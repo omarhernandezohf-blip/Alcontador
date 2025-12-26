@@ -1,0 +1,7 @@
+[theme]
+primaryColor = "#8B5CF6" # Un morado vibrante para los acentos
+backgroundColor = "#0F172A" # Fondo oscuro azulado muy elegante
+secondaryBackgroundColor = "#1E293B" # Fondo para la barra lateral y tarjetas
+textColor = "#F8FAFC" # Texto blanco casi puro para contraste máximo
+font = "sans serif" # Tipografía limpia y moderna
+base = "dark"
