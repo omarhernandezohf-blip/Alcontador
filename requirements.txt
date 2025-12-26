@@ -1,6 +1,7 @@
 streamlit
 pandas
-gspread
-google-generativeai
 openpyxl
 xlsxwriter
+google-generativeai
+gspread
+oauth2client

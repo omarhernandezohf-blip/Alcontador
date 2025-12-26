@@ -9,48 +9,82 @@ import io
 from datetime import datetime, timedelta
 import xml.etree.ElementTree as ET
 import os
+import random
 
 # ==============================================================================
-# 1. CONFIGURACIÓN VISUAL (OBLIGATORIO AL PRINCIPIO)
+# 1. CONFIGURACIÓN DE PÁGINA (OBLIGATORIO AL PRINCIPIO)
 # ==============================================================================
-st.set_page_config(page_title="Asistente Contable Pro", page_icon="💼", layout="wide")
+st.set_page_config(
+    page_title="Asistente Contable Pro | Enterprise",
+    page_icon="💼",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 # ==============================================================================
-# 2. CONEXIÓN A GOOGLE SHEETS (OPCIONAL/SEGURO)
+# 2. GESTIÓN DE CONEXIONES Y SECRETOS (BACKEND)
 # ==============================================================================
-gc = None
+
+# A. Conexión a Base de Datos (Google Sheets)
+# ------------------------------------------------------------------------------
+db_conectada = False
+sheet_logs = None
+
 try:
     if "gcp_service_account" in st.secrets:
-        credentials_dict = st.secrets["gcp_service_account"]
-        gc = gspread.service_account_from_dict(credentials_dict)
+        # Conexión silenciosa usando las credenciales de secrets.toml
+        gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
+        # Intentar abrir la hoja maestra
+        sh = gc.open("DB_Alcontador")
+        sheet_logs = sh.sheet1
+        db_conectada = True
+    else:
+        db_conectada = False
 except Exception as e:
-    pass 
+    # Si falla, no rompemos la app, solo desactivamos el log
+    db_conectada = False
 
-# ==============================================================================
-# 2.5. CONFIGURACIÓN DE SECRETOS
-# ==============================================================================
-# Configuración silenciosa de la IA
+def registrar_log(usuario, accion, detalle):
+    """
+    Función para guardar auditoría en la nube.
+    Registra: Fecha, Usuario, Acción realizada y Detalles.
+    """
+    if db_conectada and sheet_logs:
+        try:
+            fecha_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            sheet_logs.append_row([fecha_hora, usuario, accion, detalle])
+        except:
+            pass # Fallo silencioso para no interrumpir al usuario
+
+# B. Conexión a Inteligencia Artificial (Gemini Google)
+# ------------------------------------------------------------------------------
+api_key_valida = False
 try:
     if "general" in st.secrets:
         GOOGLE_API_KEY = st.secrets["general"]["api_key_google"]
         genai.configure(api_key=GOOGLE_API_KEY)
-        estado_ia = "🟢 IA Activa (Enterprise)"
-        api_key = True
+        estado_ia_global = "🟢 IA Activa (Enterprise)"
+        api_key_valida = True
     else:
-        estado_ia = "🔴 IA Desconectada"
-        api_key = False
-except Exception as e:
-    estado_ia = "🔴 Error Configuración"
-    api_key = False
+        estado_ia_global = "🔴 IA Desconectada"
+        api_key_valida = False
+except Exception:
+    estado_ia_global = "🔴 Error Configuración"
+    api_key_valida = False
 
-# Inicializar variables de sesión (Login falso)
+# C. Inicialización de Variables de Sesión (State)
+# ------------------------------------------------------------------------------
 if 'user_plan' not in st.session_state:
     st.session_state['user_plan'] = 'FREE'
+if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
+if 'username' not in st.session_state:
+    st.session_state['username'] = None
 
 # ==============================================================================
-# 3. ESTILOS CSS AVANZADOS - DISEÑO CORPORATIVO "HIGH-TECH" IMPACTANTE
+# 3. ESTILOS CSS AVANZADOS - DISEÑO "CYBERPUNK / HIGH-TECH"
 # ==============================================================================
+# Definir saludo según la hora
 hora_actual = datetime.now().hour
 if 5 <= hora_actual < 12:
     saludo = "Buenos días"
@@ -61,242 +95,268 @@ else:
 
 st.markdown("""
     <style>
-    /* --- IMPORTAR FUENTE --- */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap');
-    
-    :root {
-        --primary-blue: #0A66C2; 
-        --secondary-blue: #004182;
-        --neon-cyan: #00f3ff;
-        --neon-purple: #bc13fe;
-        --tech-bg: #0f172a; 
-        --text-light: #e2e8f0;
-    }
+        /* IMPORTAR FUENTE CORPORATIVA */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap');
+        
+        /* VARIABLES DE COLOR */
+        :root {
+            --primary-blue: #0A66C2; 
+            --secondary-blue: #004182;
+            --neon-cyan: #00f3ff;
+            --neon-purple: #bc13fe;
+            --tech-bg: #0f172a; 
+            --text-light: #e2e8f0;
+            --card-bg: rgba(30, 41, 59, 0.4);
+        }
 
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
-        background-color: var(--tech-bg) !important;
-        color: var(--text-light) !important;
-    }
+        /* FORZAR MODO OSCURO GLOBAL EN STREAMLIT */
+        .stApp {
+            background-color: var(--tech-bg) !important;
+            color: var(--text-light) !important;
+        }
 
-    /* --- ANIMACIÓN DE FONDO SUTIL PARA MÓDULOS --- */
-    @keyframes subtle-shift {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
+        html, body, [class*="css"] {
+            font-family: 'Inter', sans-serif;
+            color: var(--text-light);
+        }
 
-    .animated-module-bg {
-        background: linear-gradient(270deg, #0f172a, #1e293b, #0f172a);
-        background-size: 400% 400%;
-        animation: subtle-shift 30s ease infinite;
-        padding: 20px;
-        border-radius: 15px;
-        box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
-        margin-top: 20px;
-    }
+        /* --- ANIMACIÓN DE FONDO SUTIL PARA MÓDULOS --- */
+        @keyframes subtle-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
 
-    /* --- NUEVO HERO HEADER IMPACTANTE (CSS PURO) --- */
-    .hero-impact-container {
-        position: relative;
-        width: 100%;
-        height: 500px; /* Más alto para mayor impacto */
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
-        border-radius: 20px;
-        overflow: hidden;
-        box-shadow: 0 0 80px rgba(10, 102, 194, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        margin-bottom: 40px;
-        text-align: center;
-    }
+        .animated-module-bg {
+            background: linear-gradient(270deg, #0f172a, #1e293b, #0f172a);
+            background-size: 400% 400%;
+            animation: subtle-shift 30s ease infinite;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+            margin-top: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
 
-    /* Efecto de Red Neuronal de Fondo */
-    .hero-impact-bg {
-        position: absolute;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background-image: 
-            radial-gradient(#ffffff 1px, transparent 1px),
-            radial-gradient(#ffffff 1px, transparent 1px);
-        background-size: 50px 50px;
-        background-position: 0 0, 25px 25px;
-        opacity: 0.05;
-        animation: moveBackground 60s linear infinite;
-    }
+        /* --- HERO HEADER IMPACTANTE (CSS PURO) --- */
+        .hero-impact-container {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 0 80px rgba(10, 102, 194, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 40px;
+            text-align: center;
+        }
 
-    @keyframes moveBackground {
-        from { background-position: 0 0, 25px 25px; }
-        to { background-position: 100px 100px, 125px 125px; }
-    }
+        .hero-impact-bg {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                radial-gradient(#ffffff 1px, transparent 1px),
+                radial-gradient(#ffffff 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-position: 0 0, 25px 25px;
+            opacity: 0.05;
+            animation: moveBackground 60s linear infinite;
+        }
 
-    /* Título Gigante con Gradiente y Glow */
-    .hero-impact-title {
-        font-size: 5.5rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: -3px;
-        margin: 0;
-        background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        text-shadow: 0 0 60px rgba(10, 102, 194, 0.5);
-        z-index: 2;
-        animation: fadeInUp 1s ease-out;
-    }
+        @keyframes moveBackground {
+            from { background-position: 0 0, 25px 25px; }
+            to { background-position: 100px 100px, 125px 125px; }
+        }
 
-    /* Subtítulo dinámico */
-    .hero-impact-subtitle {
-        font-size: 1.8rem;
-        color: #60a5fa;
-        font-weight: 400;
-        margin-top: 20px;
-        z-index: 2;
-        background: rgba(15, 23, 42, 0.6);
-        padding: 10px 30px;
-        border-radius: 50px;
-        border: 1px solid rgba(96, 165, 250, 0.3);
-        backdrop-filter: blur(5px);
-        animation: fadeInUp 1.5s ease-out;
-    }
+        .hero-impact-title {
+            font-size: 5.5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: -3px;
+            margin: 0;
+            background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 60px rgba(10, 102, 194, 0.5);
+            z-index: 2;
+            animation: fadeInUp 1s ease-out;
+        }
 
-    @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(30px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
+        .hero-impact-subtitle {
+            font-size: 1.8rem;
+            color: #60a5fa;
+            font-weight: 400;
+            margin-top: 20px;
+            z-index: 2;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 10px 30px;
+            border-radius: 50px;
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            backdrop-filter: blur(5px);
+            animation: fadeInUp 1.5s ease-out;
+        }
 
-    /* Efecto de brillo inferior */
-    .hero-glow-bottom {
-        position: absolute;
-        bottom: -100px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 80%;
-        height: 200px;
-        background: radial-gradient(ellipse at center, rgba(10, 102, 194, 0.4) 0%, transparent 70%);
-        z-index: 1;
-        filter: blur(50px);
-    }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-    /* --- CARDS INFORMATIVAS MEJORADAS --- */
-    .info-card {
-        background: rgba(30, 41, 59, 0.4);
-        border-left: 5px solid var(--primary-blue);
-        padding: 25px;
-        border-radius: 12px;
-        transition: transform 0.3s ease, background 0.3s ease;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-    .info-card:hover {
-        transform: translateY(-5px);
-        background: rgba(30, 41, 59, 0.8);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    }
-    .info-icon { font-size: 2rem; margin-bottom: 10px; display: block; }
-    .info-title { font-size: 1.2rem; font-weight: 700; color: white; margin-bottom: 8px; }
-    .info-text { font-size: 0.95rem; color: #cbd5e1; }
+        .hero-glow-bottom {
+            position: absolute;
+            bottom: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 200px;
+            background: radial-gradient(ellipse at center, rgba(10, 102, 194, 0.4) 0%, transparent 70%);
+            z-index: 1;
+            filter: blur(50px);
+        }
 
+        /* --- CARDS INFORMATIVAS (DASHBOARD) --- */
+        .info-card {
+            background: var(--card-bg);
+            border-left: 5px solid var(--primary-blue);
+            padding: 30px;
+            border-radius: 16px;
+            transition: transform 0.3s ease, background 0.3s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .info-card:hover {
+            transform: translateY(-5px);
+            background: rgba(30, 41, 59, 0.8);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border-color: var(--neon-cyan);
+        }
+        .info-icon { font-size: 2.5rem; margin-bottom: 15px; display: block; }
+        .info-title { font-size: 1.4rem; font-weight: 700; color: white !important; margin-bottom: 10px; }
+        .info-text { font-size: 1rem; color: #cbd5e1 !important; line-height: 1.5; }
 
-    /* --- ENCABEZADOS DE MÓDULO PROFESIONALES --- */
-    .pro-module-header {
-        display: flex;
-        align-items: center;
-        background: linear-gradient(90deg, rgba(10, 102, 194, 0.2) 0%, rgba(15, 23, 42, 0) 100%);
-        padding: 30px;
-        border-radius: 12px;
-        border-left: 6px solid var(--primary-blue);
-        margin-bottom: 25px;
-        backdrop-filter: blur(10px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-    }
+        /* --- ENCABEZADOS DE MÓDULO --- */
+        .pro-module-header {
+            display: flex;
+            align-items: center;
+            background: linear-gradient(90deg, rgba(10, 102, 194, 0.2) 0%, rgba(15, 23, 42, 0) 100%);
+            padding: 35px;
+            border-radius: 16px;
+            border-left: 8px solid var(--primary-blue);
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .pro-module-icon {
+            width: 90px; 
+            height: auto;
+            margin-right: 35px;
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.4));
+            transition: transform 0.4s ease;
+        }
+        .pro-module-header:hover .pro-module-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+        .pro-module-title h2 {
+            margin: 0;
+            font-size: 2.6rem;
+            font-weight: 800;
+            color: white !important;
+            letter-spacing: -1px;
+        }
 
-    .pro-module-icon {
-        width: 85px; 
-        height: auto;
-        margin-right: 30px;
-        filter: drop-shadow(0 5px 10px rgba(0,0,0,0.4));
-        transition: transform 0.4s ease;
-    }
-    
-    .pro-module-header:hover .pro-module-icon {
-        transform: scale(1.1) rotate(5deg);
-    }
+        /* --- DETALLES Y EXPLICACIONES --- */
+        .detail-box {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            font-size: 1rem;
+            color: #cbd5e1;
+            line-height: 1.6;
+        }
+        .detail-box strong { color: #60a5fa; }
 
-    .pro-module-title h2 {
-        margin: 0;
-        font-size: 2.4rem;
-        font-weight: 800;
-        color: white !important;
-        letter-spacing: -1px;
-    }
+        /* --- SIDEBAR --- */
+        [data-testid="stSidebar"] {
+            background-color: #0b0f19 !important;
+            border-right: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .stRadio > div[role="radiogroup"] > label {
+            background: transparent !important;
+            border: none;
+            padding: 12px 10px !important;
+            color: #94a3b8 !important;
+            font-weight: 500 !important;
+            font-size: 0.95rem !important;
+            transition: all 0.2s;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+            display: flex;
+            align-items: center;
+        }
+        .stRadio > div[role="radiogroup"] > label:hover { 
+            color: #ffffff !important;
+            padding-left: 20px !important;
+            background: rgba(255,255,255,0.02) !important;
+        }
+        .stRadio > div[role="radiogroup"] > label[data-checked="true"] {
+            color: var(--primary-blue) !important;
+            font-weight: 700 !important;
+            background: linear-gradient(90deg, rgba(10, 102, 194, 0.1) 0%, transparent 100%) !important;
+            border-left: 4px solid var(--primary-blue);
+        }
 
-    /* --- CAJAS DE INFORMACIÓN DETALLADA --- */
-    .detail-box {
-        background: rgba(30, 41, 59, 0.6);
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 20px;
-        font-size: 0.95rem;
-        color: #cbd5e1;
-    }
-    .detail-box strong { color: #60a5fa; }
-
-    /* --- SIDEBAR --- */
-    [data-testid="stSidebar"] {
-        background-color: #0b0f19;
-        border-right: 1px solid rgba(255,255,255,0.05);
-    }
-    
-    .stRadio > div[role="radiogroup"] > label {
-        background: transparent !important; border: none; padding: 12px 5px !important;
-        color: #94a3b8 !important; font-weight: 500 !important; font-size: 0.95rem !important;
-        transition: all 0.2s;
-        border-bottom: 1px solid rgba(255,255,255,0.02);
-    }
-    .stRadio > div[role="radiogroup"] > label:hover { 
-        color: #ffffff !important; padding-left: 10px !important; 
-    }
-    .stRadio > div[role="radiogroup"] > label[data-checked="true"] {
-        color: var(--primary-blue) !important; font-weight: 700 !important;
-        background: linear-gradient(90deg, rgba(10, 102, 194, 0.1) 0%, transparent 100%) !important;
-        border-left: 3px solid var(--primary-blue);
-    }
-
-    /* --- BOTONES --- */
-    .stButton>button {
-        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%) !important;
-        color: white !important; border-radius: 8px; font-weight: 700; border: none;
-        padding: 15px 30px; height: auto; width: 100%;
-        box-shadow: 0 4px 15px rgba(10, 102, 194, 0.3);
-        transition: all 0.3s ease;
-        text-transform: uppercase; letter-spacing: 1px; font-size: 0.9rem;
-    }
-    .stButton>button:hover {
-        box-shadow: 0 8px 25px rgba(10, 102, 194, 0.6); transform: translateY(-2px);
-    }
-    
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #0f172a; }
-    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        /* --- BOTONES PERSONALIZADOS --- */
+        .stButton>button {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%) !important;
+            color: white !important;
+            border-radius: 8px;
+            font-weight: 700;
+            border: none;
+            padding: 15px 30px;
+            height: auto;
+            width: 100%;
+            box-shadow: 0 4px 15px rgba(10, 102, 194, 0.3);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+        }
+        .stButton>button:hover {
+            box-shadow: 0 8px 25px rgba(10, 102, 194, 0.6);
+            transform: translateY(-2px);
+        }
+        
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
     </style>
     """, unsafe_allow_html=True)
 
-# CONSTANTES FISCALES 2025
-SMMLV_2025, AUX_TRANS_2025 = 1430000, 175000
-UVT_2025, TOPE_EFECTIVO = 49799, 100 * 49799
-BASE_RET_SERVICIOS, BASE_RET_COMPRAS = 4 * 49799, 27 * 49799
+# ==============================================================================
+# 4. LÓGICA DE NEGOCIO Y FUNCIONES HELPER (TODO EL CEREBRO)
+# ==============================================================================
 
-# ==============================================================================
-# 4. FUNCIONES DE LÓGICA DE NEGOCIO (COMPLETAS)
-# ==============================================================================
+# Constantes Fiscales Año 2025
+SMMLV_2025 = 1430000
+AUX_TRANS_2025 = 175000
+UVT_2025 = 49799
+TOPE_EFECTIVO = 100 * UVT_2025
+BASE_RET_SERVICIOS = 4 * UVT_2025
+BASE_RET_COMPRAS = 27 * UVT_2025
 
 def calcular_dv_colombia(nit_sin_dv):
+    """Calcula el Dígito de Verificación (Módulo 11)"""
     try:
         nit_str = str(nit_sin_dv).strip()
         if not nit_str.isdigit(): return "Error"
@@ -308,15 +368,18 @@ def calcular_dv_colombia(nit_sin_dv):
         return "?"
 
 def analizar_gasto_fila(row, col_valor, col_metodo, col_concepto):
+    """Analiza una fila de gastos para auditoría tributaria"""
     hallazgos = []
     riesgo = "BAJO"
     valor = float(row[col_valor]) if pd.notnull(row[col_valor]) else 0
     metodo = str(row[col_metodo]) if pd.notnull(row[col_metodo]) else ""
     
+    # Regla 1: Bancarización
     if 'efectivo' in metodo.lower() and valor > TOPE_EFECTIVO:
         hallazgos.append(f"⛔ RECHAZO FISCAL: Pago en efectivo (${valor:,.0f}) supera tope Art 771-5.")
         riesgo = "ALTO"
     
+    # Regla 2: Retención en la fuente
     if valor >= BASE_RET_SERVICIOS and valor < BASE_RET_COMPRAS:
         hallazgos.append("⚠️ ALERTA: Verificar Retención (Base Servicios).")
         if riesgo == "BAJO": riesgo = "MEDIO"
@@ -327,6 +390,7 @@ def analizar_gasto_fila(row, col_valor, col_metodo, col_concepto):
     return " | ".join(hallazgos) if hallazgos else "OK", riesgo
 
 def calcular_ugpp_fila(row, col_salario, col_no_salarial):
+    """Calcula riesgo UGPP (Ley 1393)"""
     salario = float(row[col_salario]) if pd.notnull(row[col_salario]) else 0
     no_salarial = float(row[col_no_salarial]) if pd.notnull(row[col_no_salarial]) else 0
     
@@ -339,6 +403,7 @@ def calcular_ugpp_fila(row, col_salario, col_no_salarial):
     return salario, 0, "OK", "Cumple norma"
 
 def calcular_costo_empresa_fila(row, col_salario, col_aux, col_arl, col_exo):
+    """Calculadora de Nómina Real"""
     salario = float(row[col_salario])
     tiene_aux = str(row[col_aux]).strip().lower() in ['si', 's', 'true', '1', 'yes']
     nivel_arl = int(row[col_arl]) if pd.notnull(row[col_arl]) else 1
@@ -363,6 +428,7 @@ def calcular_costo_empresa_fila(row, col_salario, col_aux, col_arl, col_exo):
     return total, (total - base_prest)
 
 def consultar_ia_gemini(prompt):
+    """Consulta a la API de Google Gemini"""
     try:
         model = genai.GenerativeModel('models/gemini-1.5-flash')
         response = model.generate_content(prompt)
@@ -371,6 +437,7 @@ def consultar_ia_gemini(prompt):
         return f"Error de conexión IA: {str(e)}"
 
 def ocr_factura(imagen):
+    """Procesa imagen de factura con IA"""
     try:
         model = genai.GenerativeModel('models/gemini-1.5-flash')
         prompt = """Extrae datos JSON estricto: {"fecha": "YYYY-MM-DD", "nit": "num", "proveedor": "txt", "concepto": "txt", "base": num, "iva": num, "total": num}"""
@@ -380,6 +447,7 @@ def ocr_factura(imagen):
         return None
 
 def parsear_xml_dian(archivo_xml):
+    """Extrae datos de XML UBL 2.1"""
     try:
         tree = ET.parse(archivo_xml)
         root = tree.getroot()
@@ -415,14 +483,14 @@ def parsear_xml_dian(archivo_xml):
         return {"Archivo": archivo_xml.name, "Error": "Error XML"}
 
 # ==============================================================================
-# 5. INTERFAZ DE USUARIO (SIDEBAR & MENÚ PROFESIONAL)
+# 5. BARRA LATERAL (SIDEBAR) - LOGIN Y MENÚ
 # ==============================================================================
 with st.sidebar:
     # Logo
     st.image("https://cdn-icons-png.flaticon.com/512/2830/2830303.png", width=80)
     st.markdown("### 💼 Suite Financiera")
     
-    # --- SISTEMA DE LOGIN (SIMULADO) ---
+    # --- SISTEMA DE LOGIN (CONECTADO A DB) ---
     if not st.session_state.get('logged_in', False):
         st.warning("🔒 Modo Invitado")
         with st.expander("Ingresar a tu Cuenta", expanded=True):
@@ -433,25 +501,36 @@ with st.sidebar:
                 if u == "admin" and p == "admin": 
                     st.session_state['user_plan'] = 'PRO'
                     st.session_state['logged_in'] = True
+                    st.session_state['username'] = 'Admin'
+                    # REGISTRAR LOG EN GOOGLE SHEETS
+                    registrar_log("Admin", "Login", "Ingreso exitoso al sistema PRO")
                     st.rerun()
                 elif u == "cliente":
                     st.session_state['user_plan'] = 'FREE'
                     st.session_state['logged_in'] = True
+                    st.session_state['username'] = 'Cliente'
+                    # REGISTRAR LOG EN GOOGLE SHEETS
+                    registrar_log("Cliente", "Login", "Ingreso modo Free")
                     st.rerun()
                 else:
                     st.error("❌ Acceso Denegado")
+                    registrar_log(u, "Login Fallido", "Intento de contraseña incorrecta")
     
-    # Si YA inició sesión
+    # --- USUARIO LOGUEADO (PERFIL) ---
     else:
         # Tarjeta de Perfil
         plan_bg = "#FFD700" if st.session_state['user_plan'] == 'PRO' else "#A9A9A9"
-        estado_ia_txt = "🟢 IA Activa (Enterprise)" if "general" in st.secrets else "🔴 IA Desconectada"
+        
+        # Estado visual de la base de datos
+        status_db_color = "#22c55e" if db_conectada else "#ef4444"
+        status_db_text = "Conectada" if db_conectada else "Desconectada"
         
         st.markdown(f"""
         <div style='background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; border-left: 5px solid {plan_bg}; margin-bottom: 20px;'>
             <small style='color: #cbd5e1;'>Bienvenido,</small><br>
             <strong style='font-size: 1.1rem;'>Usuario {st.session_state['user_plan']}</strong><br>
-            <small>{estado_ia_txt}</small>
+            <small>{estado_ia_global}</small><br>
+            <small style='color: {status_db_color}; font-weight: bold;'>☁️ DB {status_db_text}</small>
         </div>
         """, unsafe_allow_html=True)
         
@@ -460,12 +539,13 @@ with st.sidebar:
                 st.toast("Redirigiendo a pasarela de pagos...")
 
         if st.button("Cerrar Sesión"):
+            registrar_log(st.session_state['username'], "Logout", "Salida del sistema")
             st.session_state['logged_in'] = False
             st.rerun()
 
     st.markdown("---")
     
-    # MENÚ DE NAVEGACIÓN
+    # MENÚ DE NAVEGACIÓN COMPLETO
     opciones_menu = [
         "Inicio / Dashboard",
         "Auditoría Cruce DIAN",
@@ -481,22 +561,23 @@ with st.sidebar:
         "Digitalización OCR"
     ]
     
+    # Control de acceso al menú
     if not st.session_state.get('logged_in', False):
         menu = "Inicio / Dashboard"
     else:
         menu = st.radio("Módulos Operativos:", opciones_menu)
     
-    st.markdown("<br><center><small style='color: #64748b;'>v14.5 Enterprise</small></center>", unsafe_allow_html=True)
+    st.markdown("<br><center><small style='color: #64748b;'>v15.0 Enterprise Final</small></center>", unsafe_allow_html=True)
 
 # ==============================================================================
-# 6. PÁGINAS PRINCIPALES
+# 6. CONTENIDO PRINCIPAL (MÓDULOS DETALLADOS)
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
-# 0. INICIO / DASHBOARD (REDISEÑADO SIN VIDEO)
+# 0. INICIO / DASHBOARD (CON DISEÑO IMPACTANTE)
 # ------------------------------------------------------------------------------
 if menu == "Inicio / Dashboard":
-    # HERO HEADER NUEVO (Súper Dinámico)
+    # HERO HEADER NUEVO (Súper Dinámico y Elegante)
     st.markdown(f"""
     <div class='hero-impact-container'>
         <div class='hero-impact-bg'></div>
@@ -508,7 +589,7 @@ if menu == "Inicio / Dashboard":
     </div>
     """, unsafe_allow_html=True)
     
-    # SECCIÓN DE BIENVENIDA Y CAPACIDADES (REESTRUCTURADA SIN TUTORIAL)
+    # SECCIÓN DE BIENVENIDA Y CAPACIDADES
     st.markdown("""
     <div style='text-align: center; margin-bottom: 40px;'>
         <h3 style='color: #fff; font-size: 2rem; margin-bottom: 10px;'>🚀 La Evolución de la Contabilidad</h3>
@@ -519,7 +600,7 @@ if menu == "Inicio / Dashboard":
     </div>
     """, unsafe_allow_html=True)
 
-    # GRID DE HERRAMIENTAS (Ahora ocupa todo el ancho de forma elegante)
+    # GRID DE HERRAMIENTAS (4 Columnas)
     c1, c2, c3, c4 = st.columns(4)
     
     with c1:
@@ -560,8 +641,17 @@ if menu == "Inicio / Dashboard":
 
     st.markdown("---")
     
-    st.subheader("Protocolo de Activación IA")
+    # KPIs ESTÁTICOS DE EJEMPLO
+    st.subheader("📊 Estado del Sistema")
+    k1, k2, k3 = st.columns(3)
+    k1.metric("Docs Procesados", "1,248", "+12%")
+    k2.metric("Riesgos Detectados", "15", "-2%")
+    k3.metric("Ahorro Estimado", "$45M", "COP")
     
+    st.markdown("---")
+    
+    # INSTRUCCIONES DE API
+    st.subheader("Protocolo de Activación IA")
     col_a, col_b, col_c = st.columns(3)
     with col_a:
         st.info("1. Acceso Seguro: Entra a Google AI Studio con credenciales corporativas.")
@@ -571,7 +661,7 @@ if menu == "Inicio / Dashboard":
         st.info("3. Vinculación: El sistema desbloqueará automáticamente los módulos predictivos.")
 
 # ------------------------------------------------------------------------------
-# CONTENIDO DE MÓDULOS
+# CONTENIDO DE MÓDULOS (COMPLETOS CON EXPLICACIONES)
 # ------------------------------------------------------------------------------
 else:
     # Contenedor principal con animación de fondo sutil
@@ -609,7 +699,10 @@ else:
             val_conta = c4.selectbox("Saldo (Tu Contabilidad):", df_conta.columns)
             
             if st.button("▶️ EJECUTAR AUDITORÍA BLINDADA"):
-                # LÓGICA BLINDADA (Evita el error de columnas duplicadas)
+                # REGISTRO DE ACTIVIDAD
+                registrar_log(st.session_state['username'], "Auditoria", "Ejecución cruce DIAN")
+                
+                # LÓGICA BLINDADA
                 dian_grouped = df_dian.groupby(nit_dian)[val_dian].sum().reset_index(name='Valor_DIAN')
                 dian_grouped.rename(columns={nit_dian: 'NIT'}, inplace=True)
 
@@ -622,7 +715,6 @@ else:
                 total_riesgo = diferencias['Diferencia'].abs().sum()
                 num_hallazgos = len(diferencias)
 
-                # --- AQUÍ EMPIEZA LA MAGIA DE VENTAS ---
                 st.divider()
                 st.markdown(f"### 🔍 Resultados del Escáner")
                 
@@ -636,27 +728,22 @@ else:
 
                     # VERIFICACIÓN DE PLAN (PAYWALL)
                     if st.session_state.get('user_plan') == 'FREE':
-                        # MOSTRAR SOLO LA PUNTA DEL ICEBERG
                         st.markdown("#### 👁️ Vista Previa (Modo Gratuito)")
                         st.caption("Mostrando los 2 errores más grandes:")
                         st.dataframe(diferencias.head(2).style.format("{:,.0f}"), use_container_width=True)
                         
-                        # EL MURO DE PAGO (Blur Effect)
                         st.markdown(f"""
                         <div style="margin-top: 20px; padding: 30px; border-radius: 15px; border: 1px solid #334155; background: radial-gradient(circle, rgba(15,23,42,1) 0%, rgba(30,41,59,1) 100%); text-align: center; position: relative; overflow: hidden;">
                             <div style="filter: blur(6px); opacity: 0.3; user-select: none;">
                                 <p>NIT: 900.123.456 | Diferencia: $45.000.000 | ESTADO: CRÍTICO</p>
                                 <p>NIT: 890.987.654 | Diferencia: $12.500.000 | ESTADO: CRÍTICO</p>
-                                <p>NIT: 860.000.111 | Diferencia: $ 8.200.000 | ESTADO: MEDIO</p>
-                                <p>NIT: 800.111.222 | Diferencia: $ 1.500.000 | ESTADO: BAJO</p>
                             </div>
                             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px);">
                                 <h2 style="color: #fff; text-shadow: 0 0 10px #0A66C2;">🔒 REPORTE BLOQUEADO</h2>
                                 <p style="color: #cbd5e1; font-size: 1.1rem; max-width: 600px;">
                                     Tienes <strong>{num_hallazgos - 2} inconsistencias más</strong> ocultas que suman un riesgo de <strong>${(total_riesgo * 0.8):,.0f}</strong>.
-                                    <br>La DIAN podría sancionarte por esto.
                                 </p>
-                                <a href="#" style="background: linear-gradient(90deg, #0A66C2 0%, #00d4ff 100%); color: white; padding: 15px 30px; border-radius: 30px; text-decoration: none; font-weight: bold; box-shadow: 0 0 20px rgba(10, 102, 194, 0.6); margin-top: 15px;">
+                                <a href="#" style="background: linear-gradient(90deg, #0A66C2 0%, #00d4ff 100%); color: white; padding: 15px 30px; border-radius: 30px; text-decoration: none; font-weight: bold;">
                                     🔓 DESBLOQUEAR TODO POR $59.000
                                 </a>
                             </div>
@@ -664,31 +751,28 @@ else:
                         """, unsafe_allow_html=True)
                         
                     else:
-                        # SI ES PRO: MOSTRAR TODO Y DAR BOTÓN DE DESCARGA
                         st.success("💎 ACCESO VIP: Mostrando auditoría completa.")
                         st.dataframe(diferencias.style.format("{:,.0f}"), use_container_width=True)
-                        
-                        # Generar Excel en memoria
                         out = io.BytesIO()
                         with pd.ExcelWriter(out, engine='xlsxwriter') as w:
                             diferencias.to_excel(w, index=False)
                         st.download_button("📥 Descargar Reporte Oficial (.xlsx)", out.getvalue(), f"Auditoria_DIAN_{datetime.now().date()}.xlsx")
 
     elif menu == "Minería de XML (Facturación)":
-        # Cabecera Realista
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/2823/2823523.png' class='pro-module-icon'><div class='pro-module-title'><h2>Minería de Datos XML (Facturación)</h2></div></div>""", unsafe_allow_html=True)
-        
-        # Explicación Detallada
         st.markdown("""
         <div class='detail-box'>
             <strong>Objetivo:</strong> Extraer información estructurada directamente de los archivos XML de Facturación Electrónica validados por la DIAN.<br>
-            <strong>Ventaja Técnica:</strong> El PDF es solo una representación gráfica; el XML contiene los metadatos legales reales (Fecha de emisión técnica, CUFE, Impuestos desagregados).<br>
+            <strong>Ventaja Técnica:</strong> El PDF es solo una representación gráfica; el XML contiene los metadatos legales reales.<br>
             <strong>Uso:</strong> Reconstrucción de contabilidad perdida, auditoría de IVA y Retención en la Fuente masiva.
         </div>
         """, unsafe_allow_html=True)
         
         archivos_xml = st.file_uploader("Cargar XMLs (Lote)", type=['xml'], accept_multiple_files=True)
         if archivos_xml and st.button("▶️ INICIAR PROCESAMIENTO"):
+            # REGISTRO DE ACTIVIDAD
+            registrar_log(st.session_state['username'], "Mineria XML", f"Procesados {len(archivos_xml)} archivos")
+            
             st.toast("Procesando lote de archivos...")
             datos_xml = []
             barra = st.progress(0)
@@ -705,15 +789,11 @@ else:
             st.download_button("📥 Descargar Reporte Maestro (.xlsx)", out.getvalue(), "Resumen_XML.xlsx")
 
     elif menu == "Conciliación Bancaria IA":
-        # Cabecera Realista
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/2489/2489756.png' class='pro-module-icon'><div class='pro-module-title'><h2>Conciliación Bancaria Inteligente</h2></div></div>""", unsafe_allow_html=True)
-        
-        # Explicación Detallada
         st.markdown("""
         <div class='detail-box'>
             <strong>Objetivo:</strong> Automatizar el emparejamiento de transacciones entre el Extracto Bancario y el Libro Auxiliar de Bancos.<br>
-            <strong>Algoritmo:</strong> Utiliza lógica difusa para encontrar coincidencias basadas en el valor exacto y una ventana de tiempo flexible (±3 días) para compensar los tiempos de canje bancario.<br>
-            <strong>Resultado:</strong> Identificación inmediata de partidas conciliatorias y partidas pendientes (cheques no cobrados, consignaciones no identificadas).
+            <strong>Algoritmo:</strong> Utiliza lógica difusa para encontrar coincidencias basadas en el valor exacto y una ventana de tiempo flexible.
         </div>
         """, unsafe_allow_html=True)
         
@@ -738,6 +818,9 @@ else:
             col_desc_b = st.selectbox("Descripción Banco (Para detalle):", df_banco.columns, key="db")
             
             if st.button("▶️ EJECUTAR CONCILIACIÓN"):
+                # REGISTRO DE ACTIVIDAD
+                registrar_log(st.session_state['username'], "Conciliacion", "Inicio matching bancario")
+                
                 df_banco['Fecha_Dt'] = pd.to_datetime(df_banco[col_fecha_b])
                 df_libro['Fecha_Dt'] = pd.to_datetime(df_libro[col_fecha_l])
                 df_banco['Conciliado'] = False; df_libro['Conciliado'] = False
@@ -748,7 +831,6 @@ else:
                     bar.progress((idx_b+1)/len(df_banco))
                     vb = row_b[col_valor_b]
                     fb = row_b['Fecha_Dt']
-                    # Lógica de coincidencia difusa (ventana de 3 días)
                     cands = df_libro[(df_libro[col_valor_l] == vb) & (~df_libro['Conciliado']) & (df_libro['Fecha_Dt'].between(fb-timedelta(days=3), fb+timedelta(days=3)))]
                     
                     if not cands.empty:
@@ -763,16 +845,13 @@ else:
                 with t3: st.dataframe(df_libro[~df_libro['Conciliado']], use_container_width=True)
 
     elif menu == "Auditoría Fiscal de Gastos":
-        # Cabecera Realista
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/1642/1642346.png' class='pro-module-icon'><div class='pro-module-title'><h2>Auditoría Fiscal Masiva (Art. 771-5)</h2></div></div>""", unsafe_allow_html=True)
-        
-        # Explicación Detallada
         st.markdown("""
         <div class='detail-box'>
             <strong>Objetivo:</strong> Verificar el cumplimiento de los requisitos de deducibilidad de costos y gastos según el Estatuto Tributario.<br>
             <strong>Normativa Clave:</strong> 
             1. <u>Bancarización (Art. 771-5):</u> Identifica pagos en efectivo que superan los 100 UVT individuales.
-            2. <u>Retención en la Fuente:</u> Alerta sobre pagos que superan las bases mínimas (Servicios/Compras) y no presentan retención asociada.
+            2. <u>Retención en la Fuente:</u> Alerta sobre pagos que superan las bases mínimas.
         </div>
         """, unsafe_allow_html=True)
         
@@ -790,7 +869,7 @@ else:
                 res = []
                 for r in df.to_dict('records'):
                     h, rs = analizar_gasto_fila(r, cv, cm, cc)
-                    if rs != "BAJO": # Solo mostramos lo relevante
+                    if rs != "BAJO": 
                         res.append({"Fecha": r[cf], "Tercero": r[ct], "Valor": r[cv], "Riesgo": rs, "Hallazgo": h})
                 
                 if res:
@@ -800,14 +879,11 @@ else:
                     st.success("No se encontraron riesgos fiscales evidentes.")
 
     elif menu == "Escáner de Nómina (UGPP)":
-        # Cabecera Realista
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/3135/3135817.png' class='pro-module-icon'><div class='pro-module-title'><h2>Escáner de Riesgo UGPP (Ley 1393)</h2></div></div>""", unsafe_allow_html=True)
-        
-        # Explicación Detallada
         st.markdown("""
         <div class='detail-box'>
             <strong>Objetivo:</strong> Auditar los pagos laborales para evitar sanciones de la Unidad de Gestión Pensional y Parafiscales (UGPP).<br>
-            <strong>Regla Crítica:</strong> Verifica el cumplimiento del artículo 30 de la Ley 1393 de 2010, que establece que los pagos no constitutivos de salario no pueden exceder el 40% del total de la remuneración mensual. Si exceden, la diferencia debe hacer parte de la base de cotización (IBC).
+            <strong>Regla Crítica:</strong> Verifica el cumplimiento del artículo 30 de la Ley 1393 de 2010 (regla del 40%).
         </div>
         """, unsafe_allow_html=True)
         
@@ -827,15 +903,11 @@ else:
                 st.dataframe(pd.DataFrame(res), use_container_width=True)
 
     elif menu == "Proyección de Tesorería":
-        # Cabecera Realista
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/5806/5806289.png' class='pro-module-icon'><div class='pro-module-title'><h2>Radar de Liquidez & Flujo de Caja</h2></div></div>""", unsafe_allow_html=True)
-        
-        # Explicación Detallada
         st.markdown("""
         <div class='detail-box'>
             <strong>Objetivo:</strong> Visualizar la salud financiera futura de la empresa.<br>
-            <strong>Mecánica:</strong> Cruza las fechas de vencimiento de la Cartera (Cuentas por Cobrar) contra las obligaciones con Proveedores (Cuentas por Pagar).<br>
-            <strong>Resultado:</strong> Un gráfico de 'Saldo Proyectado' que alerta sobre posibles déficits de caja (iliquidez) en fechas específicas.
+            <strong>Mecánica:</strong> Cruza las fechas de vencimiento de la Cartera (Cuentas por Cobrar) contra las obligaciones con Proveedores (Cuentas por Pagar).
         </div>
         """, unsafe_allow_html=True)
         
@@ -863,20 +935,17 @@ else:
                     st.area_chart(cal.set_index('Fecha')['Saldo Proyectado'])
                     st.dataframe(cal, use_container_width=True)
                     
-                    if api_key:
+                    if api_key_valida:
                         with st.spinner("🤖 La IA está analizando tu flujo de caja..."):
                             st.markdown(consultar_ia_gemini(f"Analiza este flujo de caja. Saldo inicial: {saldo_hoy}. Datos: {cal.head(10).to_string()}"))
                 except: st.error("Error en el formato de fechas. Asegúrate que sean columnas de fecha válidas.")
 
     elif menu == "Costeo de Nómina Real":
-        # Cabecera Realista
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/2328/2328761.png' class='pro-module-icon'><div class='pro-module-title'><h2>Calculadora de Costo Real de Nómina</h2></div></div>""", unsafe_allow_html=True)
-        
-        # Explicación Detallada
         st.markdown("""
         <div class='detail-box'>
             <strong>Objetivo:</strong> Determinar el costo verdadero de un empleado para la empresa, más allá del salario neto.<br>
-            <strong>Cálculo Integral:</strong> Incluye provisiones de prestaciones sociales (Prima, Cesantías, Intereses, Vacaciones), seguridad social del empleador (Salud, Pensión, ARL) y parafiscales (Sena, ICBF, Caja), ajustando automáticamente si la empresa es exonerada (Ley 1607).
+            <strong>Cálculo Integral:</strong> Incluye provisiones de prestaciones sociales, seguridad social del empleador y parafiscales.
         </div>
         """, unsafe_allow_html=True)
         
@@ -897,19 +966,16 @@ else:
                 st.dataframe(pd.DataFrame(rc), use_container_width=True)
 
     elif menu == "Analítica Financiera Inteligente":
-        # Cabecera Realista
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/10041/10041467.png' class='pro-module-icon'><div class='pro-module-title'><h2>Inteligencia Financiera (IA)</h2></div></div>""", unsafe_allow_html=True)
-        
-        # Explicación Detallada
         st.markdown("""
         <div class='detail-box'>
             <strong>Objetivo:</strong> Convertir datos contables planos en insights estratégicos utilizando Inteligencia Artificial.<br>
-            <strong>Capacidad:</strong> Detecta patrones de gasto, anomalías en cuentas contables y tendencias de ingresos que el ojo humano podría pasar por alto en grandes volúmenes de datos. Actúa como un Auditor Senior virtual.
+            <strong>Capacidad:</strong> Detecta patrones de gasto, anomalías en cuentas contables y tendencias de ingresos.
         </div>
         """, unsafe_allow_html=True)
         
         fi = st.file_uploader("Cargar Datos Financieros (.xlsx/.csv)", type=['xlsx', 'csv'])
-        if fi and api_key:
+        if fi and api_key_valida:
             df = pd.read_csv(fi) if fi.name.endswith('.csv') else pd.read_excel(fi)
             c1, c2 = st.columns(2)
             cd = c1.selectbox("Columna Descripción", df.columns)
@@ -921,14 +987,11 @@ else:
                 st.markdown(consultar_ia_gemini(f"Actúa como auditor financiero. Analiza estos saldos principales y da recomendaciones: {res.to_string()}"))
 
     elif menu == "Narrador Financiero & NIIF":
-        # Cabecera Realista
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/3208/3208727.png' class='pro-module-icon'><div class='pro-module-title'><h2>Narrador Financiero & Notas NIIF</h2></div></div>""", unsafe_allow_html=True)
-        
-        # Explicación Detallada
         st.markdown("""
         <div class='detail-box'>
             <strong>Objetivo:</strong> Automatizar la redacción de informes gerenciales y las Notas a los Estados Financieros.<br>
-            <strong>Innovación:</strong> Utiliza IA Generativa para interpretar las variaciones (Aumentos/Disminuciones) entre dos periodos contables. No solo dice "cuánto" cambió, sino que redacta una explicación profesional sobre el "por qué" y su impacto en la liquidez o rentabilidad.
+            <strong>Innovación:</strong> Utiliza IA Generativa para interpretar las variaciones entre dos periodos contables.
         </div>
         """, unsafe_allow_html=True)
         
@@ -936,7 +999,7 @@ else:
         f1 = c1.file_uploader("Año Actual", type=['xlsx'])
         f2 = c2.file_uploader("Año Anterior", type=['xlsx'])
         
-        if f1 and f2 and api_key:
+        if f1 and f2 and api_key_valida:
             d1 = pd.read_excel(f1); d2 = pd.read_excel(f2)
             st.divider()
             c1, c2, c3 = st.columns(3)
@@ -966,14 +1029,11 @@ else:
                     st.markdown(consultar_ia_gemini(prompt))
 
     elif menu == "Validador de RUT Oficial":
-        # Cabecera Realista
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/9422/9422888.png' class='pro-module-icon'><div class='pro-module-title'><h2>Validador Oficial de RUT</h2></div></div>""", unsafe_allow_html=True)
-        
-        # Explicación Detallada
         st.markdown("""
         <div class='detail-box'>
             <strong>Objetivo:</strong> Asegurar la integridad de los datos de terceros antes de crear medios magnéticos o facturación.<br>
-            <strong>Herramienta:</strong> Aplica el algoritmo oficial de "Módulo 11" para calcular el Dígito de Verificación (DV) correcto de cualquier NIT o Cédula, evitando errores de transcripción.
+            <strong>Herramienta:</strong> Aplica el algoritmo oficial de "Módulo 11" para calcular el Dígito de Verificación (DV).
         </div>
         """, unsafe_allow_html=True)
         
@@ -984,19 +1044,16 @@ else:
             st.link_button("🔗 Consulta Estado en Muisca (DIAN)", "https://muisca.dian.gov.co/WebRutMuisca/DefConsultaEstadoRUT.faces")
 
     elif menu == "Digitalización OCR":
-        # Cabecera Realista
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/3588/3588241.png' class='pro-module-icon'><div class='pro-module-title'><h2>Digitalización Inteligente (OCR)</h2></div></div>""", unsafe_allow_html=True)
-        
-        # Explicación Detallada
         st.markdown("""
         <div class='detail-box'>
             <strong>Objetivo:</strong> Eliminar la digitación manual de facturas físicas.<br>
-            <strong>Tecnología:</strong> Utiliza Modelos de Lenguaje de Visión (VLM) para "leer" imágenes de facturas (JPG/PNG), interpretar su contenido (Proveedor, NIT, Totales, Impuestos) y estructurarlo en una tabla lista para exportar a Excel.
+            <strong>Tecnología:</strong> Utiliza Modelos de Lenguaje de Visión (VLM) para "leer" imágenes de facturas (JPG/PNG).
         </div>
         """, unsafe_allow_html=True)
         
         af = st.file_uploader("Cargar Imágenes", type=["jpg", "png"], accept_multiple_files=True)
-        if af and st.button("🧠 PROCESAR IMÁGENES") and api_key:
+        if af and st.button("🧠 PROCESAR IMÁGENES") and api_key_valida:
             do = []
             bar = st.progress(0)
             for i, f in enumerate(af):
