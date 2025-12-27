@@ -780,20 +780,20 @@ else:
             st.download_button("📥 Descargar Reporte Maestro (.xlsx)", out.getvalue(), "Resumen_XML.xlsx")
             registrar_log(st.session_state['username'], "Mineria XML", f"Procesados {len(archivos_xml)} archivos")
 
-    # 3. CONCILIACIÓN BANCARIA (Continúa con ELIF)
     elif menu == "Conciliación Bancaria IA":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/2489/2489756.png' class='pro-module-icon'><div class='pro-module-title'><h2>Conciliación Bancaria Inteligente</h2></div></div>""", unsafe_allow_html=True)
-        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Automatizar el emparejamiento de transacciones entre el Extracto Bancario y el Libro Auxiliar de Bancos usando lógica difusa.</div>""", unsafe_allow_html=True)
+        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Automatizar el emparejamiento de transacciones entre el Extracto Bancario y el Libro Auxiliar de Bancos usando lógica difusa (Fechas cercanas).</div>""", unsafe_allow_html=True)
         
         col_banco, col_libro = st.columns(2)
         with col_banco: st.subheader("🏦 Extracto Bancario"); file_banco = st.file_uploader("Subir Excel Banco", type=['xlsx'])
         with col_libro: st.subheader("📒 Libro Auxiliar"); file_libro = st.file_uploader("Subir Excel Contabilidad", type=['xlsx'])
         
         if file_banco and file_libro:
+            # Lectura
             df_banco = pd.read_excel(file_banco)
             df_libro = pd.read_excel(file_libro)
             
-            # Cerebro Auto-Detección Banco
+            # --- CEREBRO DE AUTO-DETECCIÓN ---
             def detectar_idx(columnas, keywords):
                 cols_str = [str(c).lower().strip() for c in columnas]
                 for i, col in enumerate(cols_str):
@@ -808,6 +808,7 @@ else:
             idx_fb = detectar_idx(df_banco.columns, kw_fecha)
             idx_vb = detectar_idx(df_banco.columns, kw_valor)
             idx_db = detectar_idx(df_banco.columns, kw_desc)
+            
             idx_fl = detectar_idx(df_libro.columns, kw_fecha)
             idx_vl = detectar_idx(df_libro.columns, kw_valor)
             
@@ -824,37 +825,82 @@ else:
 
             if st.button("▶️ EJECUTAR CONCILIACIÓN AHORA", type="primary"):
                 registrar_log(st.session_state['username'], "Conciliacion", "Inicio matching bancario")
+                
+                # Normalización de Fechas
                 try:
                     df_banco['Fecha_Dt'] = pd.to_datetime(df_banco[col_fecha_b])
                     df_libro['Fecha_Dt'] = pd.to_datetime(df_libro[col_fecha_l])
                 except:
-                    st.error("Error en formato de fechas.")
+                    st.error("Error en formato de fechas. Asegúrate que las columnas de fecha sean correctas.")
                     st.stop()
 
                 df_banco['Conciliado'] = False
                 df_libro['Conciliado'] = False
                 matches = []
-                bar = st.progress(0)
                 
+                bar = st.progress(0)
+                total_rows = len(df_banco)
+                
+                # ALGORITMO DE MATCHING INTELIGENTE
                 for idx_b, row_b in df_banco.iterrows():
-                    bar.progress((idx_b+1)/len(df_banco))
+                    bar.progress((idx_b+1)/total_rows)
                     vb = row_b[col_valor_b]
                     fb = row_b['Fecha_Dt']
-                    cands = df_libro[(df_libro[col_valor_l] == vb) & (~df_libro['Conciliado']) & (df_libro['Fecha_Dt'].between(fb - timedelta(days=3), fb + timedelta(days=3)))]
+                    
+                    # Busca coincidencias: Mismo valor, no conciliado aun, y fecha +/- 3 días
+                    cands = df_libro[
+                        (df_libro[col_valor_l] == vb) & 
+                        (~df_libro['Conciliado']) & 
+                        (df_libro['Fecha_Dt'].between(fb - timedelta(days=3), fb + timedelta(days=3)))
+                    ]
                     
                     if not cands.empty:
+                        # Si encuentra match, marca ambos como conciliados
                         match_idx = cands.index[0]
                         df_banco.at[idx_b, 'Conciliado'] = True
                         df_libro.at[match_idx, 'Conciliado'] = True
-                        matches.append({"Fecha Banco": str(row_b[col_fecha_b]), "Fecha Libro": str(df_libro.at[match_idx, col_fecha_l]), "Valor": f"${vb:,.2f}", "Estado": "✅ AUTOMÁTICO"})
+                        
+                        f_libro_str = df_libro.at[match_idx, col_fecha_l]
+                        matches.append({
+                            "Fecha Banco": str(row_b[col_fecha_b]),
+                            "Fecha Libro": str(f_libro_str),
+                            "Descripción": str(row_b[col_desc_b]),
+                            "Valor Cruzado": f"${vb:,.2f}",
+                            "Estado": "✅ AUTOMÁTICO"
+                        })
                 
                 st.divider()
                 st.balloons()
-                st.success(f"🚀 ¡Proceso Terminado! {len(matches)} partidas conciliadas.")
+                st.success(f"🚀 ¡Proceso Terminado! {len(matches)} partidas conciliadas automáticamente.")
+                
+                # PREPARAR ARCHIVO PARA DESCARGA
+                df_matches = pd.DataFrame(matches)
+                df_pend_banco = df_banco[~df_banco['Conciliado']]
+                df_pend_libro = df_libro[~df_libro['Conciliado']]
+                
+                buffer = io.BytesIO()
+                with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+                    df_matches.to_excel(writer, sheet_name='1. Cruzados', index=False)
+                    df_pend_banco.to_excel(writer, sheet_name='2. Pendientes Banco', index=False)
+                    df_pend_libro.to_excel(writer, sheet_name='3. Pendientes Libros', index=False)
+                    
+                st.download_button(
+                    label="📥 DESCARGAR CONCILIACIÓN (.xlsx)",
+                    data=buffer.getvalue(),
+                    file_name=f"Conciliacion_{datetime.now().strftime('%Y%m%d')}.xlsx",
+                    mime="application/vnd.ms-excel"
+                )
+                
                 t1, t2, t3 = st.tabs(["✅ Partidas Cruzadas", "⚠️ Pendientes en Banco", "⚠️ Pendientes en Libros"])
-                with t1: st.dataframe(pd.DataFrame(matches), use_container_width=True)
-                with t2: st.dataframe(df_banco[~df_banco['Conciliado']], use_container_width=True)
-                with t3: st.dataframe(df_libro[~df_libro['Conciliado']], use_container_width=True)
+                
+                with t1: 
+                    st.dataframe(df_matches, use_container_width=True)
+                with t2: 
+                    st.warning("Estas partidas están en el Banco pero NO en tu contabilidad:")
+                    st.dataframe(df_pend_banco, use_container_width=True)
+                with t3: 
+                    st.warning("Estos registros están en Contabilidad pero NO han salido del Banco:")
+                    st.dataframe(df_pend_libro, use_container_width=True)
 
     elif menu == "Auditoría Fiscal de Gastos":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/1642/1642346.png' class='pro-module-icon'><div class='pro-module-title'><h2>Auditoría Fiscal Masiva (Art. 771-5)</h2></div></div>""", unsafe_allow_html=True)
