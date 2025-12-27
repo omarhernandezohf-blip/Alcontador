@@ -698,86 +698,80 @@ else:
             df_dian = pd.read_excel(file_dian)
             df_conta = pd.read_excel(file_conta)
             
-            st.divider()
-            st.info("⚙️ Mapeo Automático (El sistema detectó estas columnas, verifica si son correctas):")
-            
             # --- CEREBRO DE AUTO-DETECCIÓN ---
             def detectar_idx(columnas, keywords):
-                """Busca la primera columna que contenga alguna de las palabras clave"""
                 cols_str = [str(c).lower().strip() for c in columnas]
                 for i, col in enumerate(cols_str):
                     for kw in keywords:
-                        if kw in col:
-                            return i
-                return 0 # Si no encuentra, devuelve la primera columna por defecto
+                        if kw in col: return i
+                return 0 # Default a la primera si falla
             
-            # Diccionario de palabras clave para buscar
-            kw_nit = ['nit', 'n.i.t', 'cedula', 'cédula', 'documento', 'identificacion', 'tercero', 'id']
-            kw_valor = ['valor', 'saldo', 'total', 'monto', 'cuantia', 'importe', 'pagos']
+            # Palabras clave
+            kw_nit = ['nit', 'n.i.t', 'cedula', 'documento', 'id', 'tercero']
+            kw_valor = ['valor', 'saldo', 'total', 'monto', 'pago', 'cuantia']
             
-            # Detectamos los índices automáticamente
+            # Detección silenciosa
             idx_nit_d = detectar_idx(df_dian.columns, kw_nit)
             idx_val_d = detectar_idx(df_dian.columns, kw_valor)
             idx_nit_c = detectar_idx(df_conta.columns, kw_nit)
             idx_val_c = detectar_idx(df_conta.columns, kw_valor)
             
-            # Mostramos los selectores ya pre-llenados (Index=...)
-            c1, c2, c3, c4 = st.columns(4)
-            nit_dian = c1.selectbox("NIT (Archivo DIAN):", df_dian.columns, index=idx_nit_d)
-            val_dian = c2.selectbox("Valor (Archivo DIAN):", df_dian.columns, index=idx_val_d)
-            nit_conta = c3.selectbox("NIT (Tu Contabilidad):", df_conta.columns, index=idx_nit_c)
-            val_conta = c4.selectbox("Saldo (Tu Contabilidad):", df_conta.columns, index=idx_val_c)
+            # --- AQUÍ ESTÁ EL CAMBIO: VISUALIZACIÓN LIMPIA ---
+            st.divider()
+            st.success(f"✅ Sistema Autoconfigurado: Se usarán las columnas '{df_dian.columns[idx_nit_d]}' y '{df_dian.columns[idx_val_d]}' automáticamente.")
             
-            if st.button("▶️ EJECUTAR AUDITORÍA BLINDADA"):
+            # Ocultamos los selectores en un expander cerrado
+            with st.expander("🛠️ (Opcional) Ver o cambiar columnas seleccionadas manualmente"):
+                c1, c2, c3, c4 = st.columns(4)
+                nit_dian = c1.selectbox("NIT (DIAN)", df_dian.columns, index=idx_nit_d)
+                val_dian = c2.selectbox("Valor (DIAN)", df_dian.columns, index=idx_val_d)
+                nit_conta = c3.selectbox("NIT (Conta)", df_conta.columns, index=idx_nit_c)
+                val_conta = c4.selectbox("Valor (Conta)", df_conta.columns, index=idx_val_c)
+
+            # Botón Principal
+            if st.button("▶️ EJECUTAR AUDITORÍA AHORA", type="primary"):
                 try:
                     registrar_log(st.session_state['username'], "Auditoria", "Ejecución cruce DIAN")
                     
-                    # Agrupación y Suma (Normalización de datos)
+                    # Usamos las variables de los selectboxes (que ya tienen el valor automático)
                     dian_grouped = df_dian.groupby(nit_dian)[val_dian].sum().reset_index(name='Valor_DIAN').rename(columns={nit_dian: 'NIT'})
                     conta_grouped = df_conta.groupby(nit_conta)[val_conta].sum().reset_index(name='Valor_Conta').rename(columns={nit_conta: 'NIT'})
                     
-                    # Limpieza de NITs (Quitar DV o puntos si es necesario - Básico)
+                    # Limpieza básica
                     dian_grouped['NIT'] = dian_grouped['NIT'].astype(str).str.strip()
                     conta_grouped['NIT'] = conta_grouped['NIT'].astype(str).str.strip()
 
-                    # Cruce (Merge)
+                    # Cruce
                     cruce = pd.merge(dian_grouped, conta_grouped, on='NIT', how='outer').fillna(0)
                     cruce['Diferencia'] = cruce['Valor_DIAN'] - cruce['Valor_Conta']
-                    
-                    # Filtrar diferencias relevantes (mayores a 1000 pesos para evitar ruido por decimales)
                     diferencias = cruce[abs(cruce['Diferencia']) > 1000].sort_values(by="Diferencia", ascending=False)
                     
-                    total_riesgo = diferencias['Diferencia'].abs().sum()
                     num_hallazgos = len(diferencias)
+                    total_riesgo = diferencias['Diferencia'].abs().sum()
                     
                     st.divider()
-                    st.markdown(f"### 🔍 Resultados del Escáner")
-                    
                     if num_hallazgos == 0:
-                        st.success("✅ ¡Felicidades! Tu contabilidad cruza perfectamente con la DIAN.")
+                        st.balloons()
+                        st.success("✅ ¡Perfecto! No hay diferencias entre la DIAN y tu Contabilidad.")
                     else:
-                        st.error(f"⚠️ ¡ALERTA! Se detectaron {num_hallazgos} terceros con diferencias.")
+                        st.error(f"⚠️ Se encontraron {num_hallazgos} inconsistencias.")
                         col_met1, col_met2 = st.columns(2)
-                        col_met1.metric("Riesgo Financiero Total", f"${total_riesgo:,.0f}")
-                        col_met2.metric("Terceros con Inconsistencias", num_hallazgos)
+                        col_met1.metric("Riesgo Total", f"${total_riesgo:,.0f}")
+                        col_met2.metric("Terceros con Error", num_hallazgos)
                         
-                        # Lógica de PLANES (Free vs Pro)
                         if st.session_state.get('user_plan') == 'FREE':
-                            st.markdown("#### 👁️ Vista Previa (Modo Gratuito)")
-                            st.dataframe(diferencias.head(3).style.format({"Valor_DIAN": "${:,.0f}", "Valor_Conta": "${:,.0f}", "Diferencia": "${:,.0f}"}), use_container_width=True)
-                            st.warning("🔒 Para descargar el reporte completo y ver todos los terceros, pásate a PRO.")
+                            st.warning("🔒 Versión GRATUITA: Solo se muestran los primeros 3 errores.")
+                            st.dataframe(diferencias.head(3), use_container_width=True)
                         else:
-                            st.success("💎 ACCESO VIP: Reporte completo desbloqueado.")
-                            st.dataframe(diferencias.style.format({"Valor_DIAN": "${:,.0f}", "Valor_Conta": "${:,.0f}", "Diferencia": "${:,.0f}"}), use_container_width=True)
-                            
-                            # Botón de descarga
+                            st.success("💎 REPORTE COMPLETO (PRO)")
+                            st.dataframe(diferencias, use_container_width=True)
                             out = io.BytesIO()
                             with pd.ExcelWriter(out, engine='xlsxwriter') as w:
-                                diferencias.to_excel(w, index=False, sheet_name="Auditoria_DIAN")
-                            st.download_button("📥 Descargar Reporte Oficial (.xlsx)", out.getvalue(), f"Auditoria_DIAN_{datetime.now().date()}.xlsx")
+                                diferencias.to_excel(w, index=False)
+                            st.download_button("📥 Descargar Excel", out.getvalue(), "Auditoria_Final.xlsx")
                 
                 except Exception as e:
-                    st.error(f"Error en el procesamiento: {e}. Revisa que las columnas seleccionadas contengan números.")
+                    st.error(f"Algo salió mal: {e}. Revisa 'Configuración manual' arriba.")
     elif menu == "Minería de XML (Facturación)":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/2823/2823523.png' class='pro-module-icon'><div class='pro-module-title'><h2>Minería de Datos XML (Facturación)</h2></div></div>""", unsafe_allow_html=True)
         st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Extraer información estructurada directamente de los archivos XML de Facturación Electrónica validados por la DIAN.</div>""", unsafe_allow_html=True)
