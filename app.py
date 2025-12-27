@@ -904,35 +904,242 @@ else:
 
     elif menu == "Auditoría Fiscal de Gastos":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/1642/1642346.png' class='pro-module-icon'><div class='pro-module-title'><h2>Auditoría Fiscal Masiva (Art. 771-5)</h2></div></div>""", unsafe_allow_html=True)
-        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Verificar el cumplimiento de los requisitos de deducibilidad (Bancarización, Retención).</div>""", unsafe_allow_html=True)
+        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Verificar el cumplimiento de los requisitos de deducibilidad (Bancarización y Retenciones).<br>Detecta pagos en efectivo superiores a 100 UVT y bases de retención omitidas.</div>""", unsafe_allow_html=True)
+        
         ar = st.file_uploader("Cargar Auxiliar de Gastos (.xlsx)", type=['xlsx'])
+        
         if ar:
             df = pd.read_excel(ar)
-            c1, c2, c3, c4 = st.columns(4)
-            cf = c1.selectbox("Fecha", df.columns); ct = c2.selectbox("Tercero", df.columns); cv = c3.selectbox("Valor", df.columns); cm = c4.selectbox("Método de Pago", ["No disponible"]+list(df.columns))
-            cc = st.selectbox("Concepto (Opcional)", df.columns)
-            if st.button("▶️ ANALIZAR RIESGOS"):
-                res = []
-                for r in df.to_dict('records'):
-                    h, rs = analizar_gasto_fila(r, cv, cm, cc)
-                    if rs != "BAJO": res.append({"Fecha": r[cf], "Tercero": r[ct], "Valor": r[cv], "Riesgo": rs, "Hallazgo": h})
-                if res: st.warning(f"Se encontraron {len(res)} operaciones con riesgo fiscal."); st.dataframe(pd.DataFrame(res), use_container_width=True)
-                else: st.success("No se encontraron riesgos fiscales evidentes.")
+            
+            # --- CEREBRO DE AUTO-DETECCIÓN ---
+            def detectar_idx(columnas, keywords):
+                cols_str = [str(c).lower().strip() for c in columnas]
+                for i, col in enumerate(cols_str):
+                    for kw in keywords:
+                        if kw in col: return i
+                return 0
 
-    elif menu == "Escáner de Nómina (UGPP)":
-        st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/3135/3135817.png' class='pro-module-icon'><div class='pro-module-title'><h2>Escáner de Riesgo UGPP (Ley 1393)</h2></div></div>""", unsafe_allow_html=True)
-        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Auditar los pagos laborales para evitar sanciones. Verifica la regla del 40% (Art. 30 Ley 1393).</div>""", unsafe_allow_html=True)
-        an = st.file_uploader("Cargar Nómina (.xlsx)", type=['xlsx'])
-        if an:
-            dn = pd.read_excel(an)
-            c1, c2, c3 = st.columns(3)
-            cn = c1.selectbox("Empleado", dn.columns); cs = c2.selectbox("Salario Básico", dn.columns); cns = c3.selectbox("Pagos No Salariales", dn.columns)
-            if st.button("▶️ ESCANEAR NÓMINA"):
+            # Palabras clave
+            kw_fecha = ['fecha', 'date', 'dia']
+            kw_tercero = ['tercero', 'beneficiario', 'nombre', 'proveedor']
+            kw_valor = ['valor', 'monto', 'importe', 'saldo', 'debito', 'total']
+            kw_metodo = ['metodo', 'forma', 'pago', 'medio', 'banco', 'caja']
+            kw_concepto = ['concepto', 'detalle', 'descripcion', 'nota']
+
+            # Detección
+            idx_f = detectar_idx(df.columns, kw_fecha)
+            idx_t = detectar_idx(df.columns, kw_tercero)
+            idx_v = detectar_idx(df.columns, kw_valor)
+            idx_m = detectar_idx(df.columns, kw_metodo)
+            idx_c = detectar_idx(df.columns, kw_concepto)
+
+            st.divider()
+            st.success(f"✅ Configuración Automática: Analizando columna '{df.columns[idx_v]}' según método '{df.columns[idx_m]}'.")
+
+            with st.expander("🛠️ Ver/Editar Columnas Seleccionadas"):
+                c1, c2, c3, c4 = st.columns(4)
+                cf = c1.selectbox("Fecha", df.columns, index=idx_f)
+                ct = c2.selectbox("Tercero", df.columns, index=idx_t)
+                cv = c3.selectbox("Valor", df.columns, index=idx_v)
+                cm = c4.selectbox("Método de Pago", df.columns, index=idx_m)
+                cc = st.selectbox("Concepto (Opcional)", df.columns, index=idx_c)
+
+            if st.button("▶️ ANALIZAR RIESGOS FISCALES", type="primary"):
+                registrar_log(st.session_state['username'], "Auditoria Gastos", "Inicio escaneo 771-5")
                 res = []
-                for r in dn.to_dict('records'):
-                    ibc, exc, est, msg = calcular_ugpp_fila(r, cs, cns)
-                    res.append({"Empleado": r[cn], "IBC Ajustado": ibc, "Exceso": exc, "Estado": est, "Detalle": msg})
-                st.dataframe(pd.DataFrame(res), use_container_width=True)
+                errores_lectura = 0
+                
+                for r in df.to_dict('records'):
+                    try:
+                        # Convertimos a float seguro
+                        val_check = float(r[cv]) if pd.notnull(r[cv]) else 0
+                    except:
+                        val_check = 0
+                        errores_lectura += 1
+                        
+                    # Aplicamos la lógica de auditoría
+                    h, rs = analizar_gasto_fila(r, cv, cm, cc)
+                    
+                    if rs != "BAJO": 
+                        res.append({
+                            "Fecha": str(r[cf]), 
+                            "Tercero": str(r[ct]), 
+                            "Valor": f"${val_check:,.0f}", 
+                            "Método Pago": str(r[cm]),
+                            "Riesgo": rs, 
+                            "Hallazgo": h
+                        })
+                
+                st.divider()
+                if not res:
+                    st.balloons()
+                    st.success("✅ ¡Excelente! No se encontraron riesgos fiscales evidentes en los gastos analizados.")
+                else:
+                    st.warning(f"⚠️ Se encontraron {len(res)} operaciones con riesgo fiscal.")
+                    
+                    # Convertimos a DataFrame
+                    df_res = pd.DataFrame(res)
+                    
+                    # Métricas rápidas
+                    col_a, col_b = st.columns(2)
+                    riesgo_alto = len(df_res[df_res['Riesgo'] == 'ALTO'])
+                    col_a.metric("Rechazos Fiscales (Efectivo)", riesgo_alto)
+                    col_b.metric("Alertas de Retención", len(res) - riesgo_alto)
+
+                    st.dataframe(df_res, use_container_width=True)
+                    
+                    # Botón Descarga
+                    buffer = io.BytesIO()
+                    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+                        df_res.to_excel(writer, index=False)
+                    
+                    st.download_button(
+                        label="📥 DESCARGAR REPORTE DE HALLAZGOS",
+                        data=buffer.getvalue(),
+                        file_name="Auditoria_Fiscal_Gastos.xlsx",
+                        mime="application/vnd.ms-excel"
+                    )
+
+    elif menu == "Calculadora de Nómina Masiva":
+        st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/3029/3029337.png' class='pro-module-icon'><div class='pro-module-title'><h2>Calculadora de Nómina Masiva</h2></div></div>""", unsafe_allow_html=True)
+        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Ver el desglose exacto de cuánto le cuesta un empleado a la empresa.<br><strong>Incluye:</strong> Salud, Pensión, ARL, Parafiscales, Primas, Cesantías, Intereses y Vacaciones.</div>""", unsafe_allow_html=True)
+        
+        uploaded_file = st.file_uploader("Cargar Listado Personal (.xlsx)", type=['xlsx'])
+        
+        if uploaded_file:
+            df = pd.read_excel(uploaded_file)
+            
+            # --- CEREBRO DE AUTO-DETECCIÓN ---
+            def detectar_idx(columnas, keywords):
+                cols_str = [str(c).lower().strip() for c in columnas]
+                for i, col in enumerate(cols_str):
+                    for kw in keywords:
+                        if kw in col: return i
+                return 0
+
+            # Palabras clave
+            kw_nombre = ['nombre', 'empleado', 'nombres', 'colaborador']
+            kw_salario = ['salario', 'sueldo', 'basico', 'básico']
+            kw_aux = ['auxilio', 'transporte', 'conectividad']
+            kw_exo = ['exonerada', 'ley 1607', 'exento']
+            kw_arl = ['arl', 'riesgo', 'nivel']
+
+            idx_n = detectar_idx(df.columns, kw_nombre)
+            idx_s = detectar_idx(df.columns, kw_salario)
+            idx_a = detectar_idx(df.columns, kw_aux)
+            idx_e = detectar_idx(df.columns, kw_exo)
+            idx_r = detectar_idx(df.columns, kw_arl)
+
+            st.info("Configura las columnas (El sistema intenta detectarlas automáticamente):")
+            
+            c1, c2, c3, c4 = st.columns(4)
+            col_nombre = c1.selectbox("Columna Nombre", df.columns, index=idx_n)
+            col_salario = c2.selectbox("Columna Salario", df.columns, index=idx_s)
+            col_aux = c3.selectbox("Auxilio Trans (SI/NO)", df.columns, index=idx_a)
+            col_exo = c4.selectbox("Exonerada (SI/NO)", df.columns, index=idx_e)
+            
+            col_arl = st.selectbox("Nivel ARL (Opcional - Si no seleccionas, asume Nivel 1)", df.columns, index=idx_r)
+
+            if st.button("▶️ CALCULAR DESGLOSE", type="primary"):
+                registrar_log(st.session_state['username'], "Calculadora Masiva", "Ejecución exitosa")
+                
+                resultados = []
+                
+                # Bucle seguro (Fila por fila)
+                for i, row in df.iterrows():
+                    try:
+                        # 1. Extracción y Limpieza de Datos
+                        nombre = str(row[col_nombre])
+                        
+                        try:
+                            salario = float(row[col_salario])
+                        except:
+                            salario = 0
+                            
+                        tiene_aux = str(row[col_aux]).upper().strip() in ['SI', 'S', 'YES', 'TRUE']
+                        es_exonerada = str(row[col_exo]).upper().strip() in ['SI', 'S', 'YES', 'TRUE']
+                        
+                        try:
+                            nivel_arl = int(float(row[col_arl]))
+                        except:
+                            nivel_arl = 1
+
+                        # 2. Lógica de Cálculo (A prueba de fallos)
+                        # Auxilio de transporte 2024/2025 (proyectado)
+                        aux_transporte_legal = 162000 
+                        val_aux = aux_transporte_legal if (tiene_aux and salario < (1300000*2)) else 0
+                        
+                        total_devengado = salario + val_aux
+                        
+                        # Seguridad Social (Parte Trabajador)
+                        salud_trab = salario * 0.04
+                        pension_trab = salario * 0.04
+                        
+                        neto_pagar = total_devengado - salud_trab - pension_trab
+                        
+                        # Costos Empresa (Provisiones)
+                        # ARL
+                        tarifas_arl = {1: 0.00522, 2: 0.01044, 3: 0.02436, 4: 0.04350, 5: 0.06960}
+                        factor_arl = tarifas_arl.get(nivel_arl, 0.00522)
+                        costo_arl = salario * factor_arl
+                        
+                        # Salud/Pensión Empresa
+                        costo_salud = 0 if es_exonerada else (salario * 0.085)
+                        costo_pension = salario * 0.12
+                        
+                        # Parafiscales
+                        costo_sena = 0 if es_exonerada else (salario * 0.02)
+                        costo_icbf = 0 if es_exonerada else (salario * 0.03)
+                        costo_caja = salario * 0.04
+                        
+                        # Prestaciones Sociales
+                        prima = total_devengado * 0.0833
+                        cesantias = total_devengado * 0.0833
+                        intereses = cesantias * 0.12
+                        vacaciones = salario * 0.0417
+                        
+                        total_costo_empresa = (total_devengado + costo_arl + costo_salud + costo_pension + 
+                                              costo_sena + costo_icbf + costo_caja + 
+                                              prima + cesantias + intereses + vacaciones)
+
+                        # 3. Guardar Resultado
+                        resultados.append({
+                            "Empleado": nombre,
+                            "Salario Básico": salario,
+                            "Aux. Transp": val_aux,
+                            "Total Devengado": total_devengado,
+                            "Deducciones (4%+4%)": (salud_trab + pension_trab),
+                            "NETO A PAGAR": neto_pagar,
+                            "---": "---",
+                            "Costo Seguridad Social": (costo_arl + costo_salud + costo_pension),
+                            "Costo Parafiscales": (costo_sena + costo_icbf + costo_caja),
+                            "Costo Prestaciones": (prima + cesantias + intereses + vacaciones),
+                            "COSTO TOTAL EMPRESA": total_costo_empresa
+                        })
+                        
+                    except Exception as e:
+                        st.error(f"Error en fila {i}: {str(e)}")
+
+                # Mostrar Resultados
+                df_res = pd.DataFrame(resultados)
+                
+                st.divider()
+                st.success("✅ Cálculos realizados correctamente.")
+                
+                # Tarjetas Resumen
+                c1, c2, c3 = st.columns(3)
+                c1.metric("Total Nómina (Pagar)", f"${df_res['NETO A PAGAR'].sum():,.0f}")
+                c2.metric("Costo Real Empresa", f"${df_res['COSTO TOTAL EMPRESA'].sum():,.0f}")
+                c3.metric("Empleados", len(df_res))
+                
+                st.dataframe(df_res, use_container_width=True)
+                
+                # Descarga
+                buffer = io.BytesIO()
+                with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+                    df_res.to_excel(writer, index=False)
+                
+                st.download_button("
 
     elif menu == "Proyección de Tesorería":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/5806/5806289.png' class='pro-module-icon'><div class='pro-module-title'><h2>Radar de Liquidez & Flujo de Caja</h2></div></div>""", unsafe_allow_html=True)
