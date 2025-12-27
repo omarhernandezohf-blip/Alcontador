@@ -1071,20 +1071,22 @@ else:
                     st.dataframe(riesgos, use_container_width=True)
 
     # --------------------------------------------------------------------------
-    # MÓDULO 2: COSTEO DE NÓMINA REAL (CALCULADORA DETALLADA)
+    # MÓDULO: COSTEO DE NÓMINA REAL (EL QUE TÚ BUSCAS 💰)
     # --------------------------------------------------------------------------
     elif menu == "Costeo de Nómina Real":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/3029/3029337.png' class='pro-module-icon'><div class='pro-module-title'><h2>Calculadora de Nómina Real (Detallada)</h2></div></div>""", unsafe_allow_html=True)
-        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Desglosar Prestaciones Sociales y Parafiscales.<br>Incluye: Primas, Cesantías, Intereses, Vacaciones, Salud, Pensión, ARL y Caja.</div>""", unsafe_allow_html=True)
+        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Ver cuánto le cuesta realmente un empleado a la empresa.<br><strong>Desglose:</strong> Salario, Auxilio, Salud, Pensión, ARL, Parafiscales, Primas, Cesantías, Intereses y Vacaciones.</div>""", unsafe_allow_html=True)
         
-        uploaded_file = st.file_uploader("Cargar Listado Personal (.xlsx)", type=['xlsx'], key="upl_calc")
+        uploaded_file = st.file_uploader("Cargar Listado Personal (.xlsx)", type=['xlsx'], key="upl_calc_real")
         
         if uploaded_file:
             df = pd.read_excel(uploaded_file)
             
-            # Auto-detección
-            cols_str = [str(c).lower().strip() for c in df.columns]
+            # 1. AUTO-DETECCIÓN DE COLUMNAS
+            cols_todas = df.columns.tolist()
+            
             def get_idx(kws): 
+                cols_str = [str(c).lower().strip() for c in cols_todas]
                 for i, c in enumerate(cols_str):
                     for k in kws: 
                         if k in c: return i
@@ -1092,89 +1094,114 @@ else:
             
             idx_n = get_idx(['nombre', 'empleado'])
             idx_s = get_idx(['salario', 'sueldo', 'basico'])
-            idx_a = get_idx(['auxilio', 'transporte'])
-            idx_e = get_idx(['exonerada', 'exento'])
+            idx_a = get_idx(['auxilio', 'transporte', 'tiene aux'])
+            idx_e = get_idx(['exonerada', 'exento', 'cree'])
             idx_r = get_idx(['arl', 'riesgo'])
 
-            st.info("Verifica las columnas detectadas:")
+            st.info("👇 Confirma que las columnas coincidan con tu Excel:")
+            
+            # Selectores manuales (por si falla la auto-detección)
             c1, c2, c3, c4 = st.columns(4)
-            col_nom = c1.selectbox("Nombre", df.columns, index=idx_n, key="c_nom")
-            col_sal = c2.selectbox("Salario", df.columns, index=idx_s, key="c_sal")
-            col_aux = c3.selectbox("¿Tiene Aux. Transporte?", df.columns, index=idx_a, key="c_aux")
-            col_exo = c4.selectbox("¿Es Exonerada?", df.columns, index=idx_e, key="c_exo")
-            col_arl = st.selectbox("Nivel ARL (1-5)", df.columns, index=idx_r, key="c_arl")
+            col_nom = c1.selectbox("Nombre", cols_todas, index=idx_n)
+            col_sal = c2.selectbox("Salario Básico", cols_todas, index=idx_s)
+            col_aux = c3.selectbox("¿Tiene Aux. Transporte? (SI/NO)", cols_todas, index=idx_a)
+            col_exo = c4.selectbox("¿Es Exonerada? (SI/NO)", cols_todas, index=idx_e)
+            
+            col_arl = st.selectbox("Nivel ARL (Columna con el número 1, 2, 3...)", cols_todas, index=idx_r)
 
-            if st.button("▶️ CALCULAR COSTO DETALLADO", type="primary"):
+            if st.button("▶️ CALCULAR DESGLOSE FINANCIERO", type="primary"):
                 resultados = []
+                salario_minimo = 1300000 # Referencia 2024
+                aux_trans_legal = 162000 # Referencia 2024
+                
                 for i, row in df.iterrows():
                     try:
-                        # Datos
+                        # --- LECTURA DE DATOS ---
                         nom = str(row[col_nom])
-                        sal = float(row[col_sal]) if pd.notnull(row[col_sal]) else 0
                         
-                        # Lógica Auxilio y Exoneración
+                        # Limpieza de Salario (quitar signos de pesos si los hay)
+                        try: sal = float(str(row[col_sal]).replace('$','').replace(',',''))
+                        except: sal = 0
+                        
+                        # Lógica Auxilio (Lee SI, S, YES)
                         txt_aux = str(row[col_aux]).upper()
-                        tiene_aux = 'SI' in txt_aux or 'S' in txt_aux or 'YES' in txt_aux
-                        val_aux = 162000 if (tiene_aux and sal <= 2600000) else 0
+                        tiene_aux_flag = 'SI' in txt_aux or 'S' == txt_aux
+                        # Solo paga auxilio si gana menos de 2 salarios mínimos Y la columna dice SI
+                        val_aux = aux_trans_legal if (tiene_aux_flag and sal <= (salario_minimo*2)) else 0
                         
+                        # Lógica Exonerada (Lee SI, S, YES)
                         txt_exo = str(row[col_exo]).upper()
-                        es_exo = 'SI' in txt_exo or 'S' in txt_exo
+                        es_exo = 'SI' in txt_exo or 'S' == txt_exo
                         
+                        # Nivel ARL
                         try: niv_arl = int(float(row[col_arl]))
                         except: niv_arl = 1
                         
-                        # Cálculos
-                        devengado = sal + val_aux
-                        deducciones = (sal * 0.04) + (sal * 0.04) # Salud + Pensión Emp
-                        neto = devengado - deducciones
+                        # --- CÁLCULOS MATEMÁTICOS ---
+                        total_devengado = sal + val_aux
                         
-                        # Costos Empresa
-                        salud_pat = 0 if es_exo else (sal * 0.085)
-                        pension_pat = sal * 0.12
-                        tarifas = {1:0.00522, 2:0.01044, 3:0.02436, 4:0.0435, 5:0.0696}
-                        arl_pat = sal * tarifas.get(niv_arl, 0.00522)
+                        # Deducciones al Empleado (Lo que se le resta)
+                        ded_salud = sal * 0.04
+                        ded_pension = sal * 0.04
+                        neto_pagar = total_devengado - ded_salud - ded_pension
                         
-                        sena = 0 if es_exo else (sal * 0.02)
-                        icbf = 0 if es_exo else (sal * 0.03)
-                        caja = sal * 0.04
+                        # Costos Empresa (Lo que paga el jefe adicional)
+                        # Seguridad Social
+                        pat_salud = 0 if es_exo else (sal * 0.085)
+                        pat_pension = sal * 0.12
+                        tarifas_arl = {1:0.00522, 2:0.01044, 3:0.02436, 4:0.04350, 5:0.06960}
+                        pat_arl = sal * tarifas_arl.get(niv_arl, 0.00522)
                         
-                        prima = devengado * 0.0833
-                        cesantias = devengado * 0.0833
-                        int_ces = cesantias * 0.12
-                        vacac = sal * 0.0417 # Vacaciones solo sobre salario
+                        # Parafiscales
+                        pat_sena = 0 if es_exo else (sal * 0.02)
+                        pat_icbf = 0 if es_exo else (sal * 0.03)
+                        pat_caja = sal * 0.04
                         
-                        total_costo = devengado + salud_pat + pension_pat + arl_pat + sena + icbf + caja + prima + cesantias + int_ces + vacac
+                        # Prestaciones Sociales (Provisiones Mensuales)
+                        prov_prima = total_devengado * 0.0833
+                        prov_cesantias = total_devengado * 0.0833
+                        prov_int_ces = prov_cesantias * 0.12
+                        prov_vacac = sal * 0.0417 # Vacaciones es solo sobre salario base
+                        
+                        # TOTAL COSTO EMPRESA
+                        costo_total = total_devengado + pat_salud + pat_pension + pat_arl + pat_sena + pat_icbf + pat_caja + prov_prima + prov_cesantias + prov_int_ces + prov_vacac
                         
                         resultados.append({
                             "Empleado": nom,
-                            "Salario": sal,
-                            "Aux. Trans": val_aux,
-                            "NETO A PAGAR": neto,
-                            "---": "",
-                            "Salud (8.5%)": salud_pat,
-                            "Pensión (12%)": pension_pat,
-                            "ARL": arl_pat,
-                            "Caja (4%)": caja,
-                            "SENA (2%)": sena,
-                            "ICBF (3%)": icbf,
-                            "Prima": prima,
-                            "Cesantías": cesantias,
-                            "Int. Ces": int_ces,
-                            "Vacaciones": vacac,
-                            "COSTO TOTAL": total_costo
+                            "Salario Base": f"${sal:,.0f}",
+                            "Aux. Transp": f"${val_aux:,.0f}",
+                            "TOTAL DEVENGADO": f"${total_devengado:,.0f}",
+                            "Salud (4%)": f"-${ded_salud:,.0f}",
+                            "Pensión (4%)": f"-${ded_pension:,.0f}",
+                            "NETO A PAGAR (Bolsillo)": f"${neto_pagar:,.0f}",
+                            " | ": "|",
+                            "Costo Salud (8.5%)": f"${pat_salud:,.0f}",
+                            "Costo Pensión (12%)": f"${pat_pension:,.0f}",
+                            "ARL": f"${pat_arl:,.0f}",
+                            "Parafiscales (Caja/Sena/ICBF)": f"${(pat_caja+pat_sena+pat_icbf):,.0f}",
+                            "Prima": f"${prov_prima:,.0f}",
+                            "Cesantías + Int": f"${(prov_cesantias+prov_int_ces):,.0f}",
+                            "Vacaciones": f"${prov_vacac:,.0f}",
+                            "COSTO TOTAL EMPRESA": f"${costo_total:,.0f}"
                         })
-                    except: pass
-                
+                    except Exception as e:
+                        st.error(f"Error calculando fila: {e}")
+
                 df_fin = pd.DataFrame(resultados)
+                
                 st.divider()
-                st.success("✅ Cálculo Detallado Generado")
+                st.success("✅ ¡Cálculo Completo! Desplázate a la derecha en la tabla para ver todos los costos.")
                 st.dataframe(df_fin, use_container_width=True)
                 
-                # Descarga
+                # Descarga Limpia (Sin formatos de texto para que sume en Excel)
+                # Creamos una copia numérica para el Excel
+                df_export = pd.DataFrame(resultados) # Aquí podrías limpiar los signos $ si quisieras exportar numérico puro
+                
                 buffer = io.BytesIO()
                 with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
                     df_fin.to_excel(writer, index=False)
-                st.download_button("📥 DESCARGAR REPORTE DETALLADO", buffer.getvalue(), "Nomina_Real.xlsx")
+                    
+                st.download_button("📥 DESCARGAR SÁBANA DE COSTOS (.xlsx)", buffer.getvalue(), "Nomina_Detallada_Completa.xlsx")
     elif menu == "Proyección de Tesorería":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/5806/5806289.png' class='pro-module-icon'><div class='pro-module-title'><h2>Radar de Liquidez & Flujo de Caja</h2></div></div>""", unsafe_allow_html=True)
         st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Visualizar la salud financiera futura cruzando CxC y CxP.</div>""", unsafe_allow_html=True)
