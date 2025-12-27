@@ -960,27 +960,38 @@ else:
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/2328/2328761.png' class='pro-module-icon'><div class='pro-module-title'><h2>Calculadora de Costo Real de Nómina</h2></div></div>""", unsafe_allow_html=True)
         st.markdown("""
         <div class='detail-box'>
-            <strong>Objetivo:</strong> Determinar el costo verdadero de un empleado para la empresa, más allá del salario neto.<br>
-            <strong>Cálculo Integral:</strong> Incluye provisiones de prestaciones sociales, seguridad social del empleador y parafiscales.
+            <strong>Objetivo:</strong> Ver el desglose exacto de cuánto le cuesta un empleado a la empresa.<br>
+            <strong>Incluye:</strong> Salud, Pensión, ARL, Parafiscales, Primas, Cesantías, Intereses y Vacaciones.
         </div>
         """, unsafe_allow_html=True)
         
         ac = st.file_uploader("Cargar Listado Personal (.xlsx)", type=['xlsx'])
         if ac:
             dc = pd.read_excel(ac)
+            st.info("Configura las columnas de tu archivo:")
             c1, c2, c3, c4 = st.columns(4)
             cn = c1.selectbox("Nombre", dc.columns)
             cs = c2.selectbox("Salario", dc.columns)
             ca = c3.selectbox("Aux Trans (SI/NO)", dc.columns)
             ce = c4.selectbox("Empresa Exonerada (SI/NO)", dc.columns)
             
-            if st.button("▶️ CALCULAR COSTOS"):
+            if st.button("▶️ CALCULAR DESGLOSE"):
                 rc = []
                 for r in dc.to_dict('records'):
+                    # Calculamos costo total (c) y el valor de las prestaciones/aportes (cr)
                     c, cr = calcular_costo_empresa_fila(r, cs, ca, None, ce)
-                    rc.append({"Empleado": r[cn], "Costo Total Mensual": c})
+                    
+                    # Agregamos el desglose a la tabla final
+                    rc.append({
+                        "Empleado": r[cn],
+                        "Salario Base": f"${float(r[cs]):,.0f}",
+                        "Prestaciones y Aportes (Empresa)": f"${cr:,.0f}",  # <--- AQUÍ ESTÁ LO QUE FALTABA
+                        "Costo Total Mensual": f"${c:,.0f}"
+                    })
+                
+                st.success("✅ Cálculo completado con éxito.")
+                st.markdown("### 📊 Desglose de Costos")
                 st.dataframe(pd.DataFrame(rc), use_container_width=True)
-
     elif menu == "Analítica Financiera Inteligente":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/10041/10041467.png' class='pro-module-icon'><div class='pro-module-title'><h2>Inteligencia Financiera (IA)</h2></div></div>""", unsafe_allow_html=True)
         st.markdown("""
