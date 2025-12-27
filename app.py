@@ -1000,15 +1000,16 @@ else:
                         mime="application/vnd.ms-excel"
                     )
 
-    elif menu == "Escáner de Nómina (UGPP)":
-        st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/3135/3135817.png' class='pro-module-icon'><div class='pro-module-title'><h2>Escáner de Riesgo UGPP (Ley 1393)</h2></div></div>""", unsafe_allow_html=True)
-        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Auditar los pagos laborales para evitar sanciones. Verifica la regla del 40% (Art. 30 Ley 1393).<br>El sistema revisa si los pagos no salariales exceden el 40% del total de la remuneración.</div>""", unsafe_allow_html=True)
+    elif menu == "Calculadora de Nómina Masiva":
+        st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/3029/3029337.png' class='pro-module-icon'><div class='pro-module-title'><h2>Calculadora de Nómina Masiva (Detallada)</h2></div></div>""", unsafe_allow_html=True)
+        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Desglosar al detalle el costo real de cada empleado.<br><strong>Alcance:</strong> Muestra por separado Primas, Cesantías, Intereses, Vacaciones, Salud, Pensión, ARL y Parafiscales.</div>""", unsafe_allow_html=True)
         
-        an = st.file_uploader("Cargar Nómina (.xlsx)", type=['xlsx'])
-        if an:
-            dn = pd.read_excel(an)
+        uploaded_file = st.file_uploader("Cargar Listado Personal (.xlsx)", type=['xlsx'])
+        
+        if uploaded_file:
+            df = pd.read_excel(uploaded_file)
             
-            # --- CEREBRO DE AUTO-DETECCIÓN ---
+            # --- AUTO-DETECCIÓN INTELIGENTE ---
             def detectar_idx(columnas, keywords):
                 cols_str = [str(c).lower().strip() for c in columnas]
                 for i, col in enumerate(cols_str):
@@ -1016,83 +1017,133 @@ else:
                         if kw in col: return i
                 return 0
 
-            # Palabras clave inteligentes
-            kw_empleado = ['nombre', 'empleado', 'tercero', 'cédula']
-            kw_salario = ['salario', 'sueldo', 'básico', 'basico', 'asignacion']
-            kw_no_salarial = ['no salarial', 'no constitutivo', 'bono', 'bonificacion', 'auxilio', 'otros pagos']
+            kw_nombre = ['nombre', 'empleado', 'nombres']
+            kw_salario = ['salario', 'sueldo', 'basico', 'básico']
+            kw_aux = ['auxilio', 'transporte', 'tiene aux']
+            kw_exo = ['exonerada', 'exento', 'ley 1607']
+            kw_arl = ['arl', 'riesgo', 'nivel']
 
-            idx_e = detectar_idx(dn.columns, kw_empleado)
-            idx_s = detectar_idx(dn.columns, kw_salario)
+            idx_n = detectar_idx(df.columns, kw_nombre)
+            idx_s = detectar_idx(df.columns, kw_salario)
+            idx_a = detectar_idx(df.columns, kw_aux)
+            idx_e = detectar_idx(df.columns, kw_exo)
+            idx_r = detectar_idx(df.columns, kw_arl)
+
+            st.info("Configura las columnas (Verifica que el sistema seleccionó las correctas):")
             
-            # Truco: buscar columna no salarial, evitando repetir la del salario
-            idx_ns = 0
-            found_ns = False
-            cols_str = [str(c).lower().strip() for c in dn.columns]
-            for i, col in enumerate(cols_str):
-                for kw in kw_no_salarial:
-                    if kw in col and i != idx_s: 
-                        idx_ns = i
-                        found_ns = True
-                        break
-                if found_ns: break
+            c1, c2, c3, c4 = st.columns(4)
+            col_nombre = c1.selectbox("Nombre Empleado", df.columns, index=idx_n)
+            col_salario = c2.selectbox("Salario Básico", df.columns, index=idx_s)
+            col_aux = c3.selectbox("¿Tiene Aux. Transporte? (SI/NO)", df.columns, index=idx_a)
+            col_exo = c4.selectbox("¿Exonerado Salud/Parafiscales? (SI/NO)", df.columns, index=idx_e)
             
-            st.divider()
-            st.success(f"✅ Configuración Automática: Analizando '{dn.columns[idx_s]}' (Salarial) vs '{dn.columns[idx_ns]}' (No Salarial).")
+            col_arl = st.selectbox("Nivel de Riesgo ARL (1 a 5)", df.columns, index=idx_r)
 
-            with st.expander("🛠️ Ver/Editar Columnas Seleccionadas"):
-                c1, c2, c3 = st.columns(3)
-                cn = c1.selectbox("Empleado", dn.columns, index=idx_e)
-                cs = c2.selectbox("Salario Básico (Salarial)", dn.columns, index=idx_s)
-                cns = c3.selectbox("Pagos No Salariales", dn.columns, index=idx_ns)
-
-            if st.button("▶️ ESCANEAR NÓMINA (UGPP)", type="primary"):
-                registrar_log(st.session_state['username'], "UGPP", "Escaneo Ley 1393")
-                res = []
-                for r in dn.to_dict('records'):
-                    try:
-                        salario = float(r[cs]) if pd.notnull(r[cs]) else 0
-                        no_salarial = float(r[cns]) if pd.notnull(r[cns]) else 0
-                    except:
-                        salario = 0; no_salarial = 0
-                    
-                    total_remuneracion = salario + no_salarial
-                    # Regla del 40%
-                    limite_40 = total_remuneracion * 0.40
-                    
-                    estado = "OK"
-                    exceso = 0
-                    
-                    if no_salarial > limite_40:
-                        exceso = no_salarial - limite_40
-                        estado = "RIESGO ALTO"
-
-                    res.append({
-                        "Empleado": str(r[cn]),
-                        "Salario": f"${salario:,.0f}",
-                        "No Salarial": f"${no_salarial:,.0f}",
-                        "Límite 40%": f"${limite_40:,.0f}",
-                        "Exceso IBC (Pagar Seg. Social)": f"${exceso:,.0f}",
-                        "Estado": estado
-                    })
+            if st.button("▶️ CALCULAR COSTO REAL EMPRESA", type="primary"):
+                registrar_log(st.session_state['username'], "Calculadora Masiva", "Cálculo detallado")
                 
-                df_res = pd.DataFrame(res)
-                riesgos = df_res[df_res['Estado'] == "RIESGO ALTO"]
+                resultados = []
+                aux_transporte_legal = 162000  # Valor 2024 aprox / Ajustable
+                salario_minimo = 1300000       # Referencia
+                
+                for i, row in df.iterrows():
+                    try:
+                        # 1. DATOS BÁSICOS
+                        nombre = str(row[col_nombre])
+                        try: salario = float(row[col_salario])
+                        except: salario = 0
+                        
+                        tiene_aux = str(row[col_aux]).upper().strip() in ['SI', 'S', 'YES', 'TRUE', '1']
+                        es_exonerada = str(row[col_exo]).upper().strip() in ['SI', 'S', 'YES', 'TRUE', '1']
+                        
+                        try: nivel_arl = int(float(row[col_arl]))
+                        except: nivel_arl = 1
+
+                        # 2. DEVENGADO
+                        val_aux = aux_transporte_legal if (tiene_aux and salario <= (salario_minimo*2)) else 0
+                        total_devengado = salario + val_aux
+                        
+                        # 3. DEDUCCIONES AL EMPLEADO (Lo que se le quita)
+                        salud_trab = salario * 0.04
+                        pension_trab = salario * 0.04
+                        neto_pagar = total_devengado - salud_trab - pension_trab
+                        
+                        # 4. COSTOS EMPRESA (Lo que paga el jefe)
+                        # --- Seguridad Social ---
+                        tarifas_arl = {1: 0.00522, 2: 0.01044, 3: 0.02436, 4: 0.04350, 5: 0.06960}
+                        factor_arl = tarifas_arl.get(nivel_arl, 0.00522)
+                        
+                        costo_salud = 0 if es_exonerada else (salario * 0.085)
+                        costo_pension = salario * 0.12
+                        costo_arl = salario * factor_arl
+                        
+                        # --- Parafiscales ---
+                        costo_sena = 0 if es_exonerada else (salario * 0.02)
+                        costo_icbf = 0 if es_exonerada else (salario * 0.03)
+                        costo_caja = salario * 0.04
+                        
+                        # --- Prestaciones Sociales (Provisiones) ---
+                        # Base: Salario + Auxilio Transporte
+                        base_prestaciones = total_devengado 
+                        
+                        prov_prima = base_prestaciones * 0.0833      # 8.33%
+                        prov_cesantias = base_prestaciones * 0.0833  # 8.33%
+                        prov_int_cesantias = prov_cesantias * 0.12   # 12% de las cesantías (o 1% mensual)
+                        
+                        # Vacaciones: Solo sobre Salario Básico (sin auxilio)
+                        prov_vacaciones = salario * 0.0417           # 4.17%
+                        
+                        # Sumatoria Total Costos
+                        subtotal_seguridad = costo_salud + costo_pension + costo_arl
+                        subtotal_parafiscales = costo_sena + costo_icbf + costo_caja
+                        subtotal_prestaciones = prov_prima + prov_cesantias + prov_int_cesantias + prov_vacaciones
+                        
+                        costo_total_empresa = total_devengado + subtotal_seguridad + subtotal_parafiscales + subtotal_prestaciones
+
+                        # 5. ESTRUCTURA PARA EL REPORTE
+                        resultados.append({
+                            "Empleado": nombre,
+                            "Básico": salario,
+                            "Aux. Transp": val_aux,
+                            "Total Devengado": total_devengado,
+                            "Neto a Pagar (Empleado)": neto_pagar,
+                            "---": "---",
+                            "Salud (Empresa 8.5%)": costo_salud,
+                            "Pensión (Empresa 12%)": costo_pension,
+                            "ARL": costo_arl,
+                            "Caja (4%)": costo_caja,
+                            "SENA (2%)": costo_sena,
+                            "ICBF (3%)": costo_icbf,
+                            "Prima (8.33%)": prov_prima,
+                            "Cesantías (8.33%)": prov_cesantias,
+                            "Int. Cesantías (12% de Ces)": prov_int_cesantias,
+                            "Vacaciones (4.17%)": prov_vacaciones,
+                            "COSTO TOTAL MENSUAL": costo_total_empresa,
+                            "Factor Prestacional": (costo_total_empresa / salario) if salario > 0 else 0
+                        })
+                        
+                    except Exception as e:
+                        st.error(f"Error calculando fila de {row.get(col_nombre, 'Desconocido')}: {e}")
+
+                df_res = pd.DataFrame(resultados)
                 
                 st.divider()
-                if riesgos.empty:
-                    st.balloons()
-                    st.success("✅ ¡Excelente! Todos los pagos cumplen con el límite del 40% (Ley 1393).")
-                else:
-                    st.error(f"⚠️ Se encontraron {len(riesgos)} empleados que exceden el límite.")
-                    st.warning("El 'Exceso IBC' es el valor sobre el cual debes pagar Seguridad Social adicional para evitar sanciones.")
-                    st.dataframe(riesgos, use_container_width=True)
+                st.success("✅ Cálculos detallados generados exitosamente.")
                 
-                # Botón descarga
+                # Resumen Gerencial
+                c1, c2, c3 = st.columns(3)
+                c1.metric("Nómina Líquida (A Pagar)", f"${df_res['Neto a Pagar (Empleado)'].sum():,.0f}")
+                c2.metric("Provisiones y Cargas", f"${(df_res['COSTO TOTAL MENSUAL'].sum() - df_res['Total Devengado'].sum()):,.0f}")
+                c3.metric("Costo Total Operativo", f"${df_res['COSTO TOTAL MENSUAL'].sum():,.0f}")
+                
+                st.dataframe(df_res, use_container_width=True)
+                
                 buffer = io.BytesIO()
                 with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
                     df_res.to_excel(writer, index=False)
-                    
-                st.download_button("📥 DESCARGAR REPORTE UGPP", buffer.getvalue(), "Reporte_UGPP.xlsx")
+                    # Formato de moneda en Excel (opcional si se pudiera, pero Pandas lo exporta plano)
+                
+                st.download_button("📥 DESCARGAR REPORTE DETALLADO (.xlsx)", buffer.getvalue(), "Costo_Nomina_Detallado.xlsx")
     elif menu == "Proyección de Tesorería":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/5806/5806289.png' class='pro-module-icon'><div class='pro-module-title'><h2>Radar de Liquidez & Flujo de Caja</h2></div></div>""", unsafe_allow_html=True)
         st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Visualizar la salud financiera futura cruzando CxC y CxP.</div>""", unsafe_allow_html=True)
