@@ -956,7 +956,7 @@ else:
                             st.markdown(consultar_ia_gemini(f"Analiza este flujo de caja. Saldo inicial: {saldo_hoy}. Datos: {cal.head(10).to_string()}"))
                 except: st.error("Error en el formato de fechas. Asegúrate que sean columnas de fecha válidas.")
 
-    elif menu == "Costeo de Nómina Real":
+   elif menu == "Costeo de Nómina Real":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/2328/2328761.png' class='pro-module-icon'><div class='pro-module-title'><h2>Calculadora de Costo Real de Nómina</h2></div></div>""", unsafe_allow_html=True)
         st.markdown("""
         <div class='detail-box'>
@@ -967,31 +967,58 @@ else:
         
         ac = st.file_uploader("Cargar Listado Personal (.xlsx)", type=['xlsx'])
         if ac:
-            dc = pd.read_excel(ac)
-            st.info("Configura las columnas de tu archivo:")
-            c1, c2, c3, c4 = st.columns(4)
-            cn = c1.selectbox("Nombre", dc.columns)
-            cs = c2.selectbox("Salario", dc.columns)
-            ca = c3.selectbox("Aux Trans (SI/NO)", dc.columns)
-            ce = c4.selectbox("Empresa Exonerada (SI/NO)", dc.columns)
-            
-            if st.button("▶️ CALCULAR DESGLOSE"):
-                rc = []
-                for r in dc.to_dict('records'):
-                    # Calculamos costo total (c) y el valor de las prestaciones/aportes (cr)
-                    c, cr = calcular_costo_empresa_fila(r, cs, ca, None, ce)
-                    
-                    # Agregamos el desglose a la tabla final
-                    rc.append({
-                        "Empleado": r[cn],
-                        "Salario Base": f"${float(r[cs]):,.0f}",
-                        "Prestaciones y Aportes (Empresa)": f"${cr:,.0f}",  # <--- AQUÍ ESTÁ LO QUE FALTABA
-                        "Costo Total Mensual": f"${c:,.0f}"
-                    })
+            try:
+                dc = pd.read_excel(ac)
+                st.info("Configura las columnas (El sistema intenta detectarlas automáticamente):")
                 
-                st.success("✅ Cálculo completado con éxito.")
-                st.markdown("### 📊 Desglose de Costos")
-                st.dataframe(pd.DataFrame(rc), use_container_width=True)
+                # INTENTO DE AUTO-SELECCIÓN (Busca palabras clave en tus títulos)
+                cols = list(dc.columns)
+                idx_nom = next((i for i, c in enumerate(cols) if "nombre" in c.lower()), 0)
+                idx_sal = next((i for i, c in enumerate(cols) if "salario" in c.lower() or "sueldo" in c.lower()), 0)
+                idx_aux = next((i for i, c in enumerate(cols) if "aux" in c.lower() or "transporte" in c.lower()), 0)
+                idx_exo = next((i for i, c in enumerate(cols) if "exo" in c.lower()), 0)
+
+                c1, c2, c3, c4 = st.columns(4)
+                cn = c1.selectbox("1. Columna Nombre", cols, index=idx_nom)
+                cs = c2.selectbox("2. Columna Salario", cols, index=idx_sal)
+                ca = c3.selectbox("3. Auxilio Trans (SI/NO)", cols, index=idx_aux)
+                ce = c4.selectbox("4. Exonerada (SI/NO)", cols, index=idx_exo)
+                
+                # Selector opcional de ARL
+                c_arl = st.selectbox("5. Nivel ARL (Opcional - Si no seleccionas, asume Nivel 1)", ["No Aplica"] + cols)
+                col_arl = c_arl if c_arl != "No Aplica" else None
+
+                if st.button("▶️ CALCULAR DESGLOSE"):
+                    rc = []
+                    errores = 0
+                    for r in dc.to_dict('records'):
+                        # PROTECCIÓN: Si el salario no es un número, lo convierte a 0 y avisa
+                        try:
+                            val_salario = float(r[cs])
+                        except:
+                            val_salario = 0
+                            errores += 1
+
+                        # Calculamos
+                        c, cr = calcular_costo_empresa_fila(r, cs, ca, col_arl, ce)
+                        
+                        rc.append({
+                            "Empleado": str(r[cn]),
+                            "Salario Base": f"${val_salario:,.0f}",
+                            "Prestaciones y Aportes": f"${cr:,.0f}",
+                            "Costo Total Mensual": f"${c:,.0f}"
+                        })
+                    
+                    if errores > 0:
+                        st.warning(f"⚠️ OJO: En {errores} filas el salario no era un número válido (quizás seleccionaste la columna equivocada). Revisa los resultados.")
+                    else:
+                        st.success("✅ Cálculo exitoso.")
+                    
+                    st.markdown("### 📊 Resultado del Análisis")
+                    st.dataframe(pd.DataFrame(rc), use_container_width=True)
+
+            except Exception as e:
+                st.error(f"Error leyendo el archivo: {str(e)}. Revisa que el Excel no tenga filas vacías al inicio.")
     elif menu == "Analítica Financiera Inteligente":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/10041/10041467.png' class='pro-module-icon'><div class='pro-module-title'><h2>Inteligencia Financiera (IA)</h2></div></div>""", unsafe_allow_html=True)
         st.markdown("""
