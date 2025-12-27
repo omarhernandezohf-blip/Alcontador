@@ -11,8 +11,11 @@ import xml.etree.ElementTree as ET
 import os
 
 # ==============================================================================
-# 1. CONFIGURACIÓN VISUAL (OBLIGATORIO AL PRINCIPIO)
 # ==============================================================================
+# 1. CONFIGURACIÓN INICIAL DE LA PÁGINA Y EL SISTEMA
+# ==============================================================================
+# ==============================================================================
+
 st.set_page_config(
     page_title="Asistente Contable Pro | Enterprise",
     page_icon="💼",
@@ -21,63 +24,92 @@ st.set_page_config(
 )
 
 # ==============================================================================
-# 2. CONEXIÓN A BASE DE DATOS (GOOGLE SHEETS) - BACKEND OCULTO
+# 2. GESTIÓN DE CONEXIONES EXTERNAS (BACKEND)
 # ==============================================================================
+
+# ------------------------------------------------------------------------------
+# A. CONEXIÓN A BASE DE DATOS (GOOGLE SHEETS)
+# ------------------------------------------------------------------------------
+# Esta sección maneja la conexión silenciosa para registrar logs de auditoría
+# sin que el usuario tenga que ver procesos técnicos en pantalla.
 db_conectada = False
 sheet_logs = None
 
 try:
     if "gcp_service_account" in st.secrets:
-        # Conectar con las credenciales del secrets.toml
+        # Intentamos conectar con las credenciales del archivo secrets.toml
         gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
-        # Intentar abrir la hoja de cálculo maestra
+        
+        # Intentar abrir la hoja de cálculo maestra 'DB_Alcontador'
         sh = gc.open("DB_Alcontador")
         sheet_logs = sh.sheet1
         db_conectada = True
     else:
+        # Si no hay secretos configurados, marcamos como desconectado
         db_conectada = False
 except Exception as e:
-    # Fallo silencioso para no mostrar errores al usuario si no hay internet
+    # Manejo de errores silencioso para no interrumpir la experiencia del usuario
+    # si falla la conexión a internet o la API de Google.
     db_conectada = False
 
-# Función para registrar actividad (Auditoría de uso)
+
 def registrar_log(usuario, accion, detalle):
-    """Guarda una actividad en Google Sheets si la DB está conectada"""
+    """
+    Función de Auditoría:
+    Guarda un registro de actividad en Google Sheets si la DB está conectada.
+    Campos: Fecha y Hora, Usuario, Acción realizada, Detalle técnico.
+    """
     if db_conectada and sheet_logs:
         try:
-            fecha = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            sheet_logs.append_row([fecha, usuario, accion, detalle])
+            fecha_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            sheet_logs.append_row([fecha_hora, usuario, accion, detalle])
         except:
+            # Si falla el registro del log, no detenemos la aplicación
             pass 
 
-# ==============================================================================
-# 2.5. CONFIGURACIÓN DE IA (GEMINI GOOGLE)
-# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# B. CONFIGURACIÓN DE INTELIGENCIA ARTIFICIAL (GEMINI)
+# ------------------------------------------------------------------------------
 api_key_valida = False
+estado_ia = "🔴 Verificando..."
+
 try:
     if "general" in st.secrets:
+        # Configuración de la API Key para servicios de IA Generativa
         GOOGLE_API_KEY = st.secrets["general"]["api_key_google"]
         genai.configure(api_key=GOOGLE_API_KEY)
         estado_ia = "🟢 IA Activa (Enterprise)"
         api_key_valida = True
     else:
-        estado_ia = "🔴 IA Desconectada"
+        estado_ia = "🔴 IA Desconectada (Falta Key)"
         api_key_valida = False
 except Exception as e:
-    estado_ia = "🔴 Error Configuración"
+    estado_ia = "🔴 Error Configuración IA"
     api_key_valida = False
 
-# Inicializar variables de sesión (State Management)
+
+# ------------------------------------------------------------------------------
+# C. GESTIÓN DE ESTADO DE SESIÓN (SESSION STATE)
+# ------------------------------------------------------------------------------
+# Inicializamos las variables globales que recordarán si el usuario está logueado
 if 'user_plan' not in st.session_state:
     st.session_state['user_plan'] = 'FREE'
+
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
+
 if 'username' not in st.session_state:
     st.session_state['username'] = None
 
+
 # ==============================================================================
-# 3. ESTILOS CSS AVANZADOS - TU DISEÑO "HIGH-TECH" COMPLETO (INTACTO)
 # ==============================================================================
+# 3. INTERFAZ GRÁFICA Y DISEÑO (CSS AVANZADO)
+# ==============================================================================
+# ==============================================================================
+
+# Determinamos el saludo según la hora del servidor
 hora_actual = datetime.now().hour
 if 5 <= hora_actual < 12:
     saludo = "Buenos días"
@@ -86,11 +118,13 @@ elif 12 <= hora_actual < 18:
 else:
     saludo = "Buenas noches"
 
+# Inyección de CSS para el tema "Cyberpunk / High-Tech Corporativo"
 st.markdown("""
     <style>
-    /* --- IMPORTAR FUENTE --- */
+    /* --- IMPORTACIÓN DE FUENTES --- */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap');
     
+    /* --- VARIABLES DE COLOR DEL TEMA --- */
     :root {
         --primary-blue: #0A66C2; 
         --secondary-blue: #004182;
@@ -98,9 +132,10 @@ st.markdown("""
         --neon-purple: #bc13fe;
         --tech-bg: #0f172a; 
         --text-light: #e2e8f0;
+        --card-bg: rgba(30, 41, 59, 0.4);
     }
 
-    /* FORZAR MODO OSCURO GLOBAL */
+    /* --- AJUSTES GLOBALES DE LA APP --- */
     .stApp {
         background-color: var(--tech-bg) !important;
         color: var(--text-light) !important;
@@ -111,7 +146,7 @@ st.markdown("""
         color: var(--text-light);
     }
 
-    /* --- ANIMACIÓN DE FONDO SUTIL PARA MÓDULOS --- */
+    /* --- ANIMACIÓN DE FONDO PARA LOS MÓDULOS --- */
     @keyframes subtle-shift {
         0% { background-position: 0% 50%; }
         50% { background-position: 100% 50%; }
@@ -129,7 +164,7 @@ st.markdown("""
         border: 1px solid rgba(255,255,255,0.05);
     }
 
-    /* --- HERO HEADER IMPACTANTE (CSS PURO) --- */
+    /* --- HERO HEADER (BANNER PRINCIPAL) --- */
     .hero-impact-container {
         position: relative;
         width: 100%;
@@ -209,9 +244,9 @@ st.markdown("""
         filter: blur(50px);
     }
 
-    /* --- CARDS INFORMATIVAS --- */
+    /* --- TARJETAS INFORMATIVAS (CARDS) --- */
     .info-card {
-        background: rgba(30, 41, 59, 0.4);
+        background: var(--card-bg);
         border-left: 5px solid var(--primary-blue);
         padding: 25px;
         border-radius: 12px;
@@ -230,7 +265,7 @@ st.markdown("""
     .info-title { font-size: 1.2rem; font-weight: 700; color: white !important; margin-bottom: 8px; }
     .info-text { font-size: 0.95rem; color: #cbd5e1 !important; }
 
-    /* --- ENCABEZADOS DE MÓDULO --- */
+    /* --- ENCABEZADOS DE LOS MÓDULOS --- */
     .pro-module-header {
         display: flex;
         align-items: center;
@@ -244,12 +279,13 @@ st.markdown("""
     }
     .pro-module-icon {
         width: 85px; height: auto; margin-right: 30px;
-        filter: drop-shadow(0 5px 10px rgba(0,0,0,0.4)); transition: transform 0.4s ease;
+        filter: drop-shadow(0 5px 10px rgba(0,0,0,0.4)); 
+        transition: transform 0.4s ease;
     }
     .pro-module-header:hover .pro-module-icon { transform: scale(1.1) rotate(5deg); }
     .pro-module-title h2 { margin: 0; font-size: 2.4rem; font-weight: 800; color: white !important; letter-spacing: -1px; }
 
-    /* --- DETALLES --- */
+    /* --- CAJAS DE DETALLE Y TEXTO --- */
     .detail-box {
         background: rgba(30, 41, 59, 0.6);
         border: 1px solid rgba(255,255,255,0.1);
@@ -261,7 +297,7 @@ st.markdown("""
     }
     .detail-box strong { color: #60a5fa; }
 
-    /* --- SIDEBAR --- */
+    /* --- BARRA LATERAL (SIDEBAR) --- */
     [data-testid="stSidebar"] {
         background-color: #0b0f19 !important;
         border-right: 1px solid rgba(255,255,255,0.05);
@@ -282,7 +318,7 @@ st.markdown("""
         border-left: 3px solid var(--primary-blue);
     }
 
-    /* --- BOTONES --- */
+    /* --- BOTONES PERSONALIZADOS --- */
     .stButton>button {
         background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%) !important;
         color: white !important; border-radius: 8px; font-weight: 700; border: none;
@@ -295,26 +331,38 @@ st.markdown("""
         box-shadow: 0 8px 25px rgba(10, 102, 194, 0.6); transform: translateY(-2px);
     }
     
+    /* --- SCROLLBAR --- */
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: #0f172a; }
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     </style>
     """, unsafe_allow_html=True)
 
-# CONSTANTES FISCALES 2025
-SMMLV_2025, AUX_TRANS_2025 = 1430000, 175000
-UVT_2025, TOPE_EFECTIVO = 49799, 100 * 49799
-BASE_RET_SERVICIOS, BASE_RET_COMPRAS = 4 * 49799, 27 * 49799
-
 # ==============================================================================
-# 4. FUNCIONES DE LÓGICA DE NEGOCIO (COMPLETAS)
+# ==============================================================================
+# 4. FUNCIONES DE LÓGICA DE NEGOCIO Y CÁLCULOS FISCALES
+# ==============================================================================
 # ==============================================================================
 
+# CONSTANTES FISCALES COLOMBIA (AÑO GRAVABLE 2025)
+SMMLV_2025 = 1430000
+AUX_TRANS_2025 = 175000
+UVT_2025 = 49799
+TOPE_EFECTIVO = 100 * UVT_2025
+BASE_RET_SERVICIOS = 4 * UVT_2025
+BASE_RET_COMPRAS = 27 * UVT_2025
+
+# ------------------------------------------------------------------------------
+# CALCULAR DÍGITO DE VERIFICACIÓN (RUT)
+# ------------------------------------------------------------------------------
 def calcular_dv_colombia(nit_sin_dv):
-    """Calcula el Digito de Verificacion para NITs Colombianos"""
+    """
+    Aplica el algoritmo de Módulo 11 para calcular el DV de un NIT colombiano.
+    """
     try:
         nit_str = str(nit_sin_dv).strip()
         if not nit_str.isdigit(): return "Error"
+        
         primos = [3, 7, 13, 17, 19, 23, 29, 37, 41, 43, 47, 53, 59, 67, 71]
         suma = sum(int(digito) * primos[i] for i, digito in enumerate(reversed(nit_str)) if i < len(primos))
         resto = suma % 11
@@ -322,19 +370,27 @@ def calcular_dv_colombia(nit_sin_dv):
     except:
         return "?"
 
+# ------------------------------------------------------------------------------
+# ANÁLISIS DE RIESGO TRIBUTARIO (GASTOS)
+# ------------------------------------------------------------------------------
 def analizar_gasto_fila(row, col_valor, col_metodo, col_concepto):
-    """Analiza fila por fila buscando riesgos fiscales"""
+    """
+    Evalúa una fila de gastos contables para detectar incumplimientos del Art 771-5
+    y bases de retención en la fuente.
+    """
     hallazgos = []
     riesgo = "BAJO"
+    
+    # Extracción segura de valores
     valor = float(row[col_valor]) if pd.notnull(row[col_valor]) else 0
     metodo = str(row[col_metodo]) if pd.notnull(row[col_metodo]) else ""
     
-    # 1. Validación de Bancarización (Art 771-5)
+    # 1. Validación de Bancarización
     if 'efectivo' in metodo.lower() and valor > TOPE_EFECTIVO:
         hallazgos.append(f"⛔ RECHAZO FISCAL: Pago en efectivo (${valor:,.0f}) supera tope Art 771-5.")
         riesgo = "ALTO"
     
-    # 2. Validación de Retención en la Fuente
+    # 2. Validación de Bases de Retención
     if valor >= BASE_RET_SERVICIOS and valor < BASE_RET_COMPRAS:
         hallazgos.append("⚠️ ALERTA: Verificar Retención (Base Servicios).")
         if riesgo == "BAJO": riesgo = "MEDIO"
@@ -344,8 +400,13 @@ def analizar_gasto_fila(row, col_valor, col_metodo, col_concepto):
         
     return " | ".join(hallazgos) if hallazgos else "OK", riesgo
 
+# ------------------------------------------------------------------------------
+# ANÁLISIS DE RIESGO UGPP (LEY 1393)
+# ------------------------------------------------------------------------------
 def calcular_ugpp_fila(row, col_salario, col_no_salarial):
-    """Analiza la regla del 40% (Ley 1393) para la UGPP"""
+    """
+    Verifica que los pagos no salariales no excedan el 40% del total de la remuneración.
+    """
     salario = float(row[col_salario]) if pd.notnull(row[col_salario]) else 0
     no_salarial = float(row[col_no_salarial]) if pd.notnull(row[col_no_salarial]) else 0
     
@@ -357,46 +418,63 @@ def calcular_ugpp_fila(row, col_salario, col_no_salarial):
         return salario + exceso, exceso, "RIESGO ALTO", f"Excede límite Ley 1393 por ${exceso:,.0f}"
     return salario, 0, "OK", "Cumple norma"
 
+# ------------------------------------------------------------------------------
+# CALCULADORA DE COSTO DE NÓMINA (LÓGICA BLINDADA)
+# ------------------------------------------------------------------------------
 def calcular_costo_empresa_fila(row, col_salario, col_aux, col_arl, col_exo):
-    """Calculadora de Nómina Real - VERSIÓN BLINDADA CONTRA ERRORES"""
+    """
+    Calcula el costo real (prestacional y parafiscal) de un empleado.
+    Incluye protección contra errores de tipos de datos.
+    """
     try:
         # Validación de datos numéricos para evitar errores de texto
         salario = float(row[col_salario]) if pd.notnull(row[col_salario]) else 0
     except:
-        salario = 0 # Si hay texto en vez de número, asume 0
+        salario = 0 # Si hay texto en vez de número, asume 0 para no romper el loop
 
     tiene_aux = str(row[col_aux]).strip().lower() in ['si', 's', 'true', '1', 'yes']
     
-    # Validación de ARL
+    # Validación segura de la columna ARL
     if col_arl and col_arl in row and pd.notnull(row[col_arl]):
         try:
             nivel_arl = int(row[col_arl])
         except:
-            nivel_arl = 1
+            nivel_arl = 1 # Valor por defecto seguro
     else:
         nivel_arl = 1 
         
     es_exonerado = str(row[col_exo]).strip().lower() in ['si', 's', 'true', '1', 'yes']
     
-    # Cálculos fiscales (2025)
+    # Cálculos detallados
     aux_trans = AUX_TRANS_2025 if tiene_aux else 0
     ibc = salario
     base_prest = salario + aux_trans
     
+    # Aportes Seguridad Social Empleador
     salud = 0 if es_exonerado else ibc * 0.085
     pension = ibc * 0.12
     
+    # Riesgos Laborales (ARL)
     arl_t = {1:0.00522, 2:0.01044, 3:0.02436, 4:0.0435, 5:0.0696}
     arl_val = ibc * arl_t.get(nivel_arl, 0.00522)
     
-    paraf = ibc * 0.04 
-    if not es_exonerado: paraf += ibc * 0.05
+    # Parafiscales
+    paraf = ibc * 0.04  # Caja de Compensación (Siempre se paga)
+    if not es_exonerado: 
+        paraf += ibc * 0.05 # SENA + ICBF
     
+    # Prestaciones Sociales (Provisiones Mensuales)
+    # Prima (8.33%) + Cesantias (8.33%) + Int. Cesantias (1%) + Vacaciones (4.17%) = ~21.83%
     prest = base_prest * 0.2183 
     
     total = base_prest + salud + pension + arl_val + paraf + prest
+    
+    # Retornamos Total Costo y Valor Adicional
     return total, (total - base_prest)
 
+# ------------------------------------------------------------------------------
+# CONEXIÓN CON IA (GEMINI)
+# ------------------------------------------------------------------------------
 def consultar_ia_gemini(prompt):
     try:
         model = genai.GenerativeModel('models/gemini-1.5-flash')
@@ -405,6 +483,9 @@ def consultar_ia_gemini(prompt):
     except Exception as e:
         return f"Error de conexión IA: {str(e)}"
 
+# ------------------------------------------------------------------------------
+# OCR DE FACTURAS (IA)
+# ------------------------------------------------------------------------------
 def ocr_factura(imagen):
     try:
         model = genai.GenerativeModel('models/gemini-1.5-flash')
@@ -414,6 +495,9 @@ def ocr_factura(imagen):
     except:
         return None
 
+# ------------------------------------------------------------------------------
+# PARSEADOR DE XML (FACTURACIÓN ELECTRÓNICA DIAN)
+# ------------------------------------------------------------------------------
 def parsear_xml_dian(archivo_xml):
     try:
         tree = ET.parse(archivo_xml)
@@ -450,20 +534,23 @@ def parsear_xml_dian(archivo_xml):
         return {"Archivo": archivo_xml.name, "Error": "Error XML"}
 
 # ==============================================================================
-# 5. INTERFAZ DE USUARIO (SIDEBAR & MENÚ PROFESIONAL)
 # ==============================================================================
+# 5. BARRA LATERAL (SIDEBAR) - NAVEGACIÓN Y LOGIN
+# ==============================================================================
+# ==============================================================================
+
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/2830/2830303.png", width=80)
     st.markdown("### 💼 Suite Financiera")
     
-    # --- SISTEMA DE LOGIN CON DB Y REGISTRO ---
+    # --- LOGICA DE LOGIN Y REGISTRO ---
     if not st.session_state.get('logged_in', False):
         st.warning("🔒 Modo Invitado")
         with st.expander("Ingresar a tu Cuenta", expanded=True):
             u = st.text_input("Usuario (Prueba: admin)")
             p = st.text_input("Contraseña (Prueba: admin)", type="password")
             if st.button("Entrar"):
-                # VALIDACIÓN DE CREDENCIALES
+                # VALIDACIÓN DE CREDENCIALES (SIMULADA + DB)
                 if u == "admin" and p == "admin": 
                     st.session_state['user_plan'] = 'PRO'
                     st.session_state['logged_in'] = True
@@ -480,7 +567,7 @@ with st.sidebar:
                     st.error("❌ Acceso Denegado")
                     registrar_log(u, "Login Fallido", "Contraseña incorrecta")
     
-    # Si YA inició sesión
+    # --- PANEL DE USUARIO LOGUEADO ---
     else:
         plan_bg = "#FFD700" if st.session_state['user_plan'] == 'PRO' else "#A9A9A9"
         status_db = "🟢 DB Online" if db_conectada else "🔴 DB Offline"
@@ -497,7 +584,7 @@ with st.sidebar:
         if st.session_state['user_plan'] == 'FREE':
             st.markdown("---")
             st.write("🔓 Desbloquea todo el potencial")
-            # AQUÍ PONES TU LINK DE WOMPI O MERCADO PAGO
+            # Enlace de pago WOMPI
             st.link_button(
                 "💎 COMPRAR PLAN PRO", 
                 "https://checkout.wompi.co/l/TU_LINK_AQUI" 
@@ -534,7 +621,9 @@ with st.sidebar:
     st.markdown("<br><center><small style='color: #64748b;'>v14.5 Enterprise</small></center>", unsafe_allow_html=True)
 
 # ==============================================================================
-# 6. PÁGINAS PRINCIPALES (TU CONTENIDO COMPLETO)
+# ==============================================================================
+# 6. CONTENIDO PRINCIPAL (DASHBOARD Y MÓDULOS)
+# ==============================================================================
 # ==============================================================================
 
 if menu == "Inicio / Dashboard":
@@ -583,7 +672,9 @@ if menu == "Inicio / Dashboard":
     if not db_conectada:
         st.warning("⚠️ La base de datos no está conectada. Asegúrate de compartir el Google Sheet 'DB_Alcontador' con el email del Service Account.")
 
+# ------------------------------------------------------------------------------
 # CONTENIDO DE MÓDULOS DETALLADOS
+# ------------------------------------------------------------------------------
 else:
     st.markdown('<div class="animated-module-bg">', unsafe_allow_html=True)
 
@@ -730,7 +821,7 @@ else:
                 except: st.error("Error en el formato de fechas.")
 
     # ==============================================================================
-    # 🚨 MÓDULO DE NÓMINA (AQUÍ ESTÁ LA LÓGICA ARREGLADA)
+    # 🚨 MÓDULO DE NÓMINA (CORREGIDO: Auto-Detección y Protección de Errores)
     # ==============================================================================
     elif menu == "Costeo de Nómina Real":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/2328/2328761.png' class='pro-module-icon'><div class='pro-module-title'><h2>Calculadora de Costo Real de Nómina</h2></div></div>""", unsafe_allow_html=True)
