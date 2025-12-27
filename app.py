@@ -1139,7 +1139,7 @@ else:
                 with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
                     df_res.to_excel(writer, index=False)
                 
-               st.download_button("📥 DESCARGAR CÁLCULOS DETALLADOS", buffer.getvalue(), "Nomina_Calculada.xlsx")
+                st.download_button("📥 DESCARGAR CÁLCULOS DETALLADOS", buffer.getvalue(), "Nomina_Calculada.xlsx")
     elif menu == "Proyección de Tesorería":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/5806/5806289.png' class='pro-module-icon'><div class='pro-module-title'><h2>Radar de Liquidez & Flujo de Caja</h2></div></div>""", unsafe_allow_html=True)
         st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Visualizar la salud financiera futura cruzando CxC y CxP.</div>""", unsafe_allow_html=True)
