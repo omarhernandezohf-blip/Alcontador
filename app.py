@@ -681,9 +681,10 @@ if menu == "Inicio / Dashboard":
 else:
     st.markdown('<div class="animated-module-bg">', unsafe_allow_html=True)
 
-    if menu == "Auditoría Cruce DIAN":
+    elif menu == "Auditoría Cruce DIAN":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/921/921591.png' class='pro-module-icon'><div class='pro-module-title'><h2>Auditor de Exógena (Cruce DIAN)</h2></div></div>""", unsafe_allow_html=True)
         st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Detectar discrepancias entre lo que reportaste y lo que la DIAN sabe de ti.<br><strong>Estrategia:</strong> Cruce matricial de NITs para evitar sanciones por inexactitud (Art. 651 ET).</div>""", unsafe_allow_html=True)
+        
         col_dian, col_conta = st.columns(2)
         with col_dian:
             st.subheader("🏛️ 1. Archivo DIAN")
@@ -691,40 +692,92 @@ else:
         with col_conta:
             st.subheader("📒 2. Contabilidad")
             file_conta = st.file_uploader("Subir Auxiliar por Tercero (.xlsx)", type=['xlsx'])
+            
         if file_dian and file_conta:
-            df_dian = pd.read_excel(file_dian); df_conta = pd.read_excel(file_conta)
-            st.divider(); st.info("⚙️ Configuración del Mapeo (Selecciona las columnas)")
+            # Leemos los archivos
+            df_dian = pd.read_excel(file_dian)
+            df_conta = pd.read_excel(file_conta)
+            
+            st.divider()
+            st.info("⚙️ Mapeo Automático (El sistema detectó estas columnas, verifica si son correctas):")
+            
+            # --- CEREBRO DE AUTO-DETECCIÓN ---
+            def detectar_idx(columnas, keywords):
+                """Busca la primera columna que contenga alguna de las palabras clave"""
+                cols_str = [str(c).lower().strip() for c in columnas]
+                for i, col in enumerate(cols_str):
+                    for kw in keywords:
+                        if kw in col:
+                            return i
+                return 0 # Si no encuentra, devuelve la primera columna por defecto
+            
+            # Diccionario de palabras clave para buscar
+            kw_nit = ['nit', 'n.i.t', 'cedula', 'cédula', 'documento', 'identificacion', 'tercero', 'id']
+            kw_valor = ['valor', 'saldo', 'total', 'monto', 'cuantia', 'importe', 'pagos']
+            
+            # Detectamos los índices automáticamente
+            idx_nit_d = detectar_idx(df_dian.columns, kw_nit)
+            idx_val_d = detectar_idx(df_dian.columns, kw_valor)
+            idx_nit_c = detectar_idx(df_conta.columns, kw_nit)
+            idx_val_c = detectar_idx(df_conta.columns, kw_valor)
+            
+            # Mostramos los selectores ya pre-llenados (Index=...)
             c1, c2, c3, c4 = st.columns(4)
-            nit_dian = c1.selectbox("NIT (Archivo DIAN):", df_dian.columns)
-            val_dian = c2.selectbox("Valor (Archivo DIAN):", df_dian.columns)
-            nit_conta = c3.selectbox("NIT (Tu Contabilidad):", df_conta.columns)
-            val_conta = c4.selectbox("Saldo (Tu Contabilidad):", df_conta.columns)
+            nit_dian = c1.selectbox("NIT (Archivo DIAN):", df_dian.columns, index=idx_nit_d)
+            val_dian = c2.selectbox("Valor (Archivo DIAN):", df_dian.columns, index=idx_val_d)
+            nit_conta = c3.selectbox("NIT (Tu Contabilidad):", df_conta.columns, index=idx_nit_c)
+            val_conta = c4.selectbox("Saldo (Tu Contabilidad):", df_conta.columns, index=idx_val_c)
+            
             if st.button("▶️ EJECUTAR AUDITORÍA BLINDADA"):
-                registrar_log(st.session_state['username'], "Auditoria", "Ejecución cruce DIAN")
-                dian_grouped = df_dian.groupby(nit_dian)[val_dian].sum().reset_index(name='Valor_DIAN').rename(columns={nit_dian: 'NIT'})
-                conta_grouped = df_conta.groupby(nit_conta)[val_conta].sum().reset_index(name='Valor_Conta').rename(columns={nit_conta: 'NIT'})
-                cruce = pd.merge(dian_grouped, conta_grouped, on='NIT', how='outer').fillna(0)
-                cruce['Diferencia'] = cruce['Valor_DIAN'] - cruce['Valor_Conta']
-                diferencias = cruce[abs(cruce['Diferencia']) > 1000].sort_values(by="Diferencia", ascending=False)
-                total_riesgo = diferencias['Diferencia'].abs().sum(); num_hallazgos = len(diferencias)
-                st.divider(); st.markdown(f"### 🔍 Resultados del Escáner")
-                if num_hallazgos == 0:
-                    st.success("✅ ¡Felicidades! Tu contabilidad es perfecta. No hay diferencias materiales.")
-                else:
-                    st.error(f"⚠️ ¡ALERTA! Se detectaron {num_hallazgos} inconsistencias graves.")
-                    col_met1, col_met2 = st.columns(2)
-                    col_met1.metric("Riesgo Financiero Total", f"${total_riesgo:,.0f}"); col_met2.metric("Terceros con Error", num_hallazgos)
-                    if st.session_state.get('user_plan') == 'FREE':
-                        st.markdown("#### 👁️ Vista Previa (Modo Gratuito)")
-                        st.dataframe(diferencias.head(2).style.format("{:,.0f}"), use_container_width=True)
-                        st.markdown(f"""<div style="margin-top: 20px; padding: 30px; border-radius: 15px; border: 1px solid #334155; background: radial-gradient(circle, rgba(15,23,42,1) 0%, rgba(30,41,59,1) 100%); text-align: center; position: relative; overflow: hidden;"><div style="filter: blur(6px); opacity: 0.3; user-select: none;"><p>NIT: 900.123.456 | Diferencia: $45.000.000 | ESTADO: CRÍTICO</p><p>NIT: 890.987.654 | Diferencia: $12.500.000 | ESTADO: CRÍTICO</p></div><div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px);"><h2 style="color: #fff; text-shadow: 0 0 10px #0A66C2;">🔒 REPORTE BLOQUEADO</h2><p style="color: #cbd5e1; font-size: 1.1rem;">Riesgo oculto: <strong>${total_riesgo:,.0f}</strong></p><a href="#" style="background: linear-gradient(90deg, #0A66C2 0%, #00d4ff 100%); color: white; padding: 15px 30px; border-radius: 30px; text-decoration: none; font-weight: bold;">🔓 DESBLOQUEAR TODO POR $59.000</a></div></div>""", unsafe_allow_html=True)
-                    else:
-                        st.success("💎 ACCESO VIP: Mostrando auditoría completa.")
-                        st.dataframe(diferencias.style.format("{:,.0f}"), use_container_width=True)
-                        out = io.BytesIO()
-                        with pd.ExcelWriter(out, engine='xlsxwriter') as w: diferencias.to_excel(w, index=False)
-                        st.download_button("📥 Descargar Reporte Oficial (.xlsx)", out.getvalue(), f"Auditoria_DIAN_{datetime.now().date()}.xlsx")
+                try:
+                    registrar_log(st.session_state['username'], "Auditoria", "Ejecución cruce DIAN")
+                    
+                    # Agrupación y Suma (Normalización de datos)
+                    dian_grouped = df_dian.groupby(nit_dian)[val_dian].sum().reset_index(name='Valor_DIAN').rename(columns={nit_dian: 'NIT'})
+                    conta_grouped = df_conta.groupby(nit_conta)[val_conta].sum().reset_index(name='Valor_Conta').rename(columns={nit_conta: 'NIT'})
+                    
+                    # Limpieza de NITs (Quitar DV o puntos si es necesario - Básico)
+                    dian_grouped['NIT'] = dian_grouped['NIT'].astype(str).str.strip()
+                    conta_grouped['NIT'] = conta_grouped['NIT'].astype(str).str.strip()
 
+                    # Cruce (Merge)
+                    cruce = pd.merge(dian_grouped, conta_grouped, on='NIT', how='outer').fillna(0)
+                    cruce['Diferencia'] = cruce['Valor_DIAN'] - cruce['Valor_Conta']
+                    
+                    # Filtrar diferencias relevantes (mayores a 1000 pesos para evitar ruido por decimales)
+                    diferencias = cruce[abs(cruce['Diferencia']) > 1000].sort_values(by="Diferencia", ascending=False)
+                    
+                    total_riesgo = diferencias['Diferencia'].abs().sum()
+                    num_hallazgos = len(diferencias)
+                    
+                    st.divider()
+                    st.markdown(f"### 🔍 Resultados del Escáner")
+                    
+                    if num_hallazgos == 0:
+                        st.success("✅ ¡Felicidades! Tu contabilidad cruza perfectamente con la DIAN.")
+                    else:
+                        st.error(f"⚠️ ¡ALERTA! Se detectaron {num_hallazgos} terceros con diferencias.")
+                        col_met1, col_met2 = st.columns(2)
+                        col_met1.metric("Riesgo Financiero Total", f"${total_riesgo:,.0f}")
+                        col_met2.metric("Terceros con Inconsistencias", num_hallazgos)
+                        
+                        # Lógica de PLANES (Free vs Pro)
+                        if st.session_state.get('user_plan') == 'FREE':
+                            st.markdown("#### 👁️ Vista Previa (Modo Gratuito)")
+                            st.dataframe(diferencias.head(3).style.format({"Valor_DIAN": "${:,.0f}", "Valor_Conta": "${:,.0f}", "Diferencia": "${:,.0f}"}), use_container_width=True)
+                            st.warning("🔒 Para descargar el reporte completo y ver todos los terceros, pásate a PRO.")
+                        else:
+                            st.success("💎 ACCESO VIP: Reporte completo desbloqueado.")
+                            st.dataframe(diferencias.style.format({"Valor_DIAN": "${:,.0f}", "Valor_Conta": "${:,.0f}", "Diferencia": "${:,.0f}"}), use_container_width=True)
+                            
+                            # Botón de descarga
+                            out = io.BytesIO()
+                            with pd.ExcelWriter(out, engine='xlsxwriter') as w:
+                                diferencias.to_excel(w, index=False, sheet_name="Auditoria_DIAN")
+                            st.download_button("📥 Descargar Reporte Oficial (.xlsx)", out.getvalue(), f"Auditoria_DIAN_{datetime.now().date()}.xlsx")
+                
+                except Exception as e:
+                    st.error(f"Error en el procesamiento: {e}. Revisa que las columnas seleccionadas contengan números.")
     elif menu == "Minería de XML (Facturación)":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/2823/2823523.png' class='pro-module-icon'><div class='pro-module-title'><h2>Minería de Datos XML (Facturación)</h2></div></div>""", unsafe_allow_html=True)
         st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Extraer información estructurada directamente de los archivos XML de Facturación Electrónica validados por la DIAN.</div>""", unsafe_allow_html=True)
