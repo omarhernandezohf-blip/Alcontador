@@ -681,6 +681,7 @@ if menu == "Inicio / Dashboard":
 else:
     st.markdown('<div class="animated-module-bg">', unsafe_allow_html=True)
 
+    # 1. AUDITORÍA (Empieza con IF porque es el primero de la lista)
     if menu == "Auditoría Cruce DIAN":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/921/921591.png' class='pro-module-icon'><div class='pro-module-title'><h2>Auditor de Exógena (Cruce DIAN)</h2></div></div>""", unsafe_allow_html=True)
         st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Detectar discrepancias entre lo que reportaste y lo que la DIAN sabe de ti.<br><strong>Estrategia:</strong> Cruce matricial de NITs para evitar sanciones por inexactitud (Art. 651 ET).</div>""", unsafe_allow_html=True)
@@ -694,33 +695,28 @@ else:
             file_conta = st.file_uploader("Subir Auxiliar por Tercero (.xlsx)", type=['xlsx'])
             
         if file_dian and file_conta:
-            # Leemos los archivos
             df_dian = pd.read_excel(file_dian)
             df_conta = pd.read_excel(file_conta)
             
-            # --- CEREBRO DE AUTO-DETECCIÓN ---
+            # Cerebro de Auto-Detección
             def detectar_idx(columnas, keywords):
                 cols_str = [str(c).lower().strip() for c in columnas]
                 for i, col in enumerate(cols_str):
                     for kw in keywords:
                         if kw in col: return i
-                return 0 # Default a la primera si falla
+                return 0
             
-            # Palabras clave
             kw_nit = ['nit', 'n.i.t', 'cedula', 'documento', 'id', 'tercero']
             kw_valor = ['valor', 'saldo', 'total', 'monto', 'pago', 'cuantia']
             
-            # Detección silenciosa
             idx_nit_d = detectar_idx(df_dian.columns, kw_nit)
             idx_val_d = detectar_idx(df_dian.columns, kw_valor)
             idx_nit_c = detectar_idx(df_conta.columns, kw_nit)
             idx_val_c = detectar_idx(df_conta.columns, kw_valor)
             
-            # --- AQUÍ ESTÁ EL CAMBIO: VISUALIZACIÓN LIMPIA ---
             st.divider()
             st.success(f"✅ Sistema Autoconfigurado: Se usarán las columnas '{df_dian.columns[idx_nit_d]}' y '{df_dian.columns[idx_val_d]}' automáticamente.")
             
-            # Ocultamos los selectores en un expander cerrado
             with st.expander("🛠️ (Opcional) Ver o cambiar columnas seleccionadas manualmente"):
                 c1, c2, c3, c4 = st.columns(4)
                 nit_dian = c1.selectbox("NIT (DIAN)", df_dian.columns, index=idx_nit_d)
@@ -728,20 +724,15 @@ else:
                 nit_conta = c3.selectbox("NIT (Conta)", df_conta.columns, index=idx_nit_c)
                 val_conta = c4.selectbox("Valor (Conta)", df_conta.columns, index=idx_val_c)
 
-            # Botón Principal
             if st.button("▶️ EJECUTAR AUDITORÍA AHORA", type="primary"):
                 try:
                     registrar_log(st.session_state['username'], "Auditoria", "Ejecución cruce DIAN")
-                    
-                    # Usamos las variables de los selectboxes (que ya tienen el valor automático)
                     dian_grouped = df_dian.groupby(nit_dian)[val_dian].sum().reset_index(name='Valor_DIAN').rename(columns={nit_dian: 'NIT'})
                     conta_grouped = df_conta.groupby(nit_conta)[val_conta].sum().reset_index(name='Valor_Conta').rename(columns={nit_conta: 'NIT'})
                     
-                    # Limpieza básica
                     dian_grouped['NIT'] = dian_grouped['NIT'].astype(str).str.strip()
                     conta_grouped['NIT'] = conta_grouped['NIT'].astype(str).str.strip()
 
-                    # Cruce
                     cruce = pd.merge(dian_grouped, conta_grouped, on='NIT', how='outer').fillna(0)
                     cruce['Diferencia'] = cruce['Valor_DIAN'] - cruce['Valor_Conta']
                     diferencias = cruce[abs(cruce['Diferencia']) > 1000].sort_values(by="Diferencia", ascending=False)
@@ -772,6 +763,8 @@ else:
                 
                 except Exception as e:
                     st.error(f"Algo salió mal: {e}. Revisa 'Configuración manual' arriba.")
+
+    # 2. MINERÍA XML (Continúa con ELIF)
     elif menu == "Minería de XML (Facturación)":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/2823/2823523.png' class='pro-module-icon'><div class='pro-module-title'><h2>Minería de Datos XML (Facturación)</h2></div></div>""", unsafe_allow_html=True)
         st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Extraer información estructurada directamente de los archivos XML de Facturación Electrónica validados por la DIAN.</div>""", unsafe_allow_html=True)
@@ -787,20 +780,20 @@ else:
             st.download_button("📥 Descargar Reporte Maestro (.xlsx)", out.getvalue(), "Resumen_XML.xlsx")
             registrar_log(st.session_state['username'], "Mineria XML", f"Procesados {len(archivos_xml)} archivos")
 
+    # 3. CONCILIACIÓN BANCARIA (Continúa con ELIF)
     elif menu == "Conciliación Bancaria IA":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/2489/2489756.png' class='pro-module-icon'><div class='pro-module-title'><h2>Conciliación Bancaria Inteligente</h2></div></div>""", unsafe_allow_html=True)
-        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Automatizar el emparejamiento de transacciones entre el Extracto Bancario y el Libro Auxiliar de Bancos usando lógica difusa (Fechas cercanas).</div>""", unsafe_allow_html=True)
+        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Automatizar el emparejamiento de transacciones entre el Extracto Bancario y el Libro Auxiliar de Bancos usando lógica difusa.</div>""", unsafe_allow_html=True)
         
         col_banco, col_libro = st.columns(2)
         with col_banco: st.subheader("🏦 Extracto Bancario"); file_banco = st.file_uploader("Subir Excel Banco", type=['xlsx'])
         with col_libro: st.subheader("📒 Libro Auxiliar"); file_libro = st.file_uploader("Subir Excel Contabilidad", type=['xlsx'])
         
         if file_banco and file_libro:
-            # Lectura de archivos
             df_banco = pd.read_excel(file_banco)
             df_libro = pd.read_excel(file_libro)
             
-            # --- CEREBRO DE AUTO-DETECCIÓN ---
+            # Cerebro Auto-Detección Banco
             def detectar_idx(columnas, keywords):
                 cols_str = [str(c).lower().strip() for c in columnas]
                 for i, col in enumerate(cols_str):
@@ -808,91 +801,60 @@ else:
                         if kw in col: return i
                 return 0
             
-            # Palabras clave para Bancos
             kw_fecha = ['fecha', 'date', 'dia', 'fec']
             kw_valor = ['valor', 'monto', 'importe', 'saldo', 'debito', 'credito', 'total']
             kw_desc = ['desc', 'detalle', 'concepto', 'tercero', 'referencia']
             
-            # Detección
             idx_fb = detectar_idx(df_banco.columns, kw_fecha)
             idx_vb = detectar_idx(df_banco.columns, kw_valor)
             idx_db = detectar_idx(df_banco.columns, kw_desc)
-            
             idx_fl = detectar_idx(df_libro.columns, kw_fecha)
             idx_vl = detectar_idx(df_libro.columns, kw_valor)
             
             st.divider()
             st.success(f"✅ Configuración Automática: Se comparará '{df_banco.columns[idx_vb]}' del Banco vs '{df_libro.columns[idx_vl]}' del Libro.")
 
-            # Ocultamos selectores manuales
             with st.expander("🛠️ Ver/Editar Columnas Seleccionadas"):
                 c1, c2, c3, c4 = st.columns(4)
                 col_fecha_b = c1.selectbox("Fecha Banco:", df_banco.columns, index=idx_fb, key="fb")
                 col_valor_b = c2.selectbox("Valor Banco:", df_banco.columns, index=idx_vb, key="vb")
                 col_fecha_l = c3.selectbox("Fecha Libro:", df_libro.columns, index=idx_fl, key="fl")
                 col_valor_l = c4.selectbox("Valor Libro:", df_libro.columns, index=idx_vl, key="vl")
-                col_desc_b = st.selectbox("Descripción Banco (Para referencia):", df_banco.columns, index=idx_db, key="db")
+                col_desc_b = st.selectbox("Descripción Banco:", df_banco.columns, index=idx_db, key="db")
 
             if st.button("▶️ EJECUTAR CONCILIACIÓN AHORA", type="primary"):
                 registrar_log(st.session_state['username'], "Conciliacion", "Inicio matching bancario")
-                
-                # Normalización de Fechas
                 try:
                     df_banco['Fecha_Dt'] = pd.to_datetime(df_banco[col_fecha_b])
                     df_libro['Fecha_Dt'] = pd.to_datetime(df_libro[col_fecha_l])
                 except:
-                    st.error("Error en formato de fechas. Asegúrate que las columnas de fecha sean correctas.")
+                    st.error("Error en formato de fechas.")
                     st.stop()
 
                 df_banco['Conciliado'] = False
                 df_libro['Conciliado'] = False
                 matches = []
-                
                 bar = st.progress(0)
-                total_rows = len(df_banco)
                 
-                # ALGORITMO DE MATCHING INTELIGENTE
                 for idx_b, row_b in df_banco.iterrows():
-                    bar.progress((idx_b+1)/total_rows)
+                    bar.progress((idx_b+1)/len(df_banco))
                     vb = row_b[col_valor_b]
                     fb = row_b['Fecha_Dt']
-                    
-                    # Busca coincidencias: Mismo valor, no conciliado aun, y fecha +/- 3 días
-                    cands = df_libro[
-                        (df_libro[col_valor_l] == vb) & 
-                        (~df_libro['Conciliado']) & 
-                        (df_libro['Fecha_Dt'].between(fb - timedelta(days=3), fb + timedelta(days=3)))
-                    ]
+                    cands = df_libro[(df_libro[col_valor_l] == vb) & (~df_libro['Conciliado']) & (df_libro['Fecha_Dt'].between(fb - timedelta(days=3), fb + timedelta(days=3)))]
                     
                     if not cands.empty:
-                        # Si encuentra match, marca ambos como conciliados
                         match_idx = cands.index[0]
                         df_banco.at[idx_b, 'Conciliado'] = True
                         df_libro.at[match_idx, 'Conciliado'] = True
-                        
-                        f_libro_str = df_libro.at[match_idx, col_fecha_l]
-                        matches.append({
-                            "Fecha Banco": str(row_b[col_fecha_b]),
-                            "Fecha Libro": str(f_libro_str),
-                            "Descripción": str(row_b[col_desc_b]),
-                            "Valor Cruzado": f"${vb:,.2f}",
-                            "Estado": "✅ AUTOMÁTICO"
-                        })
+                        matches.append({"Fecha Banco": str(row_b[col_fecha_b]), "Fecha Libro": str(df_libro.at[match_idx, col_fecha_l]), "Valor": f"${vb:,.2f}", "Estado": "✅ AUTOMÁTICO"})
                 
                 st.divider()
                 st.balloons()
-                st.success(f"🚀 ¡Proceso Terminado! {len(matches)} partidas conciliadas automáticamente.")
-                
+                st.success(f"🚀 ¡Proceso Terminado! {len(matches)} partidas conciliadas.")
                 t1, t2, t3 = st.tabs(["✅ Partidas Cruzadas", "⚠️ Pendientes en Banco", "⚠️ Pendientes en Libros"])
-                
-                with t1: 
-                    st.dataframe(pd.DataFrame(matches), use_container_width=True)
-                with t2: 
-                    st.warning("Estas partidas están en el Banco pero NO en tu contabilidad:")
-                    st.dataframe(df_banco[~df_banco['Conciliado']], use_container_width=True)
-                with t3: 
-                    st.warning("Estos registros están en Contabilidad pero NO han salido del Banco:")
-                    st.dataframe(df_libro[~df_libro['Conciliado']], use_container_width=True)
+                with t1: st.dataframe(pd.DataFrame(matches), use_container_width=True)
+                with t2: st.dataframe(df_banco[~df_banco['Conciliado']], use_container_width=True)
+                with t3: st.dataframe(df_libro[~df_libro['Conciliado']], use_container_width=True)
 
     elif menu == "Auditoría Fiscal de Gastos":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/1642/1642346.png' class='pro-module-icon'><div class='pro-module-title'><h2>Auditoría Fiscal Masiva (Art. 771-5)</h2></div></div>""", unsafe_allow_html=True)
