@@ -681,7 +681,7 @@ if menu == "Inicio / Dashboard":
 else:
     st.markdown('<div class="animated-module-bg">', unsafe_allow_html=True)
 
-    elif menu == "Auditoría Cruce DIAN":
+    if menu == "Auditoría Cruce DIAN":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/921/921591.png' class='pro-module-icon'><div class='pro-module-title'><h2>Auditor de Exógena (Cruce DIAN)</h2></div></div>""", unsafe_allow_html=True)
         st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Detectar discrepancias entre lo que reportaste y lo que la DIAN sabe de ti.<br><strong>Estrategia:</strong> Cruce matricial de NITs para evitar sanciones por inexactitud (Art. 651 ET).</div>""", unsafe_allow_html=True)
         
