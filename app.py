@@ -466,21 +466,31 @@ def calcular_costo_empresa_fila(row, col_salario, col_aux, col_arl, col_exo):
     return costo_total, total_seg_social, total_prestaciones, paraf
 
 # ------------------------------------------------------------------------------
-# CONEXIÓN CON IA (GEMINI)
+# CONEXIÓN CON IA (CEREBRO HÍBRIDO)
 # ------------------------------------------------------------------------------
 def consultar_ia_gemini(prompt):
+    """
+    Usa el modelo PRO (Más inteligente y razonador)
+    Ideal para: Narrador Financiero, Análisis de Tesorería y Auditoría NIIF.
+    """
     try:
-        model = genai.GenerativeModel('models/gemini-1.5-flash')
+        # AQUÍ ESTÁ EL CAMBIO: Usamos 'pro' para razonamiento avanzado
+        model = genai.GenerativeModel('models/gemini-1.5-pro')
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
         return f"Error de conexión IA: {str(e)}"
 
 # ------------------------------------------------------------------------------
-# OCR DE FACTURAS (IA)
+# OCR DE FACTURAS (VELOCIDAD)
 # ------------------------------------------------------------------------------
 def ocr_factura(imagen):
+    """
+    Usa el modelo FLASH (Más rápido y ligero)
+    Ideal para: Procesar imágenes masivas sin hacer esperar al usuario.
+    """
     try:
+        # MANTENEMOS 'flash' AQUÍ para velocidad
         model = genai.GenerativeModel('models/gemini-1.5-flash')
         prompt = """Extrae datos JSON estricto: {"fecha": "YYYY-MM-DD", "nit": "num", "proveedor": "txt", "concepto": "txt", "base": num, "iva": num, "total": num}"""
         response = model.generate_content([prompt, imagen])
