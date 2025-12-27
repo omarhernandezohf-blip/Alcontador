@@ -403,12 +403,28 @@ def calcular_ugpp_fila(row, col_salario, col_no_salarial):
     return salario, 0, "OK", "Cumple norma"
 
 def calcular_costo_empresa_fila(row, col_salario, col_aux, col_arl, col_exo):
-    """Calculadora de Nómina Real"""
-    salario = float(row[col_salario])
+    """Calculadora de Nómina Real - VERSIÓN BLINDADA"""
+    try:
+        # Validación de datos numéricos para evitar errores de texto
+        salario = float(row[col_salario]) if pd.notnull(row[col_salario]) else 0
+    except:
+        salario = 0 # Si hay texto en vez de número, asume 0
+
     tiene_aux = str(row[col_aux]).strip().lower() in ['si', 's', 'true', '1', 'yes']
-    nivel_arl = int(row[col_arl]) if pd.notnull(row[col_arl]) else 1
+    
+    # CORRECCIÓN DEL ERROR (KEYERROR):
+    # Si no se seleccionó columna ARL o está vacía, usamos Nivel 1 por defecto
+    if col_arl and col_arl in row and pd.notnull(row[col_arl]):
+        try:
+            nivel_arl = int(row[col_arl])
+        except:
+            nivel_arl = 1
+    else:
+        nivel_arl = 1 
+        
     es_exonerado = str(row[col_exo]).strip().lower() in ['si', 's', 'true', '1', 'yes']
     
+    # Cálculos fiscales (2025)
     aux_trans = AUX_TRANS_2025 if tiene_aux else 0
     ibc = salario
     base_prest = salario + aux_trans
