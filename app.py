@@ -422,55 +422,48 @@ def calcular_ugpp_fila(row, col_salario, col_no_salarial):
 # CALCULADORA DE COSTO DE NÓMINA (LÓGICA BLINDADA)
 # ------------------------------------------------------------------------------
 def calcular_costo_empresa_fila(row, col_salario, col_aux, col_arl, col_exo):
-    """
-    Calcula el costo real (prestacional y parafiscal) de un empleado.
-    Incluye protección contra errores de tipos de datos.
-    """
+    """Calculadora de Nómina Real - VERSIÓN DETALLADA"""
     try:
-        # Validación de datos numéricos para evitar errores de texto
         salario = float(row[col_salario]) if pd.notnull(row[col_salario]) else 0
     except:
-        salario = 0 # Si hay texto en vez de número, asume 0 para no romper el loop
+        salario = 0
 
     tiene_aux = str(row[col_aux]).strip().lower() in ['si', 's', 'true', '1', 'yes']
     
-    # Validación segura de la columna ARL
+    # ARL
     if col_arl and col_arl in row and pd.notnull(row[col_arl]):
-        try:
-            nivel_arl = int(row[col_arl])
-        except:
-            nivel_arl = 1 # Valor por defecto seguro
-    else:
-        nivel_arl = 1 
+        try: nivel_arl = int(row[col_arl])
+        except: nivel_arl = 1
+    else: nivel_arl = 1 
         
     es_exonerado = str(row[col_exo]).strip().lower() in ['si', 's', 'true', '1', 'yes']
     
-    # Cálculos detallados
+    # --- CÁLCULOS DETALLADOS ---
     aux_trans = AUX_TRANS_2025 if tiene_aux else 0
     ibc = salario
     base_prest = salario + aux_trans
     
-    # Aportes Seguridad Social Empleador
+    # 1. SEGURIDAD SOCIAL (Empleador)
     salud = 0 if es_exonerado else ibc * 0.085
     pension = ibc * 0.12
-    
-    # Riesgos Laborales (ARL)
     arl_t = {1:0.00522, 2:0.01044, 3:0.02436, 4:0.0435, 5:0.0696}
     arl_val = ibc * arl_t.get(nivel_arl, 0.00522)
     
-    # Parafiscales
-    paraf = ibc * 0.04  # Caja de Compensación (Siempre se paga)
-    if not es_exonerado: 
-        paraf += ibc * 0.05 # SENA + ICBF
+    total_seg_social = salud + pension + arl_val
     
-    # Prestaciones Sociales (Provisiones Mensuales)
-    # Prima (8.33%) + Cesantias (8.33%) + Int. Cesantias (1%) + Vacaciones (4.17%) = ~21.83%
-    prest = base_prest * 0.2183 
+    # 2. PARAFISCALES
+    paraf = ibc * 0.04 # Caja
+    if not es_exonerado: paraf += ibc * 0.05 # SENA + ICBF
     
-    total = base_prest + salud + pension + arl_val + paraf + prest
+    # 3. PRESTACIONES SOCIALES (Prima, Cesantías, Int, Vacaciones)
+    # Factor 21.83% sobre salario + auxilio
+    total_prestaciones = base_prest * 0.2183 
     
-    # Retornamos Total Costo y Valor Adicional
-    return total, (total - base_prest)
+    # TOTAL COSTO
+    costo_total = base_prest + total_seg_social + paraf + total_prestaciones
+    
+    # Retornamos los valores separados
+    return costo_total, total_seg_social, total_prestaciones, paraf
 
 # ------------------------------------------------------------------------------
 # CONEXIÓN CON IA (GEMINI)
