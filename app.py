@@ -55,6 +55,120 @@ st.markdown("""
     </div>
     """, unsafe_allow_html=True)
 # --- FIN DEL HEADER EJECUTIVO ---
+import numpy as np # Necesario para datos simulados
+import pandas as pd # Necesario para la tabla
+
+# --- INICIO DEL BENTO GRID DASHBOARD ---
+
+# 1. ESTILOS CSS PERSONALIZADOS PARA LAS TARJETAS (BENTO BOXES)
+st.markdown("""
+    <style>
+        .bento-box {
+            background-color: #1e293b; /* Color de fondo tarjeta */
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            height: 100%;
+            transition: transform 0.2s;
+        }
+        .bento-box:hover {
+            transform: translateY(-5px);
+            border-color: rgba(59, 130, 246, 0.5); /* Brillo azul al pasar mouse */
+        }
+        .metric-label {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        .metric-value {
+            color: white;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        .metric-delta {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .positive { color: #4ade80; } /* Verde */
+        .negative { color: #f87171; } /* Rojo */
+    </style>
+""", unsafe_allow_html=True)
+
+# 2. FUNCIÓN PARA CREAR TARJETAS DE MÉTRICAS (HTML PURO)
+def metric_card(label, value, delta, is_positive=True):
+    delta_color = "positive" if is_positive else "negative"
+    arrow = "↑" if is_positive else "↓"
+    st.markdown(f"""
+    <div class="bento-box">
+        <div class="metric-label">{label}</div>
+        <div class="metric-value">{value}</div>
+        <div class="metric-delta {delta_color}">
+            {arrow} {delta} vs mes anterior
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# 3. FILA SUPERIOR: 4 COLUMNAS DE KPIs
+st.markdown("### 📊 Métricas en Tiempo Real")
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    metric_card("Ingresos Totales", "$124,500", "12%", True)
+
+with col2:
+    metric_card("Gastos Operativos", "$42,300", "5%", False) # False = Rojo (Gasto subió)
+
+with col3:
+    metric_card("Beneficio Neto", "$82,200", "18%", True)
+
+with col4:
+    metric_card("Margen Ebitda", "34%", "2%", True)
+
+# Espacio separador
+st.markdown("---")
+
+# 4. FILA CENTRAL: GRÁFICOS (DIVISIÓN 2/3 y 1/3)
+c_chart_1, c_chart_2 = st.columns([2, 1]) # La columna izquierda es el doble de ancha
+
+with c_chart_1:
+    st.markdown("#### 📈 Tendencia de Flujo de Caja")
+    # Generamos datos falsos para el ejemplo visual
+    chart_data = pd.DataFrame(
+        np.random.randn(20, 3) + [10, 10, 10], # Datos aleatorios desplazados
+        columns=['Ingresos', 'Gastos', 'Beneficio'])
+    st.area_chart(chart_data, color=["#3b82f6", "#ef4444", "#10b981"]) # Azul, Rojo, Verde
+
+with c_chart_2:
+    st.markdown("#### 📉 Desglose de Gastos")
+    # Datos falsos de gastos
+    gastos_data = pd.DataFrame({
+        'Categoría': ['Nómina', 'Software', 'Oficina', 'Marketing'],
+        'Monto': [5000, 2000, 1500, 3000]
+    })
+    st.bar_chart(gastos_data.set_index('Categoría'), color="#6366f1")
+
+# 5. FILA INFERIOR: TABLA DE TRANSACCIONES (BENTO LARGO)
+st.markdown("### 📝 Últimas Transacciones")
+with st.container():
+    # Creamos un DataFrame de ejemplo elegante
+    df_transacciones = pd.DataFrame({
+        "ID": ["TRX-001", "TRX-002", "TRX-003", "TRX-004", "TRX-005"],
+        "Fecha": ["2024-05-01", "2024-05-02", "2024-05-02", "2024-05-03", "2024-05-03"],
+        "Concepto": ["Pago Cliente A", "Suscripción AWS", "Pago Cliente B", "Licencias Office", "Consultoría"],
+        "Estado": ["Completado", "Pendiente", "Completado", "Completado", "Revisión"],
+        "Monto": ["+$1,200", "-$300", "+$4,500", "-$150", "+$2,000"]
+    })
+    # Mostramos la tabla ocupando todo el ancho
+    st.dataframe(
+        df_transacciones, 
+        use_container_width=True, 
+        hide_index=True
+    )
+
+# --- FIN DEL BENTO GRID DASHBOARD ---
 # ==============================================================================
 # 2. GESTIÓN DE CONEXIONES EXTERNAS (BACKEND)
 # ==============================================================================
