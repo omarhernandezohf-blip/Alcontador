@@ -880,12 +880,13 @@ with col_p2:
     st.button("🚀 Mejorar a PRO", key="btn_pro", type="primary", use_container_width=True)
 # --- FIN PLANES ---
 
+    # Verificación de conexión (Asegúrate de que esté alineado con el código de arriba)
     if not db_conectada:
-        st.warning("⚠️ La base de datos no está conectada. Asegúrate de compartir el Google Sheet 'DB_Alcontador' con el email del Service Account.")
+        st.warning("⚠️ La base de datos no está conectada. Revisa el Google Sheet 'DB_Alcontador'.")
 
-# ------------------------------------------------------------------------------
-# CONTENIDO DE MÓDULOS DETALLADOS
-# ------------------------------------------------------------------------------
+# ---------------------------------------------------------
+# ESTE ELSE ES EL QUE CAMBIA DE MENU (Debe tocar el borde izquierdo)
+# ---------------------------------------------------------
 else:
     st.markdown('<div class="animated-module-bg">', unsafe_allow_html=True)
 
