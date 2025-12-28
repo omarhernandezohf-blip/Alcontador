@@ -22,7 +22,104 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+# --- INICIO DE LA SECCIÓN VISUAL HERO (COPIAR DESDE AQUÍ) ---
+# Inyectamos CSS personalizado y HTML directamente en Streamlit
+st.markdown("""
+    <style>
+        /* Estilos para el contenedor principal "Hero" */
+        .hero-container {
+            position: relative;
+            width: 100%;
+            height: 350px;  /* Altura del recuadro */
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* El video de fondo */
+        .video-background {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(1.5);
+            min-width: 100%;
+            min-height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        /* La capa oscura para que se lea el texto */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(10,25,41,0.4) 0%, rgba(10,25,41,0.9) 100%);
+            z-index: 2;
+            backdrop-filter: blur(2px);
+        }
+        
+        /* El contenido de texto flotante */
+        .hero-content {
+            position: relative;
+            z-index: 3;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify_content: center;
+            align-items: center;
+            text-align: center;
+            font-family: 'sans-serif';
+        }
+        
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: white;
+            margin: 0;
+            text-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            background: linear-gradient(to right, #ffffff, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .hero-subtitle {
+            margin-top: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 20px;
+            border-radius: 50px;
+            color: #dbeafe;
+            font-size: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+        }
+    </style>
 
+    <div class="hero-container">
+        <div class="video-background">
+            <iframe 
+                width="100%" height="100%" 
+                src="https://www.youtube.com/embed/_kKJqYo5A20?autoplay=1&mute=1&loop=1&playlist=_kKJqYo5A20&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1" 
+                frameborder="0" 
+                allow="autoplay; encrypted-media" 
+                allowfullscreen>
+            </iframe>
+        </div>
+        
+        <div class="overlay"></div>
+        
+        <div class="hero-content">
+            <h1 class="hero-title">ASISTENTE CONTABLE PRO</h1>
+            <div class="hero-subtitle">
+                Buenas noches. Plataforma de Inteligencia Financiera Corporativa.
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+# --- FIN DE LA SECCIÓN VISUAL HERO ---
 # ==============================================================================
 # 2. GESTIÓN DE CONEXIONES EXTERNAS (BACKEND)
 # ==============================================================================
