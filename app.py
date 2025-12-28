@@ -16,12 +16,6 @@ import os
 # ==============================================================================
 # ==============================================================================
 
-st.set_page_config(
-    page_title="Asistente Contable Pro | Enterprise",
-    page_icon="💼",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 # --- INICIO DEL HEADER EJECUTIVO (LIMPIO Y PROFESIONAL) ---
 st.markdown("""
     <style>
