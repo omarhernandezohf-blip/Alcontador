@@ -811,10 +811,10 @@ if menu == "Inicio / Dashboard":
         st.markdown("""<div class='info-card'><span class='info-icon'>📈</span><div class='info-title'>Reportes NIIF</div><div class='info-text'>Redacción automática experta de notas a estados financieros.</div></div>""", unsafe_allow_html=True)
 
     # --- INICIO SECCIÓN PLANES Y PRECIOS ---
-st.markdown("---") # Línea separadora
-st.markdown("### 💎 Planes de Suscripción")
+    st.markdown("---") # Línea separadora
+    st.markdown("### 💎 Planes de Suscripción")
 
-st.markdown("""
+    st.markdown("""
     <style>
         /* Estilos Tarjetas de Precio */
         .pricing-wrapper { display: flex; gap: 20px; flex-wrap: wrap; }
