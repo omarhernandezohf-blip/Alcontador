@@ -846,39 +846,39 @@ if menu == "Inicio / Dashboard":
 
 col_p1, col_p2 = st.columns(2)
 
-    # PLAN GRATIS
-    with col_p1:
-        st.markdown("""
-            <div class="pricing-card">
-                <h3 style="color:white; margin:0">Plan Inicial</h3>
-                <div class="price-tag">$0 <span>/mes</span></div>
-                <ul class="features-ul">
-                    <li><span class="check">✓</span> Dashboard Contable</li>
-                    <li><span class="check">✓</span> 5 Consultas IA/día</li>
-                    <li class="dimmed"><span class="cross">✕</span> Agente Tributario</li>
-                    <li class="dimmed"><span class="cross">✕</span> Conexión Bancaria</li>
-                </ul>
-            </div>
-        """, unsafe_allow_html=True)
-        st.button("Continuar Gratis", key="btn_free", use_container_width=True)
+# PLAN GRATIS
+with col_p1:
+    st.markdown("""
+        <div class="pricing-card">
+            <h3 style="color:white; margin:0">Plan Inicial</h3>
+            <div class="price-tag">$0 <span>/mes</span></div>
+            <ul class="features-ul">
+                <li><span class="check">✓</span> Dashboard Contable</li>
+                <li><span class="check">✓</span> 5 Consultas IA/día</li>
+                <li class="dimmed"><span class="cross">✕</span> Agente Tributario</li>
+                <li class="dimmed"><span class="cross">✕</span> Conexión Bancaria</li>
+            </ul>
+        </div>
+    """, unsafe_allow_html=True)
+    st.button("Continuar Gratis", key="btn_free", use_container_width=True)
 
-    # PLAN PRO
-    with col_p2:
-        st.markdown("""
-            <div class="pricing-card pro">
-                <div class="pro-badge">POPULAR</div>
-                <h3 style="color:white; margin:0">Asistente PRO</h3>
-                <div class="price-tag">$29 <span>/mes</span></div>
-                <ul class="features-ul">
-                    <li><span class="check">✓</span> <strong>Todo lo del Plan Inicial</strong></li>
-                    <li><span class="check">✓</span> Consultas IA Ilimitadas</li>
-                    <li><span class="check">✓</span> Predicción de Impuestos</li>
-                    <li><span class="check">✓</span> Soporte Prioritario</li>
-                </ul>
-            </div>
-        """, unsafe_allow_html=True)
-        st.button("🚀 Mejorar a PRO", key="btn_pro", type="primary", use_container_width=True)
-    # --- FIN PLANES ---
+# PLAN PRO
+with col_p2:
+    st.markdown("""
+        <div class="pricing-card pro">
+            <div class="pro-badge">POPULAR</div>
+            <h3 style="color:white; margin:0">Asistente PRO</h3>
+            <div class="price-tag">$29 <span>/mes</span></div>
+            <ul class="features-ul">
+                <li><span class="check">✓</span> <strong>Todo lo del Plan Inicial</strong></li>
+                <li><span class="check">✓</span> Consultas IA Ilimitadas</li>
+                <li><span class="check">✓</span> Predicción de Impuestos</li>
+                <li><span class="check">✓</span> Soporte Prioritario</li>
+            </ul>
+        </div>
+    """, unsafe_allow_html=True)
+    st.button("🚀 Mejorar a PRO", key="btn_pro", type="primary", use_container_width=True)
+# --- FIN PLANES ---
 
     if not db_conectada:
         st.warning("⚠️ La base de datos no está conectada. Asegúrate de compartir el Google Sheet 'DB_Alcontador' con el email del Service Account.")
