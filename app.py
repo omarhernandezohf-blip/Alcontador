@@ -810,13 +810,75 @@ if menu == "Inicio / Dashboard":
     with c4:
         st.markdown("""<div class='info-card'><span class='info-icon'>📈</span><div class='info-title'>Reportes NIIF</div><div class='info-text'>Redacción automática experta de notas a estados financieros.</div></div>""", unsafe_allow_html=True)
 
-    st.markdown("---")
-    
-    st.subheader("Protocolo de Activación IA")
-    col_a, col_b, col_c = st.columns(3)
-    with col_a: st.info("1. Acceso Seguro: Entra a Google AI Studio con credenciales corporativas.")
-    with col_b: st.info("2. Generación: Crea tu API Key y configúrala en el sistema.")
-    with col_c: st.info("3. Vinculación: El sistema desbloqueará automáticamente los módulos predictivos.")
+    # --- INICIO SECCIÓN PLANES Y PRECIOS ---
+st.markdown("---") # Línea separadora
+st.markdown("### 💎 Planes de Suscripción")
+
+st.markdown("""
+    <style>
+        /* Estilos Tarjetas de Precio */
+        .pricing-wrapper { display: flex; gap: 20px; flex-wrap: wrap; }
+        .pricing-card {
+            background-color: #0f172a;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px; padding: 2rem; flex: 1; min-width: 300px;
+            transition: transform 0.3s ease;
+        }
+        .pricing-card:hover { transform: translateY(-5px); border-color: #3b82f6; }
+        .pricing-card.pro {
+            background: linear-gradient(145deg, #0f172a 0%, #1e3a8a 100%);
+            border: 1px solid #3b82f6; box-shadow: 0 0 30px rgba(59, 130, 246, 0.15);
+            position: relative;
+        }
+        .pro-badge {
+            position: absolute; top: -12px; right: 20px; background: #2563eb;
+            color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold;
+        }
+        .price-tag { font-size: 2.5rem; font-weight: 800; color: white; margin: 10px 0; }
+        .price-tag span { font-size: 1rem; color: #94a3b8; font-weight: 400; }
+        .features-ul { list-style: none; padding: 0; margin: 20px 0; color: #cbd5e1; }
+        .features-ul li { margin-bottom: 10px; display: flex; align-items: center; }
+        .check { color: #4ade80; margin-right: 10px; }
+        .cross { color: #ef4444; margin-right: 10px; }
+        .dimmed { color: #64748b; text-decoration: line-through; }
+    </style>
+""", unsafe_allow_html=True)
+
+col_p1, col_p2 = st.columns(2)
+
+# PLAN GRATIS
+with col_p1:
+    st.markdown("""
+        <div class="pricing-card">
+            <h3 style="color:white; margin:0">Plan Inicial</h3>
+            <div class="price-tag">$0 <span>/mes</span></div>
+            <ul class="features-ul">
+                <li><span class="check">✓</span> Dashboard Contable</li>
+                <li><span class="check">✓</span> 5 Consultas IA/día</li>
+                <li class="dimmed"><span class="cross">✕</span> Agente Tributario</li>
+                <li class="dimmed"><span class="cross">✕</span> Conexión Bancaria</li>
+            </ul>
+        </div>
+    """, unsafe_allow_html=True)
+    st.button("Continuar Gratis", key="btn_free", use_container_width=True)
+
+# PLAN PRO
+with col_p2:
+    st.markdown("""
+        <div class="pricing-card pro">
+            <div class="pro-badge">POPULAR</div>
+            <h3 style="color:white; margin:0">Asistente PRO</h3>
+            <div class="price-tag">$29 <span>/mes</span></div>
+            <ul class="features-ul">
+                <li><span class="check">✓</span> <strong>Todo lo del Plan Inicial</strong></li>
+                <li><span class="check">✓</span> Consultas IA Ilimitadas</li>
+                <li><span class="check">✓</span> Predicción de Impuestos</li>
+                <li><span class="check">✓</span> Soporte Prioritario</li>
+            </ul>
+        </div>
+    """, unsafe_allow_html=True)
+    st.button("🚀 Mejorar a PRO", key="btn_pro", type="primary", use_container_width=True)
+# --- FIN PLANES ---
 
     if not db_conectada:
         st.warning("⚠️ La base de datos no está conectada. Asegúrate de compartir el Google Sheet 'DB_Alcontador' con el email del Service Account.")
