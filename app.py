@@ -810,7 +810,7 @@ if menu == "Inicio / Dashboard":
     with c4:
         st.markdown("""<div class='info-card'><span class='info-icon'>📈</span><div class='info-title'>Reportes NIIF</div><div class='info-text'>Redacción automática experta de notas a estados financieros.</div></div>""", unsafe_allow_html=True)
 
-    # --- INICIO SECCIÓN PLANES Y PRECIOS ---
+    # --- INICIO SECCIÓN PLANES Y PRECIOS (OFERTA LANZAMIENTO) ---
     st.markdown("---") # Línea separadora
     st.markdown("### 💎 Planes de Suscripción")
 
@@ -831,11 +831,18 @@ if menu == "Inicio / Dashboard":
             position: relative;
         }
         .pro-badge {
-            position: absolute; top: -12px; right: 20px; background: #2563eb;
+            position: absolute; top: -12px; right: 20px; background: #ea580c; /* Naranja Oferta */
             color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold;
+            box-shadow: 0 2px 10px rgba(234, 88, 12, 0.5);
         }
-        .price-tag { font-size: 2.5rem; font-weight: 800; color: white; margin: 10px 0; }
+        .price-tag { font-size: 2.5rem; font-weight: 800; color: white; margin: 5px 0; }
         .price-tag span { font-size: 1rem; color: #94a3b8; font-weight: 400; }
+        
+        .price-old {
+            font-size: 1.1rem; color: #64748b; text-decoration: line-through; font-weight: 500;
+            margin-bottom: -5px; display: block;
+        }
+        
         .features-ul { list-style: none; padding: 0; margin: 20px 0; color: #cbd5e1; }
         .features-ul li { margin-bottom: 10px; display: flex; align-items: center; }
         .check { color: #4ade80; margin-right: 10px; }
@@ -851,7 +858,7 @@ if menu == "Inicio / Dashboard":
         st.markdown("""
         <div class="pricing-card">
             <h3 style="color:white; margin:0">Plan Inicial</h3>
-            <div class="price-tag">$0 <span>/mes</span></div>
+            <div class="price-tag">$0 <span>COP/mes</span></div>
             <ul class="features-ul">
                 <li><span class="check">✓</span> Dashboard Contable</li>
                 <li><span class="check">✓</span> 5 Consultas IA/día</li>
@@ -862,13 +869,13 @@ if menu == "Inicio / Dashboard":
         """, unsafe_allow_html=True)
         st.button("Continuar Gratis", key="btn_free", use_container_width=True)
 
-    # PLAN PRO
+    # PLAN PRO (OFERTA LANZAMIENTO)
     with col_p2:
         st.markdown("""
         <div class="pricing-card pro">
-            <div class="pro-badge">POPULAR</div>
+            <div class="pro-badge">OFERTA LANZAMIENTO 🚀</div>
             <h3 style="color:white; margin:0">Asistente PRO</h3>
-            <div class="price-tag">$29 <span>/mes</span></div>
+            <div class="price-old">$120.000</div> <div class="price-tag">$49.900 <span>COP/mes</span></div>
             <ul class="features-ul">
                 <li><span class="check">✓</span> <strong>Todo lo del Plan Inicial</strong></li>
                 <li><span class="check">✓</span> Consultas IA Ilimitadas</li>
@@ -877,7 +884,7 @@ if menu == "Inicio / Dashboard":
             </ul>
         </div>
         """, unsafe_allow_html=True)
-        st.button("🚀 Mejorar a PRO", key="btn_pro", type="primary", use_container_width=True)
+        st.button("🔥 Aprovechar Oferta PRO", key="btn_pro", type="primary", use_container_width=True)
     # --- FIN PLANES ---
 
     # Verificación de conexión
