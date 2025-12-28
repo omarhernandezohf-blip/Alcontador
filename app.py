@@ -22,104 +22,102 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-# --- INICIO DE LA SECCIÓN VISUAL HERO (COPIAR DESDE AQUÍ) ---
-# Inyectamos CSS personalizado y HTML directamente en Streamlit
+# --- INICIO DEL HERO SECTION (VIDEO + TÍTULO INTEGRADOS) ---
 st.markdown("""
     <style>
-        /* Estilos para el contenedor principal "Hero" */
-        .hero-container {
+        /* Contenedor Principal: La Tarjeta Brillante */
+        .header-container {
             position: relative;
             width: 100%;
-            height: 350px;  /* Altura del recuadro */
+            height: 250px; /* Altura controlada */
+            background-color: #0e1117;
             border-radius: 20px;
-            overflow: hidden;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            overflow: hidden; /* Corta lo que sobresale */
             border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 20px rgba(0, 100, 255, 0.1);
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        
-        /* El video de fondo */
-        .video-background {
+
+        /* Capa 1: El Video de Fondo */
+        .video-bg {
             position: absolute;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%) scale(1.5);
-            min-width: 100%;
-            min-height: 100%;
-            z-index: 1;
-            pointer-events: none;
+            transform: translate(-50%, -50%) scale(1.6); /* Zoom para evitar bordes negros */
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.6; /* Un poco transparente para no marear */
         }
         
-        /* La capa oscura para que se lea el texto */
-        .overlay {
+        /* Capa 2: Filtro Oscuro (Para leer las letras) */
+        .dark-overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(circle, rgba(10,25,41,0.4) 0%, rgba(10,25,41,0.9) 100%);
-            z-index: 2;
-            backdrop-filter: blur(2px);
+            background: radial-gradient(circle, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.8) 100%);
+            z-index: 1;
         }
-        
-        /* El contenido de texto flotante */
-        .hero-content {
+
+        /* Capa 3: El Texto (Encima de todo) */
+        .title-content {
             position: relative;
-            z-index: 3;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify_content: center;
-            align-items: center;
+            z-index: 2;
             text-align: center;
-            font-family: 'sans-serif';
+            width: 100%;
         }
-        
-        .hero-title {
-            font-size: 3.5rem;
+
+        .main-title {
+            font-family: 'Source Sans Pro', sans-serif;
+            font-size: 3rem;
             font-weight: 800;
-            color: white;
-            margin: 0;
-            text-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            background: linear-gradient(to right, #ffffff, #a5b4fc);
+            background: linear-gradient(90deg, #ffffff, #82aaff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            margin: 0;
+            padding: 0;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
-        
-        .hero-subtitle {
-            margin-top: 15px;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 8px 20px;
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #d1d5db;
+            margin-top: 10px;
+            font-weight: 300;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 5px 20px;
             border-radius: 50px;
-            color: #dbeafe;
-            font-size: 1rem;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(5px);
+            display: inline-block;
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(4px);
         }
     </style>
 
-    <div class="hero-container">
-        <div class="video-background">
+    <div class="header-container">
+        <div class="video-bg">
             <iframe 
-                width="100%" height="100%" 
-                src="https://www.youtube.com/embed/_kKJqYo5A20?autoplay=1&mute=1&loop=1&playlist=_kKJqYo5A20&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1" 
+                src="https://www.youtube.com/embed/_kKJqYo5A20?controls=0&autoplay=1&mute=1&loop=1&playlist=_kKJqYo5A20&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&playsinline=1" 
                 frameborder="0" 
-                allow="autoplay; encrypted-media" 
-                allowfullscreen>
+                width="100%" 
+                height="100%" 
+                allow="autoplay; encrypted-media">
             </iframe>
         </div>
         
-        <div class="overlay"></div>
-        
-        <div class="hero-content">
-            <h1 class="hero-title">ASISTENTE CONTABLE PRO</h1>
-            <div class="hero-subtitle">
-                Buenas noches. Plataforma de Inteligencia Financiera Corporativa.
-            </div>
+        <div class="dark-overlay"></div>
+
+        <div class="title-content">
+            <h1 class="main-title">ASISTENTE CONTABLE PRO</h1>
+            <div class="subtitle">Buenas noches. Plataforma de Inteligencia Financiera Corporativa.</div>
         </div>
     </div>
-    """, unsafe_allow_html=True)
-# --- FIN DE LA SECCIÓN VISUAL HERO ---
+""", unsafe_allow_html=True)
+# --- FIN DEL HERO SECTION ---
 # ==============================================================================
 # 2. GESTIÓN DE CONEXIONES EXTERNAS (BACKEND)
 # ==============================================================================
