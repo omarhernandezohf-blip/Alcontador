@@ -22,102 +22,45 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-# --- INICIO DEL HERO SECTION (VIDEO + TÍTULO INTEGRADOS) ---
+# --- INICIO DEL HEADER EJECUTIVO (LIMPIO Y PROFESIONAL) ---
 st.markdown("""
     <style>
-        /* Contenedor Principal: La Tarjeta Brillante */
-        .header-container {
-            position: relative;
-            width: 100%;
-            height: 250px; /* Altura controlada */
-            background-color: #0e1117;
-            border-radius: 20px;
-            overflow: hidden; /* Corta lo que sobresale */
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 0 20px rgba(0, 100, 255, 0.1);
-            margin-bottom: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* Capa 1: El Video de Fondo */
-        .video-bg {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(1.6); /* Zoom para evitar bordes negros */
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            opacity: 0.6; /* Un poco transparente para no marear */
+        /* Estilo del Contenedor del Título */
+        .dashboard-header {
+            padding: 2rem 1rem;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); /* Degradado Azul Oscuro Corporativo */
+            border-radius: 12px;
+            border-left: 5px solid #3b82f6; /* Línea de acento azul brillante */
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
         
-        /* Capa 2: Filtro Oscuro (Para leer las letras) */
-        .dark-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.8) 100%);
-            z-index: 1;
-        }
-
-        /* Capa 3: El Texto (Encima de todo) */
-        .title-content {
-            position: relative;
-            z-index: 2;
-            text-align: center;
-            width: 100%;
-        }
-
-        .main-title {
-            font-family: 'Source Sans Pro', sans-serif;
-            font-size: 3rem;
-            font-weight: 800;
-            background: linear-gradient(90deg, #ffffff, #82aaff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        /* Título Principal */
+        .dashboard-title {
+            color: #ffffff;
+            font-family: 'Helvetica Neue', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
             margin: 0;
-            padding: 0;
-            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            letter-spacing: -0.5px;
         }
-
-        .subtitle {
+        
+        /* Subtítulo */
+        .dashboard-subtitle {
+            color: #94a3b8; /* Gris azulado suave */
+            font-family: 'Helvetica Neue', sans-serif;
             font-size: 1.1rem;
-            color: #d1d5db;
-            margin-top: 10px;
-            font-weight: 300;
-            background: rgba(0, 0, 0, 0.4);
-            padding: 5px 20px;
-            border-radius: 50px;
-            display: inline-block;
-            border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(4px);
+            margin-top: 0.5rem;
+            font-weight: 400;
         }
     </style>
 
-    <div class="header-container">
-        <div class="video-bg">
-            <iframe 
-                src="https://www.youtube.com/embed/_kKJqYo5A20?controls=0&autoplay=1&mute=1&loop=1&playlist=_kKJqYo5A20&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&playsinline=1" 
-                frameborder="0" 
-                width="100%" 
-                height="100%" 
-                allow="autoplay; encrypted-media">
-            </iframe>
-        </div>
-        
-        <div class="dark-overlay"></div>
-
-        <div class="title-content">
-            <h1 class="main-title">ASISTENTE CONTABLE PRO</h1>
-            <div class="subtitle">Buenas noches. Plataforma de Inteligencia Financiera Corporativa.</div>
-        </div>
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">ASISTENTE CONTABLE PRO</h1>
+        <div class="dashboard-subtitle">Plataforma de Inteligencia Financiera Corporativa • Panel de Control</div>
     </div>
-""", unsafe_allow_html=True)
-# --- FIN DEL HERO SECTION ---
+    """, unsafe_allow_html=True)
+# --- FIN DEL HEADER EJECUTIVO ---
 # ==============================================================================
 # 2. GESTIÓN DE CONEXIONES EXTERNAS (BACKEND)
 # ==============================================================================
