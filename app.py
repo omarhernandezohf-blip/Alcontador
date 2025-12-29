@@ -483,7 +483,7 @@ def consultar_ia_gemini(prompt):
     """
     try:
         # AQUÍ ESTÁ EL CAMBIO: Usamos 'pro' para razonamiento avanzado
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-pro')
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
