@@ -10,165 +10,26 @@ from datetime import datetime, timedelta
 import xml.etree.ElementTree as ET
 import os
 
-# ==============================================================================
-# ==============================================================================
-# 1. CONFIGURACIÓN INICIAL DE LA PÁGINA Y EL SISTEMA
-# ==============================================================================
-# ==============================================================================
-
-# --- INICIO DEL HEADER EJECUTIVO (LIMPIO Y PROFESIONAL) ---
+# --- CONFIGURACIÓN DE ESTILO GLOBAL (FONDO DE TODA LA PÁGINA) ---
 st.markdown("""
     <style>
-        /* Estilo del Contenedor del Título */
-        .dashboard-header {
-            padding: 2rem 1rem;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); /* Degradado Azul Oscuro Corporativo */
-            border-radius: 12px;
-            border-left: 5px solid #3b82f6; /* Línea de acento azul brillante */
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-        
-        /* Título Principal */
-        .dashboard-title {
-            color: #ffffff;
-            font-family: 'Helvetica Neue', sans-serif;
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin: 0;
-            letter-spacing: -0.5px;
-        }
-        
-        /* Subtítulo */
-        .dashboard-subtitle {
-            color: #94a3b8; /* Gris azulado suave */
-            font-family: 'Helvetica Neue', sans-serif;
-            font-size: 1.1rem;
-            margin-top: 0.5rem;
-            font-weight: 400;
-        }
-    </style>
-
-    <div class="dashboard-header">
-        <h1 class="dashboard-title">ASISTENTE CONTABLE PRO</h1>
-        <div class="dashboard-subtitle">Plataforma de Inteligencia Financiera Corporativa • Panel de Control</div>
-    </div>
-    """, unsafe_allow_html=True)
-# --- FIN DEL HEADER EJECUTIVO ---
-import numpy as np # Necesario para datos simulados
-import pandas as pd # Necesario para la tabla
-
-# --- INICIO DEL BENTO GRID DASHBOARD ---
-
-# 1. ESTILOS CSS PERSONALIZADOS PARA LAS TARJETAS (BENTO BOXES)
-st.markdown("""
-    <style>
-        .bento-box {
-            background-color: #1e293b; /* Color de fondo tarjeta */
-            padding: 20px;
-            border-radius: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            height: 100%;
-            transition: transform 0.2s;
-        }
-        .bento-box:hover {
-            transform: translateY(-5px);
-            border-color: rgba(59, 130, 246, 0.5); /* Brillo azul al pasar mouse */
-        }
-        .metric-label {
-            color: #94a3b8;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 5px;
-        }
-        .metric-value {
+        /* 1. Fondo General de la App (El degradado que te gustó) */
+        .stApp {
+            background: radial-gradient(circle at 50% -20%, #1e293b, #0f172a);
             color: white;
-            font-size: 1.8rem;
-            font-weight: 700;
         }
-        .metric-delta {
-            font-size: 0.9rem;
-            font-weight: 600;
+        
+        /* 2. Ajuste para que los textos no se pierdan */
+        h1, h2, h3, p, span {
+            color: #f8fafc !important; /* Blanco hueso suave */
         }
-        .positive { color: #4ade80; } /* Verde */
-        .negative { color: #f87171; } /* Rojo */
+        
+        /* 3. Ocultar el menú estándar de Streamlit para que se vea más limpio */
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
     </style>
 """, unsafe_allow_html=True)
 
-# 2. FUNCIÓN PARA CREAR TARJETAS DE MÉTRICAS (HTML PURO)
-def metric_card(label, value, delta, is_positive=True):
-    delta_color = "positive" if is_positive else "negative"
-    arrow = "↑" if is_positive else "↓"
-    st.markdown(f"""
-    <div class="bento-box">
-        <div class="metric-label">{label}</div>
-        <div class="metric-value">{value}</div>
-        <div class="metric-delta {delta_color}">
-            {arrow} {delta} vs mes anterior
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-# 3. FILA SUPERIOR: 4 COLUMNAS DE KPIs
-st.markdown("### 📊 Métricas en Tiempo Real")
-col1, col2, col3, col4 = st.columns(4)
-
-with col1:
-    metric_card("Ingresos Totales", "$124,500", "12%", True)
-
-with col2:
-    metric_card("Gastos Operativos", "$42,300", "5%", False) # False = Rojo (Gasto subió)
-
-with col3:
-    metric_card("Beneficio Neto", "$82,200", "18%", True)
-
-with col4:
-    metric_card("Margen Ebitda", "34%", "2%", True)
-
-# Espacio separador
-st.markdown("---")
-
-# 4. FILA CENTRAL: GRÁFICOS (DIVISIÓN 2/3 y 1/3)
-c_chart_1, c_chart_2 = st.columns([2, 1]) # La columna izquierda es el doble de ancha
-
-with c_chart_1:
-    st.markdown("#### 📈 Tendencia de Flujo de Caja")
-    # Generamos datos falsos para el ejemplo visual
-    chart_data = pd.DataFrame(
-        np.random.randn(20, 3) + [10, 10, 10], # Datos aleatorios desplazados
-        columns=['Ingresos', 'Gastos', 'Beneficio'])
-    st.area_chart(chart_data, color=["#3b82f6", "#ef4444", "#10b981"]) # Azul, Rojo, Verde
-
-with c_chart_2:
-    st.markdown("#### 📉 Desglose de Gastos")
-    # Datos falsos de gastos
-    gastos_data = pd.DataFrame({
-        'Categoría': ['Nómina', 'Software', 'Oficina', 'Marketing'],
-        'Monto': [5000, 2000, 1500, 3000]
-    })
-    st.bar_chart(gastos_data.set_index('Categoría'), color="#6366f1")
-
-# 5. FILA INFERIOR: TABLA DE TRANSACCIONES (BENTO LARGO)
-st.markdown("### 📝 Últimas Transacciones")
-with st.container():
-    # Creamos un DataFrame de ejemplo elegante
-    df_transacciones = pd.DataFrame({
-        "ID": ["TRX-001", "TRX-002", "TRX-003", "TRX-004", "TRX-005"],
-        "Fecha": ["2024-05-01", "2024-05-02", "2024-05-02", "2024-05-03", "2024-05-03"],
-        "Concepto": ["Pago Cliente A", "Suscripción AWS", "Pago Cliente B", "Licencias Office", "Consultoría"],
-        "Estado": ["Completado", "Pendiente", "Completado", "Completado", "Revisión"],
-        "Monto": ["+$1,200", "-$300", "+$4,500", "-$150", "+$2,000"]
-    })
-    # Mostramos la tabla ocupando todo el ancho
-    st.dataframe(
-        df_transacciones, 
-        use_container_width=True, 
-        hide_index=True
-    )
-
-# --- FIN DEL BENTO GRID DASHBOARD ---
 # ==============================================================================
 # 2. GESTIÓN DE CONEXIONES EXTERNAS (BACKEND)
 # ==============================================================================
@@ -776,84 +637,108 @@ with st.sidebar:
 # ==============================================================================
 
 if menu == "Inicio / Dashboard":
-    # HERO HEADER NUEVO (High-Tech)
-    st.markdown(f"""
-    <div class='hero-impact-container'>
-        <div class='hero-impact-bg'></div>
-        <div class='hero-glow-bottom'></div>
-        <div style="z-index: 2; padding: 20px;">
-            <h1 class='hero-impact-title'>ASISTENTE CONTABLE PRO</h1>
-            <div class='hero-impact-subtitle'>{saludo}. Plataforma de Inteligencia Financiera Corporativa.</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # SECCIÓN DE BIENVENIDA
-    st.markdown("""
-    <div style='text-align: center; margin-bottom: 40px;'>
-        <h3 style='color: #fff; font-size: 2rem; margin-bottom: 10px;'>🚀 La Evolución de la Contabilidad</h3>
-        <p style='font-size: 1.1rem; color: #94a3b8; max-width: 800px; margin: 0 auto;'>
-            Esta suite Enterprise ha sido diseñada para automatizar lo operativo y dejarte tiempo para lo estratégico. 
-            <strong>Precisión algorítmica, velocidad de procesamiento y análisis profundo con IA.</strong>
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # GRID DE HERRAMIENTAS
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        st.markdown("""<div class='info-card'><span class='info-icon'>⚖️</span><div class='info-title'>Auditoría Fiscal</div><div class='info-text'>Cruces automáticos DIAN vs Contabilidad para evitar sanciones.</div></div>""", unsafe_allow_html=True)
-    with c2:
-        st.markdown("""<div class='info-card'><span class='info-icon'>📧</span><div class='info-title'>Minería XML</div><div class='info-text'>Extracción masiva de datos fiscales directamente de la fuente.</div></div>""", unsafe_allow_html=True)
-    with c3:
-        st.markdown("""<div class='info-card'><span class='info-icon'>🤝</span><div class='info-title'>Conciliación IA</div><div class='info-text'>Matching bancario inteligente con lógica difusa.</div></div>""", unsafe_allow_html=True)
-    with c4:
-        st.markdown("""<div class='info-card'><span class='info-icon'>📈</span><div class='info-title'>Reportes NIIF</div><div class='info-text'>Redacción automática experta de notas a estados financieros.</div></div>""", unsafe_allow_html=True)
-
-    # --- INICIO SECCIÓN PLANES Y PRECIOS (OFERTA LANZAMIENTO) ---
-    st.markdown("---") # Línea separadora
-    st.markdown("### 💎 Planes de Suscripción")
-
+    # 1. HEADER EJECUTIVO (Ahora solo aparece en Inicio)
     st.markdown("""
     <style>
-        /* Estilos Tarjetas de Precio */
-        .pricing-wrapper { display: flex; gap: 20px; flex-wrap: wrap; }
-        .pricing-card {
-            background-color: #0f172a;
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px; padding: 2rem; flex: 1; min-width: 300px;
-            transition: transform 0.3s ease;
+        .dashboard-header {
+            padding: 2rem 1rem;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            border-radius: 12px;
+            border-left: 5px solid #3b82f6;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
+        .dashboard-title {
+            color: #ffffff; font-family: 'Helvetica Neue', sans-serif;
+            font-size: 2.5rem; font-weight: 700; margin: 0; letter-spacing: -0.5px;
+        }
+        .dashboard-subtitle {
+            color: #94a3b8; font-family: 'Helvetica Neue', sans-serif;
+            font-size: 1.1rem; margin-top: 0.5rem; font-weight: 400;
+        }
+    </style>
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">ASISTENTE CONTABLE PRO</h1>
+        <div class="dashboard-subtitle">Plataforma de Inteligencia Financiera Corporativa • Panel de Control</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 2. BENTO GRID DASHBOARD (Métricas y Gráficos)
+    st.markdown("""
+    <style>
+        .bento-box {
+            background-color: #1e293b; padding: 20px; border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); height: 100%; transition: transform 0.2s;
+        }
+        .bento-box:hover { transform: translateY(-5px); border-color: rgba(59, 130, 246, 0.5); }
+        .metric-label { color: #94a3b8; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+        .metric-value { color: white; font-size: 1.8rem; font-weight: 700; }
+        .metric-delta { font-size: 0.9rem; font-weight: 600; }
+        .positive { color: #4ade80; } .negative { color: #f87171; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    def metric_card(label, value, delta, is_positive=True):
+        delta_color = "positive" if is_positive else "negative"
+        arrow = "↑" if is_positive else "↓"
+        st.markdown(f"""
+        <div class="bento-box">
+            <div class="metric-label">{label}</div>
+            <div class="metric-value">{value}</div>
+            <div class="metric-delta {delta_color}">{arrow} {delta} vs mes anterior</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("### 📊 Métricas en Tiempo Real")
+    col1, col2, col3, col4 = st.columns(4)
+    with col1: metric_card("Ingresos Totales", "$124,500", "12%", True)
+    with col2: metric_card("Gastos Operativos", "$42,300", "5%", False)
+    with col3: metric_card("Beneficio Neto", "$82,200", "18%", True)
+    with col4: metric_card("Margen Ebitda", "34%", "2%", True)
+
+    st.markdown("---")
+
+    c_chart_1, c_chart_2 = st.columns([2, 1])
+    with c_chart_1:
+        st.markdown("#### 📈 Tendencia de Flujo de Caja")
+        chart_data = pd.DataFrame(np.random.randn(20, 3) + [10, 10, 10], columns=['Ingresos', 'Gastos', 'Beneficio'])
+        st.area_chart(chart_data, color=["#3b82f6", "#ef4444", "#10b981"])
+    with c_chart_2:
+        st.markdown("#### 📉 Desglose de Gastos")
+        gastos_data = pd.DataFrame({'Categoría': ['Nómina', 'Software', 'Oficina', 'Marketing'], 'Monto': [5000, 2000, 1500, 3000]})
+        st.bar_chart(gastos_data.set_index('Categoría'), color="#6366f1")
+
+    st.markdown("### 📝 Últimas Transacciones")
+    df_transacciones = pd.DataFrame({
+        "ID": ["TRX-001", "TRX-002", "TRX-003", "TRX-004", "TRX-005"],
+        "Fecha": ["2024-05-01", "2024-05-02", "2024-05-02", "2024-05-03", "2024-05-03"],
+        "Concepto": ["Pago Cliente A", "Suscripción AWS", "Pago Cliente B", "Licencias Office", "Consultoría"],
+        "Estado": ["Completado", "Pendiente", "Completado", "Completado", "Revisión"],
+        "Monto": ["+$1,200", "-$300", "+$4,500", "-$150", "+$2,000"]
+    })
+    st.dataframe(df_transacciones, use_container_width=True, hide_index=True)
+
+    # 3. SECCIÓN PLANES Y PRECIOS (OFERTA LANZAMIENTO)
+    st.markdown("---")
+    st.markdown("### 💎 Planes de Suscripción")
+    
+    st.markdown("""
+    <style>
+        .pricing-card { background-color: #0f172a; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 2rem; flex: 1; transition: transform 0.3s ease; }
         .pricing-card:hover { transform: translateY(-5px); border-color: #3b82f6; }
-        .pricing-card.pro {
-            background: linear-gradient(145deg, #0f172a 0%, #1e3a8a 100%);
-            border: 1px solid #3b82f6; box-shadow: 0 0 30px rgba(59, 130, 246, 0.15);
-            position: relative;
-        }
-        .pro-badge {
-            position: absolute; top: -12px; right: 20px; background: #ea580c; /* Naranja Oferta */
-            color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold;
-            box-shadow: 0 2px 10px rgba(234, 88, 12, 0.5);
-        }
+        .pricing-card.pro { background: linear-gradient(145deg, #0f172a 0%, #1e3a8a 100%); border: 1px solid #3b82f6; box-shadow: 0 0 30px rgba(59, 130, 246, 0.15); position: relative; }
+        .pro-badge { position: absolute; top: -12px; right: 20px; background: #ea580c; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
         .price-tag { font-size: 2.5rem; font-weight: 800; color: white; margin: 5px 0; }
         .price-tag span { font-size: 1rem; color: #94a3b8; font-weight: 400; }
-        
-        .price-old {
-            font-size: 1.1rem; color: #64748b; text-decoration: line-through; font-weight: 500;
-            margin-bottom: -5px; display: block;
-        }
-        
+        .price-old { font-size: 1.1rem; color: #64748b; text-decoration: line-through; }
         .features-ul { list-style: none; padding: 0; margin: 20px 0; color: #cbd5e1; }
         .features-ul li { margin-bottom: 10px; display: flex; align-items: center; }
-        .check { color: #4ade80; margin-right: 10px; }
-        .cross { color: #ef4444; margin-right: 10px; }
-        .dimmed { color: #64748b; text-decoration: line-through; }
+        .check { color: #4ade80; margin-right: 10px; } .cross { color: #ef4444; margin-right: 10px; } .dimmed { color: #64748b; text-decoration: line-through; }
     </style>
     """, unsafe_allow_html=True)
 
     col_p1, col_p2 = st.columns(2)
-
-    # PLAN GRATIS
     with col_p1:
         st.markdown("""
         <div class="pricing-card">
@@ -865,11 +750,9 @@ if menu == "Inicio / Dashboard":
                 <li class="dimmed"><span class="cross">✕</span> Agente Tributario</li>
                 <li class="dimmed"><span class="cross">✕</span> Conexión Bancaria</li>
             </ul>
-        </div>
-        """, unsafe_allow_html=True)
+        </div>""", unsafe_allow_html=True)
         st.button("Continuar Gratis", key="btn_free", use_container_width=True)
 
-    # PLAN PRO (OFERTA LANZAMIENTO)
     with col_p2:
         st.markdown("""
         <div class="pricing-card pro">
@@ -882,12 +765,9 @@ if menu == "Inicio / Dashboard":
                 <li><span class="check">✓</span> Predicción de Impuestos</li>
                 <li><span class="check">✓</span> Soporte Prioritario</li>
             </ul>
-        </div>
-        """, unsafe_allow_html=True)
+        </div>""", unsafe_allow_html=True)
         st.button("🔥 Aprovechar Oferta PRO", key="btn_pro", type="primary", use_container_width=True)
-    # --- FIN PLANES ---
 
-    # Verificación de conexión
     if not db_conectada:
         st.warning("⚠️ La base de datos no está conectada. Revisa el Google Sheet 'DB_Alcontador'.")
 
@@ -1287,135 +1167,7 @@ else:
     # --------------------------------------------------------------------------
     # MÓDULO: COSTEO DE NÓMINA REAL (EL QUE TÚ BUSCAS 💰)
     # --------------------------------------------------------------------------
-    elif menu == "Costeo de Nómina Real":
-        st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/3029/3029337.png' class='pro-module-icon'><div class='pro-module-title'><h2>Calculadora de Nómina Real (Detallada)</h2></div></div>""", unsafe_allow_html=True)
-        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Ver cuánto le cuesta realmente un empleado a la empresa.<br><strong>Desglose:</strong> Salario, Auxilio, Salud, Pensión, ARL, Parafiscales, Primas, Cesantías, Intereses y Vacaciones.</div>""", unsafe_allow_html=True)
-        
-        uploaded_file = st.file_uploader("Cargar Listado Personal (.xlsx)", type=['xlsx'], key="upl_calc_real")
-        
-        if uploaded_file:
-            df = pd.read_excel(uploaded_file)
-            
-            # 1. AUTO-DETECCIÓN DE COLUMNAS
-            cols_todas = df.columns.tolist()
-            
-            def get_idx(kws): 
-                cols_str = [str(c).lower().strip() for c in cols_todas]
-                for i, c in enumerate(cols_str):
-                    for k in kws: 
-                        if k in c: return i
-                return 0
-            
-            idx_n = get_idx(['nombre', 'empleado'])
-            idx_s = get_idx(['salario', 'sueldo', 'basico'])
-            idx_a = get_idx(['auxilio', 'transporte', 'tiene aux'])
-            idx_e = get_idx(['exonerada', 'exento', 'cree'])
-            idx_r = get_idx(['arl', 'riesgo'])
-
-            st.info("👇 Confirma que las columnas coincidan con tu Excel:")
-            
-            # Selectores manuales (por si falla la auto-detección)
-            c1, c2, c3, c4 = st.columns(4)
-            col_nom = c1.selectbox("Nombre", cols_todas, index=idx_n)
-            col_sal = c2.selectbox("Salario Básico", cols_todas, index=idx_s)
-            col_aux = c3.selectbox("¿Tiene Aux. Transporte? (SI/NO)", cols_todas, index=idx_a)
-            col_exo = c4.selectbox("¿Es Exonerada? (SI/NO)", cols_todas, index=idx_e)
-            
-            col_arl = st.selectbox("Nivel ARL (Columna con el número 1, 2, 3...)", cols_todas, index=idx_r)
-
-            if st.button("▶️ CALCULAR DESGLOSE FINANCIERO", type="primary"):
-                resultados = []
-                salario_minimo = 1300000 # Referencia 2024
-                aux_trans_legal = 162000 # Referencia 2024
-                
-                for i, row in df.iterrows():
-                    try:
-                        # --- LECTURA DE DATOS ---
-                        nom = str(row[col_nom])
-                        
-                        # Limpieza de Salario (quitar signos de pesos si los hay)
-                        try: sal = float(str(row[col_sal]).replace('$','').replace(',',''))
-                        except: sal = 0
-                        
-                        # Lógica Auxilio (Lee SI, S, YES)
-                        txt_aux = str(row[col_aux]).upper()
-                        tiene_aux_flag = 'SI' in txt_aux or 'S' == txt_aux
-                        # Solo paga auxilio si gana menos de 2 salarios mínimos Y la columna dice SI
-                        val_aux = aux_trans_legal if (tiene_aux_flag and sal <= (salario_minimo*2)) else 0
-                        
-                        # Lógica Exonerada (Lee SI, S, YES)
-                        txt_exo = str(row[col_exo]).upper()
-                        es_exo = 'SI' in txt_exo or 'S' == txt_exo
-                        
-                        # Nivel ARL
-                        try: niv_arl = int(float(row[col_arl]))
-                        except: niv_arl = 1
-                        
-                        # --- CÁLCULOS MATEMÁTICOS ---
-                        total_devengado = sal + val_aux
-                        
-                        # Deducciones al Empleado (Lo que se le resta)
-                        ded_salud = sal * 0.04
-                        ded_pension = sal * 0.04
-                        neto_pagar = total_devengado - ded_salud - ded_pension
-                        
-                        # Costos Empresa (Lo que paga el jefe adicional)
-                        # Seguridad Social
-                        pat_salud = 0 if es_exo else (sal * 0.085)
-                        pat_pension = sal * 0.12
-                        tarifas_arl = {1:0.00522, 2:0.01044, 3:0.02436, 4:0.04350, 5:0.06960}
-                        pat_arl = sal * tarifas_arl.get(niv_arl, 0.00522)
-                        
-                        # Parafiscales
-                        pat_sena = 0 if es_exo else (sal * 0.02)
-                        pat_icbf = 0 if es_exo else (sal * 0.03)
-                        pat_caja = sal * 0.04
-                        
-                        # Prestaciones Sociales (Provisiones Mensuales)
-                        prov_prima = total_devengado * 0.0833
-                        prov_cesantias = total_devengado * 0.0833
-                        prov_int_ces = prov_cesantias * 0.12
-                        prov_vacac = sal * 0.0417 # Vacaciones es solo sobre salario base
-                        
-                        # TOTAL COSTO EMPRESA
-                        costo_total = total_devengado + pat_salud + pat_pension + pat_arl + pat_sena + pat_icbf + pat_caja + prov_prima + prov_cesantias + prov_int_ces + prov_vacac
-                        
-                        resultados.append({
-                            "Empleado": nom,
-                            "Salario Base": f"${sal:,.0f}",
-                            "Aux. Transp": f"${val_aux:,.0f}",
-                            "TOTAL DEVENGADO": f"${total_devengado:,.0f}",
-                            "Salud (4%)": f"-${ded_salud:,.0f}",
-                            "Pensión (4%)": f"-${ded_pension:,.0f}",
-                            "NETO A PAGAR (Bolsillo)": f"${neto_pagar:,.0f}",
-                            " | ": "|",
-                            "Costo Salud (8.5%)": f"${pat_salud:,.0f}",
-                            "Costo Pensión (12%)": f"${pat_pension:,.0f}",
-                            "ARL": f"${pat_arl:,.0f}",
-                            "Parafiscales (Caja/Sena/ICBF)": f"${(pat_caja+pat_sena+pat_icbf):,.0f}",
-                            "Prima": f"${prov_prima:,.0f}",
-                            "Cesantías + Int": f"${(prov_cesantias+prov_int_ces):,.0f}",
-                            "Vacaciones": f"${prov_vacac:,.0f}",
-                            "COSTO TOTAL EMPRESA": f"${costo_total:,.0f}"
-                        })
-                    except Exception as e:
-                        st.error(f"Error calculando fila: {e}")
-
-                df_fin = pd.DataFrame(resultados)
-                
-                st.divider()
-                st.success("✅ ¡Cálculo Completo! Desplázate a la derecha en la tabla para ver todos los costos.")
-                st.dataframe(df_fin, use_container_width=True)
-                
-                # Descarga Limpia (Sin formatos de texto para que sume en Excel)
-                # Creamos una copia numérica para el Excel
-                df_export = pd.DataFrame(resultados) # Aquí podrías limpiar los signos $ si quisieras exportar numérico puro
-                
-                buffer = io.BytesIO()
-                with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-                    df_fin.to_excel(writer, index=False)
-                    
-                st.download_button("📥 DESCARGAR SÁBANA DE COSTOS (.xlsx)", buffer.getvalue(), "Nomina_Detallada_Completa.xlsx")
+    
     elif menu == "Proyección de Tesorería":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/5806/5806289.png' class='pro-module-icon'><div class='pro-module-title'><h2>Radar de Liquidez & Flujo de Caja</h2></div></div>""", unsafe_allow_html=True)
         st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Visualizar la salud financiera futura cruzando CxC y CxP.</div>""", unsafe_allow_html=True)
