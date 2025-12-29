@@ -483,7 +483,7 @@ def consultar_ia_gemini(prompt):
     """
     try:
         # AQUÍ ESTÁ EL CAMBIO: Usamos 'pro' para razonamiento avanzado
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-pro')
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
@@ -499,7 +499,7 @@ def ocr_factura(imagen):
     """
     try:
         # MANTENEMOS 'flash' AQUÍ para velocidad
-        model = genai.GenerativeModel('models/gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         prompt = """Extrae datos JSON estricto: {"fecha": "YYYY-MM-DD", "nit": "num", "proveedor": "txt", "concepto": "txt", "base": num, "iva": num, "total": num}"""
         response = model.generate_content([prompt, imagen])
         return json.loads(response.text.replace("```json", "").replace("```", "").strip())
