@@ -483,9 +483,9 @@ def consultar_ia_gemini(prompt):
     Ideal para: Narrador Financiero, Análisis de Tesorería y Auditoría NIIF.
     """
     try:
-        # Intentamos usar la versión estable '001' si la corta falla
+        # Intentamos usar la versión '2.5-flash' disponible
         try:
-            model = genai.GenerativeModel('gemini-1.5-flash-001')
+            model = genai.GenerativeModel('gemini-2.5-flash')
             response = model.generate_content(prompt)
             return response.text
         except Exception as e:
@@ -508,12 +508,12 @@ def ocr_factura(imagen):
     """
     try:
         # Usamos versión estable
-        model = genai.GenerativeModel('gemini-1.5-flash-001')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         prompt = """Extrae datos JSON estricto: {"fecha": "YYYY-MM-DD", "nit": "num", "proveedor": "txt", "concepto": "txt", "base": num, "iva": num, "total": num}"""
         response = model.generate_content([prompt, imagen])
         return json.loads(response.text.replace("```json", "").replace("```", "").strip())
     except Exception as e:
-        # En OCR fallamos silenciosamente o retornamos None como antes, 
+        # En OCR fallamos silenciosamente o retornamos None como antes,
         # pero podríamos loguear el error si tuviéramos un sistema de logs.
         print(f"Error OCR: {e}")
         return None
@@ -599,7 +599,7 @@ with st.sidebar:
         user_plan_safe = html.escape(str(st.session_state['user_plan']))
         estado_ia_safe = html.escape(str(estado_ia))
         status_db_safe = html.escape(str(status_db))
-        
+
         st.markdown(f"""
         <div style='background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; border-left: 5px solid {plan_bg}; margin-bottom: 20px;'>
             <small style='color: #cbd5e1;'>Bienvenido,</small><br>
@@ -1065,18 +1065,18 @@ else:
                 # Optimización: Uso de apply en lugar de iterar con to_dict('records')
                 # Pre-calculamos valores seguros numéricos
                 df['val_check_safe'] = pd.to_numeric(df[cv], errors='coerce').fillna(0)
-                
+
                 # Definimos una función wrapper para usar en apply
                 def wrapper_analisis(row):
                     return analizar_gasto_fila(row, cv, cm, cc)
 
                 # Ejecutamos análisis vectorizado (row-wise pero optimizado por pandas)
                 analisis_result = df.apply(wrapper_analisis, axis=1)
-                
+
                 # Expandimos los resultados
                 df['Hallazgo_Temp'] = analisis_result.apply(lambda x: x[0])
                 df['Riesgo_Temp'] = analisis_result.apply(lambda x: x[1])
-                
+
                 # Filtramos resultados
                 df_riesgos = df[df['Riesgo_Temp'] != "BAJO"].copy()
                 
@@ -1156,23 +1156,23 @@ else:
 
             if st.button("▶️ ESCANEAR RIESGO UGPP", type="primary"):
                 # Optimización: Vectorización con Pandas
-                
+
                 # Conversión numérica segura
                 dn['salario_safe'] = pd.to_numeric(dn[cs], errors='coerce').fillna(0)
                 if cns == "< No Aplica / Es $0 >":
                     dn['no_salarial_safe'] = 0.0
                 else:
                     dn['no_salarial_safe'] = pd.to_numeric(dn[cns], errors='coerce').fillna(0)
-                
+
                 # Cálculos vectorizados
                 dn['total_rem'] = dn['salario_safe'] + dn['no_salarial_safe']
                 dn['limite_40'] = dn['total_rem'] * 0.40
                 dn['exceso'] = dn['no_salarial_safe'] - dn['limite_40']
                 # Si no hay exceso (negativo), ponemos 0
                 dn['exceso'] = dn['exceso'].clip(lower=0)
-                
+
                 dn['estado'] = dn['exceso'].apply(lambda x: "RIESGO ALTO" if x > 0 else "OK")
-                
+
                 # Construcción del DataFrame de resultados
                 df_res = pd.DataFrame({
                     "Empleado": dn[cn].astype(str),
@@ -1268,7 +1268,7 @@ else:
                         # Calculamos
                         # CORRECCIÓN BUG: La función retorna 4 valores, no 2. Desempaquetamos correctamente.
                         costo_total, total_seg, total_prest, paraf = calcular_costo_empresa_fila(r, cs, ca, col_arl, ce)
-                        
+
                         # Agrupamos para visualización
                         total_aportes_prestaciones = total_seg + total_prest + paraf
                         
