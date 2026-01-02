@@ -194,7 +194,7 @@ def login_section():
             flow = google_auth_oauthlib.flow.Flow.from_client_config(
                 client_config,
                 scopes=['openid', 'https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile'],
-                redirect_uri=st.secrets["google"]["redirect_uri"]
+                redirect_uri=st.secrets["google"]["redirect_uri"] # Enforce exact redirect_uri
             )
 
             # Check for authorization code in URL
@@ -478,7 +478,7 @@ def calcular_costo_empresa_fila(row, col_salario, col_aux, col_arl, col_exo):
     
     # 3. PRESTACIONES SOCIALES (Prima, Cesantías, Int, Vacaciones)
     # Factor 21.83% sobre salario + auxilio
-    total_prestaciones = base_prest * 0.2183 
+    total_prestaciones = base_prest * 0.2183
     
     # TOTAL COSTO
     costo_total = base_prest + total_seg_social + paraf + total_prestaciones
