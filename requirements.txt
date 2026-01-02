@@ -7,3 +7,5 @@ gspread
 oauth2client
 Pillow
 numpy
+google-auth-oauthlib
+google-api-python-client

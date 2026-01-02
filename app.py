@@ -11,217 +11,312 @@ from datetime import datetime, timedelta
 import xml.etree.ElementTree as ET
 import os
 import html
+import google_auth_oauthlib.flow
+from googleapiclient.discovery import build
 
-# --- CONFIGURACIÓN DE ESTILO GLOBAL (FONDO DE TODA LA PÁGINA) ---
+# --- CONFIGURACIÓN DE ESTILO GLOBAL (ULTRA-TECH THEME) ---
 st.markdown("""
     <style>
         /* --- FONTS --- */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Manrope:wght@400;600;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;600&family=Orbitron:wght@900&display=swap');
 
         /* --- VARIABLES --- */
         :root {
-            --bg-deep: #020617;
-            --bg-slate: #0f172a;
-            --glass-surface: rgba(30, 41, 59, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --primary-indigo: #6366f1;
-            --secondary-blue: #3b82f6;
-            --success-emerald: #10b981;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --shadow-soft: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
+            --bg-void: #020617;
+            --bg-deep: #0f172a;
+            --bg-night: #1e1b4b;
+            --neon-cyan: #06b6d4;
+            --neon-purple: #8b5cf6;
+            --glass-heavy: rgba(17, 24, 39, 0.7);
+            --border-tech: rgba(56, 189, 248, 0.3);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --shadow-glow: 0 0 15px rgba(6, 182, 212, 0.3);
         }
 
-        /* --- GLOBAL RESET & BACKGROUND --- */
+        /* --- LIVING BACKGROUND --- */
         .stApp {
-            background: linear-gradient(to bottom, #0f172a, #020617) !important;
+            background: linear-gradient(-45deg, #020617, #0f172a, #1e1b4b, #0f172a) !important;
+            background-size: 400% 400% !important;
+            animation: gradientBG 15s ease infinite;
             font-family: 'Inter', sans-serif;
-            color: var(--text-muted);
+            color: var(--text-secondary);
         }
 
-        /* Noise Overlay */
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Tech Grid Overlay */
         .stApp::before {
             content: "";
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+            background-image:
+                linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
             pointer-events: none;
-            z-index: 0;
+            z-index: -1;
+            mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
         }
 
+        /* --- TYPOGRAPHY --- */
         h1, h2, h3, h4, h5, h6 {
-            font-family: 'Manrope', sans-serif;
+            font-family: 'Rajdhani', sans-serif !important;
+            text-transform: uppercase;
+            letter-spacing: 1px;
             color: white !important;
-            letter-spacing: -0.5px;
-            font-weight: 800;
         }
 
-        p, span, div, label {
-            color: var(--text-muted);
+        /* --- GLASSMORPHISM 2.0 --- */
+        div[data-testid="stExpander"], .glass-card, .pricing-card, .pro-module-header {
+            background: var(--glass-heavy) !important;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-tech) !important;
+            border-radius: 4px !important; /* Tech look is sharper */
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* --- GLASSMORPHISM CARD SYSTEM --- */
-        .glass-card {
-            background: var(--glass-surface);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            box-shadow: var(--shadow-soft);
-            padding: 24px;
+        div[data-testid="stExpander"]:hover, .glass-card:hover, .pricing-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow);
+            border-color: var(--neon-cyan) !important;
         }
 
-        /* --- SIDEBAR --- */
+        /* --- WIDGET STYLING --- */
+        .stTextInput > div > div > input,
+        .stNumberInput > div > div > input,
+        .stSelectbox > div > div > div {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+            color: white !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 4px;
+            font-family: 'Rajdhani', sans-serif;
+        }
+
+        .stTextInput > div > div > input:focus,
+        .stNumberInput > div > div > input:focus,
+        .stSelectbox > div > div > div:focus {
+            border-color: var(--neon-cyan) !important;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
+        }
+
+        /* --- DATAFRAMES - TERMINAL STYLE --- */
+        [data-testid="stDataFrame"] {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-tech);
+            font-family: 'Courier New', monospace;
+            border-radius: 4px;
+        }
+
+        [data-testid="stDataFrame"] table {
+            color: var(--neon-cyan) !important;
+        }
+
+        [data-testid="stDataFrame"] thead tr th {
+             background-color: rgba(6, 182, 212, 0.1) !important;
+             color: white !important;
+             font-family: 'Rajdhani', sans-serif !important;
+             text-transform: uppercase;
+        }
+
+        /* --- SIDEBAR - CONTROL DOCK --- */
         [data-testid="stSidebar"] {
-            background-color: #050b14 !important;
-            border-right: 1px solid rgba(255,255,255,0.05);
+            background: rgba(2, 6, 23, 0.95) !important;
+            border-right: 1px solid var(--border-tech);
         }
 
-        /* Sidebar Nav Tabs */
         .stRadio > div[role="radiogroup"] > label {
             background: transparent !important;
             border: none;
-            padding: 12px 16px !important;
+            padding: 10px 15px !important;
             color: #64748b !important;
-            border-left: 3px solid transparent;
+            border-left: 2px solid transparent;
+            font-family: 'Rajdhani', sans-serif;
+            letter-spacing: 0.5px;
             transition: all 0.2s ease;
-            font-weight: 500;
         }
 
         .stRadio > div[role="radiogroup"] > label:hover {
-            color: white !important;
-            background: rgba(255,255,255,0.03) !important;
+             color: white !important;
+             background: rgba(6, 182, 212, 0.05) !important;
+             text-shadow: 0 0 5px rgba(6, 182, 212, 0.5);
         }
 
         .stRadio > div[role="radiogroup"] > label[data-checked="true"] {
-            background: linear-gradient(90deg, rgba(99, 102, 241, 0.15), transparent) !important;
-            border-left: 3px solid #00f3ff; /* Neon Cyan Indicator */
+            background: linear-gradient(90deg, rgba(6, 182, 212, 0.1), transparent) !important;
+            border-left: 2px solid var(--neon-cyan);
             color: white !important;
             font-weight: 700;
-        }
-
-        /* --- INPUTS & WIDGETS --- */
-        .stTextInput > div > div > input,
-        .stSelectbox > div > div > div,
-        .stNumberInput > div > div > input {
-            background-color: rgba(15, 23, 42, 0.8) !important;
-            border: 1px solid rgba(255,255,255,0.1) !important;
-            color: white !important;
-            border-radius: 8px;
-        }
-        
-        .stTextInput > div > div > input:focus,
-        .stSelectbox > div > div > div:focus {
-             border-color: var(--primary-indigo) !important;
-             box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+            text-shadow: 0 0 8px var(--neon-cyan);
         }
 
         /* --- BUTTONS --- */
         .stButton > button {
-            background: linear-gradient(135deg, var(--primary-indigo) 0%, var(--secondary-blue) 100%) !important;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple)) !important;
+            border: none !important;
             color: white !important;
-            border: none;
-            padding: 0.6rem 1.2rem;
-            border-radius: 8px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            font-family: 'Rajdhani', sans-serif !important;
+            font-weight: 700 !important;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 2px !important;
+            /* Tech Shape */
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
             transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
 
         .stButton > button:hover {
+            filter: brightness(1.2);
+            text-shadow: 0 0 8px white;
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.5);
         }
-
-        /* --- DATAFRAMES --- */
-        [data-testid="stDataFrame"] {
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        /* --- MODULE HEADER SPECIFIC --- */
-        .pro-module-header {
-            display: flex;
-            align-items: center;
-            background: linear-gradient(90deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0) 100%);
-            padding: 24px;
-            border-radius: 12px;
-            border-left: 4px solid var(--primary-indigo);
-            border: 1px solid var(--glass-border);
-            border-left-width: 4px;
-            backdrop-filter: blur(12px);
-            margin-bottom: 24px;
-        }
-
-        .pro-module-title h2 {
-            margin: 0;
-            font-size: 1.8rem;
-            color: white !important;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
-        }
-
-        /* --- METRICS --- */
-        [data-testid="stMetricValue"] {
-             font-family: 'Manrope', sans-serif;
-             font-weight: 800;
-             color: #f8fafc !important;
-             text-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
-        }
-        [data-testid="stMetricLabel"] {
-             color: #94a3b8 !important;
-             font-size: 0.85rem;
-             letter-spacing: 1px;
-             text-transform: uppercase;
-        }
-        
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #020617; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
 
         /* Hide Streamlit Defaults */
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
         header {visibility: hidden;}
 
-        /* --- MISSING COMPONENTS --- */
+        /* --- METRICS --- */
+        [data-testid="stMetricValue"] {
+             font-family: 'Orbitron', sans-serif;
+             font-weight: 900;
+             color: #f8fafc !important;
+             text-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+        }
+        [data-testid="stMetricLabel"] {
+             color: var(--neon-cyan) !important;
+             font-family: 'Rajdhani', sans-serif;
+             font-size: 0.9rem;
+             letter-spacing: 1px;
+             text-transform: uppercase;
+        }
+
+        /* --- HELPERS --- */
         .pro-module-icon {
-            width: 50px; height: 50px; margin-right: 20px;
-            filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.5));
+            width: 40px; height: 40px; margin-right: 15px;
+            filter: drop-shadow(0 0 5px var(--neon-cyan));
         }
 
         .detail-box {
-            background: rgba(15, 23, 42, 0.4);
-            border-left: 3px solid var(--secondary-blue);
-            border-radius: 0 8px 8px 0;
-            padding: 16px;
-            margin-bottom: 24px;
-            color: var(--text-muted);
-            font-size: 0.95rem;
-            line-height: 1.6;
-        }
-        .detail-box strong { color: var(--text-main); font-weight: 600; }
-
-        .animated-module-bg {
-             animation: fadeIn 0.6s ease-out;
+            background: rgba(6, 182, 212, 0.05);
+            border-left: 2px solid var(--neon-cyan);
+            padding: 15px;
+            margin-bottom: 20px;
+            color: var(--text-secondary);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.1rem;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .detail-box strong { color: white; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 0px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--neon-cyan); }
+
     </style>
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 2. GESTIÓN DE CONEXIONES EXTERNAS (BACKEND)
+# 2. GESTIÓN DE CONEXIONES EXTERNAS (BACKEND) Y SEGURIDAD (OAUTH2)
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
-# A. CONEXIÓN A BASE DE DATOS (GOOGLE SHEETS)
+# A. AUTENTICACIÓN GOOGLE OAUTH2 (THE GATEKEEPER)
+# ------------------------------------------------------------------------------
+
+def login_section():
+    # Load secrets
+    if "google" not in st.secrets:
+        st.error("Missing Google Secrets configuration.")
+        st.stop()
+
+    client_config = {
+        "web": {
+            "client_id": st.secrets["google"]["client_id"],
+            "client_secret": st.secrets["google"]["client_secret"],
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "redirect_uris": [st.secrets["google"]["redirect_uri"]],
+        }
+    }
+
+    # Initialize Flow
+    flow = google_auth_oauthlib.flow.Flow.from_client_config(
+        client_config,
+        scopes=['openid', 'https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile'],
+        redirect_uri=st.secrets["google"]["redirect_uri"]
+    )
+
+    # Check for authorization code in URL
+    if "code" in st.query_params:
+        try:
+            code = st.query_params["code"]
+            flow.fetch_token(code=code)
+            credentials = flow.credentials
+
+            # Fetch User Info
+            user_info_service = build('oauth2', 'v2', credentials=credentials)
+            user_info = user_info_service.userinfo().get().execute()
+
+            # Store in Session State
+            st.session_state['logged_in'] = True
+            st.session_state['user_info'] = user_info
+            st.session_state['username'] = user_info.get('name')
+            st.session_state['user_email'] = user_info.get('email')
+            st.session_state['user_picture'] = user_info.get('picture')
+            st.session_state['user_plan'] = 'PRO' # Default to PRO for authorized users for now
+
+            # Clear query params to prevent re-execution
+            st.query_params.clear()
+            st.rerun()
+
+        except Exception as e:
+            st.error(f"Authentication Failed: {e}")
+    else:
+        # Show Login Screen
+        auth_url, _ = flow.authorization_url(prompt='consent')
+
+        st.markdown(f"""
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh;">
+            <h1 style="font-family: 'Orbitron'; font-size: 3rem; margin-bottom: 1rem; text-align: center;">SYSTEM ACCESS</h1>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem; font-family: 'Rajdhani'; font-size: 1.2rem;">AUTHENTICATION REQUIRED FOR ENTERPRISE SUITE</p>
+            <a href="{auth_url}" target="_self">
+                <button style="
+                    background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple));
+                    border: none;
+                    color: white;
+                    padding: 1rem 2rem;
+                    font-size: 1.2rem;
+                    font-family: 'Rajdhani';
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    cursor: pointer;
+                    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+                    box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+                    transition: all 0.3s ease;
+                ">
+                    🔐 INICIAR SESIÓN CON GOOGLE
+                </button>
+            </a>
+        </div>
+        """, unsafe_allow_html=True)
+        st.stop()
+
+# --- CHECK LOGIN STATUS ---
+if not st.session_state.get('logged_in', False):
+    login_section()
+
+# ------------------------------------------------------------------------------
+# B. CONEXIÓN A BASE DE DATOS (GOOGLE SHEETS)
 # ------------------------------------------------------------------------------
 # Esta sección maneja la conexión silenciosa para registrar logs de auditoría
 # sin que el usuario tenga que ver procesos técnicos en pantalla.
@@ -262,7 +357,7 @@ def registrar_log(usuario, accion, detalle):
 
 
 # ------------------------------------------------------------------------------
-# B. CONFIGURACIÓN DE INTELIGENCIA ARTIFICIAL (GEMINI)
+# C. CONFIGURACIÓN DE INTELIGENCIA ARTIFICIAL (GEMINI)
 # ------------------------------------------------------------------------------
 api_key_valida = False
 estado_ia = "🔴 Verificando..."
@@ -272,28 +367,14 @@ try:
         # Configuración de la API Key para servicios de IA Generativa
         GOOGLE_API_KEY = st.secrets["general"]["api_key_google"]
         genai.configure(api_key=GOOGLE_API_KEY)
-        estado_ia = "🟢 IA Activa (Enterprise)"
+        estado_ia = "🟢 IA Activa (System Online)"
         api_key_valida = True
     else:
-        estado_ia = "🔴 IA Desconectada (Falta Key)"
+        estado_ia = "🔴 IA Desconectada (Offline)"
         api_key_valida = False
 except Exception as e:
     estado_ia = "🔴 Error Configuración IA"
     api_key_valida = False
-
-
-# ------------------------------------------------------------------------------
-# C. GESTIÓN DE ESTADO DE SESIÓN (SESSION STATE)
-# ------------------------------------------------------------------------------
-# Inicializamos las variables globales que recordarán si el usuario está logueado
-if 'user_plan' not in st.session_state:
-    st.session_state['user_plan'] = 'FREE'
-
-if 'logged_in' not in st.session_state:
-    st.session_state['logged_in'] = False
-
-if 'username' not in st.session_state:
-    st.session_state['username'] = None
 
 
 # ==============================================================================
@@ -533,67 +614,47 @@ with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/2830/2830303.png", width=80)
     st.markdown("### 💼 Suite Financiera", unsafe_allow_html=True)
     
-    # --- LOGICA DE LOGIN Y REGISTRO ---
-    if not st.session_state.get('logged_in', False):
-        st.markdown("""
-        <div style="background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 8px; padding: 10px; margin-bottom: 15px;">
-            <span style="color: #fbbf24; font-weight: 600;">🔒 Modo Invitado</span>
-        </div>
-        """, unsafe_allow_html=True)
-        with st.expander("Ingresar a tu Cuenta", expanded=True):
-            u = st.text_input("Usuario (Prueba: admin)")
-            p = st.text_input("Contraseña (Prueba: admin)", type="password")
-            if st.button("Entrar"):
-                # VALIDACIÓN DE CREDENCIALES (SIMULADA + DB)
-                if u == "admin" and p == "admin": 
-                    st.session_state['user_plan'] = 'PRO'
-                    st.session_state['logged_in'] = True
-                    st.session_state['username'] = 'Admin'
-                    registrar_log("Admin", "Login", "Ingreso exitoso al sistema")
-                    st.rerun()
-                elif u == "cliente":
-                    st.session_state['user_plan'] = 'FREE'
-                    st.session_state['logged_in'] = True
-                    st.session_state['username'] = 'Cliente'
-                    registrar_log("Cliente", "Login", "Ingreso modo Free")
-                    st.rerun()
-                else:
-                    st.error("❌ Acceso Denegado")
-                    registrar_log(u, "Login Fallido", "Contraseña incorrecta")
+    # --- PANEL DE USUARIO LOGUEADO (SIDEBAR) ---
+    plan_bg = "#FFD700" if st.session_state['user_plan'] == 'PRO' else "#A9A9A9"
+    status_db = "🟢 DB Online" if db_conectada else "🔴 DB Offline"
     
-    # --- PANEL DE USUARIO LOGUEADO ---
-    else:
-        plan_bg = "#FFD700" if st.session_state['user_plan'] == 'PRO' else "#A9A9A9"
-        status_db = "🟢 DB Online" if db_conectada else "🔴 DB Offline"
-        
-        # Security: Escape variables injected into HTML
-        user_plan_safe = html.escape(str(st.session_state['user_plan']))
-        estado_ia_safe = html.escape(str(estado_ia))
-        status_db_safe = html.escape(str(status_db))
+    # Security: Escape variables injected into HTML
+    user_plan_safe = html.escape(str(st.session_state.get('user_plan', 'FREE')))
+    estado_ia_safe = html.escape(str(estado_ia))
+    status_db_safe = html.escape(str(status_db))
 
-        st.markdown(f"""
-        <div style='background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; border-left: 5px solid {plan_bg}; margin-bottom: 20px;'>
-            <small style='color: #cbd5e1;'>Bienvenido,</small><br>
-            <strong style='font-size: 1.1rem;'>Usuario {user_plan_safe}</strong><br>
-            <small>{estado_ia_safe}</small><br>
-            <small style='color: {'#22c55e' if db_conectada else '#ef4444'}; font-weight:bold;'>{status_db_safe}</small>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        if st.session_state['user_plan'] == 'FREE':
-            st.markdown("---")
-            st.write("🔓 Desbloquea todo el potencial")
-            # Enlace de pago WOMPI
-            st.link_button(
-                "💎 COMPRAR PLAN PRO", 
-                "https://checkout.wompi.co/l/TU_LINK_AQUI" 
-            )
-            st.caption("Una vez pagues, envía el comprobante.")
+    # User Info from Google
+    user_name = html.escape(str(st.session_state.get('username', 'Commander')))
+    user_pic = st.session_state.get('user_picture', '')
 
-        if st.button("Cerrar Sesión"):
-            registrar_log(st.session_state['username'], "Logout", "Salida del sistema")
-            st.session_state['logged_in'] = False
-            st.rerun()
+    # Show User Profile
+    if user_pic:
+        st.markdown(f"<img src='{user_pic}' style='width: 50px; height: 50px; border-radius: 50%; margin-bottom: 10px; border: 2px solid var(--neon-cyan);'>", unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div style='background: rgba(255,255,255,0.05); padding: 15px; border-radius: 4px; border-left: 3px solid {plan_bg}; margin-bottom: 20px;'>
+        <small style='color: #94a3b8; text-transform:uppercase;'>OPERATOR:</small><br>
+        <strong style='font-size: 1.1rem; color:white; font-family: "Rajdhani";'>{user_name}</strong><br>
+        <span style="font-size: 0.8rem; color: var(--neon-cyan);">{user_plan_safe} ACCESS</span><br>
+        <small style='color: #64748b;'>{estado_ia_safe}</small><br>
+        <small style='color: {'#06b6d4' if db_conectada else '#ef4444'}; font-weight:bold;'>{status_db_safe}</small>
+    </div>
+    """, unsafe_allow_html=True)
+
+    if st.session_state['user_plan'] == 'FREE':
+        st.markdown("---")
+        st.write("🔓 UNLOCK FULL SYSTEM")
+        # Enlace de pago WOMPI
+        st.link_button(
+            "💎 UPGRADE TO PRO",
+            "https://checkout.wompi.co/l/TU_LINK_AQUI"
+        )
+        st.caption("Access all enterprise modules.")
+
+    if st.button("TERMINATE SESSION"):
+        registrar_log(st.session_state.get('username', 'Unknown'), "Logout", "Salida del sistema")
+        st.session_state.clear()
+        st.rerun()
 
     st.markdown("---")
     
@@ -612,12 +673,9 @@ with st.sidebar:
         "Digitalización OCR"
     ]
     
-    if not st.session_state.get('logged_in', False):
-        menu = "Inicio / Dashboard"
-    else:
-        menu = st.radio("Módulos Operativos:", opciones_menu)
+    menu = st.radio("SYSTEM MODULES:", opciones_menu)
     
-    st.markdown("<br><center><small style='color: #64748b;'>v14.5 Enterprise</small></center>", unsafe_allow_html=True)
+    st.markdown("<br><center><small style='color: #64748b;'>v14.5 ENTERPRISE</small></center>", unsafe_allow_html=True)
 
 # ==============================================================================
 # ==============================================================================
@@ -626,98 +684,123 @@ with st.sidebar:
 # ==============================================================================
 
 if menu == "Inicio / Dashboard":
-    # 1. HEADER EJECUTIVO (Ahora solo aparece en Inicio)
+    # 1. HEADER EJECUTIVO (HERO SECTION - ULTRA TECH)
     st.markdown("""
-    <div class="glass-card" style="margin-bottom: 2rem; border-left: 4px solid var(--primary-indigo);">
-        <h1 style="margin:0; font-size: 2.8rem;">ASISTENTE CONTABLE PRO</h1>
-        <div style="color: var(--text-muted); font-size: 1.1rem; margin-top: 0.5rem; font-weight: 500;">
-            Plataforma de Inteligencia Financiera Corporativa <span style="color:var(--secondary-blue)">• Panel de Control</span>
+    <div class="hero-container">
+        <div class="hero-content">
+            <h1 class="hero-title">ASISTENTE CONTABLE <span style="color: var(--neon-cyan)">PRO</span></h1>
+            <div class="hero-subtitle">SYSTEM ONLINE • v14.5 ENTERPRISE • <span style="color: var(--neon-purple)">AI CORE ACTIVE</span></div>
         </div>
+        <div class="hero-decoration"></div>
     </div>
+    <style>
+        .hero-container {
+            position: relative;
+            padding: 3rem 2rem;
+            margin-bottom: 2rem;
+            background: linear-gradient(90deg, rgba(6, 182, 212, 0.1), transparent);
+            border-left: 4px solid var(--neon-cyan);
+            border-radius: 4px;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        .hero-title {
+            font-family: 'Orbitron', sans-serif !important;
+            font-size: 3.5rem !important;
+            margin: 0;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
+        }
+        .hero-subtitle {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+    </style>
     """, unsafe_allow_html=True)
 
     # 2. BENTO GRID DASHBOARD (Métricas y Gráficos)
-    # The CSS styles for .bento-box are already consolidated in the main style block under .glass-card,
-    # but we will use a specific inline style or just the class to leverage the glass effect.
 
     def metric_card(label, value, delta, is_positive=True):
         color = "#10b981" if is_positive else "#f43f5e"
         arrow = "↑" if is_positive else "↓"
         st.markdown(f"""
-        <div class="glass-card" style="height: 100%; display: flex; flex-direction: column; justify-content: center;">
-            <div style="color: var(--text-muted); font-size: 0.85rem; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px;">{label}</div>
-            <div style="font-size: 1.6rem; font-weight: 800; color: white; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{value}</div>
-            <div style="color: {color}; font-size: 0.95rem; font-weight: 600;">
-                {arrow} {delta} <span style="color: var(--text-muted); font-weight: 400;">vs mes anterior</span>
+        <div class="glass-card" style="height: 100%; display: flex; flex-direction: column; justify-content: center; padding: 20px;">
+            <div style="color: var(--neon-cyan); font-family: 'Rajdhani'; font-size: 0.9rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px;">{label}</div>
+            <div style="font-family: 'Orbitron'; font-size: 1.8rem; font-weight: 900; color: white; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 0 10px rgba(255,255,255,0.3);">{value}</div>
+            <div style="color: {color}; font-size: 1rem; font-weight: 600; font-family: 'Rajdhani';">
+                {arrow} {delta} <span style="color: var(--text-secondary); font-weight: 400;">vs last cycle</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-    st.markdown("### 📊 Métricas en Tiempo Real")
+    st.markdown("### 📊 LIVE METRICS STREAM")
     col1, col2, col3, col4 = st.columns(4)
-    with col1: metric_card("Ingresos Totales", "$124,500", "12%", True)
-    with col2: metric_card("Gastos Operativos", "$42,300", "5%", False)
-    with col3: metric_card("Beneficio Neto", "$82,200", "18%", True)
-    with col4: metric_card("Margen Ebitda", "34%", "2%", True)
+    with col1: metric_card("TOTAL INCOME", "$124,500", "12%", True)
+    with col2: metric_card("OP. EXPENSES", "$42,300", "5%", False)
+    with col3: metric_card("NET PROFIT", "$82,200", "18%", True)
+    with col4: metric_card("EBITDA MARGIN", "34%", "2%", True)
 
     st.markdown("---")
 
     c_chart_1, c_chart_2 = st.columns([2, 1])
     with c_chart_1:
-        st.markdown("#### 📈 Tendencia de Flujo de Caja")
-        chart_data = pd.DataFrame(np.random.randn(20, 3) + [10, 10, 10], columns=['Ingresos', 'Gastos', 'Beneficio'])
-        st.area_chart(chart_data, color=["#3b82f6", "#ef4444", "#10b981"])
+        st.markdown("#### 📈 CASH FLOW TREND")
+        chart_data = pd.DataFrame(np.random.randn(20, 3) + [10, 10, 10], columns=['Income', 'Expenses', 'Profit'])
+        st.area_chart(chart_data, color=["#06b6d4", "#ef4444", "#10b981"])
     with c_chart_2:
-        st.markdown("#### 📉 Desglose de Gastos")
-        gastos_data = pd.DataFrame({'Categoría': ['Nómina', 'Software', 'Oficina', 'Marketing'], 'Monto': [5000, 2000, 1500, 3000]})
-        st.bar_chart(gastos_data.set_index('Categoría'), color="#6366f1")
+        st.markdown("#### 📉 EXPENSE BREAKDOWN")
+        gastos_data = pd.DataFrame({'Category': ['Payroll', 'Software', 'Office', 'Ads'], 'Amount': [5000, 2000, 1500, 3000]})
+        st.bar_chart(gastos_data.set_index('Category'), color="#8b5cf6")
 
-    st.markdown("### 📝 Últimas Transacciones")
+    st.markdown("### 📝 LATEST TRANSACTIONS LOG")
     df_transacciones = pd.DataFrame({
         "ID": ["TRX-001", "TRX-002", "TRX-003", "TRX-004", "TRX-005"],
-        "Fecha": ["2024-05-01", "2024-05-02", "2024-05-02", "2024-05-03", "2024-05-03"],
-        "Concepto": ["Pago Cliente A", "Suscripción AWS", "Pago Cliente B", "Licencias Office", "Consultoría"],
-        "Estado": ["Completado", "Pendiente", "Completado", "Completado", "Revisión"],
-        "Monto": ["+$1,200", "-$300", "+$4,500", "-$150", "+$2,000"]
+        "DATE": ["2024-05-01", "2024-05-02", "2024-05-02", "2024-05-03", "2024-05-03"],
+        "CONCEPT": ["Payment Client A", "AWS Subscription", "Payment Client B", "Office Licenses", "Consulting"],
+        "STATUS": ["COMPLETED", "PENDING", "COMPLETED", "COMPLETED", "REVIEW"],
+        "AMOUNT": ["+$1,200", "-$300", "+$4,500", "-$150", "+$2,000"]
     })
     st.dataframe(df_transacciones, use_container_width=True, hide_index=True)
 
-    # 3. SECCIÓN PLANES Y PRECIOS (OFERTA LANZAMIENTO)
+    # 3. SECCIÓN PLANES Y PRECIOS
     st.markdown("---")
-    st.markdown("### 💎 Planes de Suscripción")
+    st.markdown("### 💎 UPGRADE ACCESS LEVEL")
     
-    # Pricing styles updated to use global vars and cleaner look
     st.markdown("""
     <style>
         .pricing-card {
-            background: var(--glass-surface);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
+            background: var(--glass-heavy);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-tech);
+            border-radius: 4px;
             padding: 2.5rem;
             height: 100%;
             display: flex; flex-direction: column;
-            transition: transform 0.3s ease, border-color 0.3s ease;
+            transition: all 0.3s ease;
         }
-        .pricing-card:hover { transform: translateY(-5px); border-color: var(--secondary-blue); }
+        .pricing-card:hover { transform: translateY(-5px); border-color: var(--neon-cyan); box-shadow: 0 0 20px rgba(6, 182, 212, 0.2); }
         .pricing-card.pro {
-            background: linear-gradient(145deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 58, 138, 0.4) 100%);
-            border: 1px solid var(--primary-indigo);
-            box-shadow: 0 0 30px rgba(99, 102, 241, 0.15);
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.9) 0%, rgba(6, 182, 212, 0.1) 100%);
+            border: 1px solid var(--neon-cyan);
+            box-shadow: 0 0 30px rgba(6, 182, 212, 0.1);
             position: relative;
         }
         .pro-badge {
             position: absolute; top: -12px; right: 24px;
-            background: linear-gradient(90deg, #f59e0b, #ea580c);
-            color: white; padding: 4px 12px; border-radius: 20px;
-            font-size: 0.75rem; font-weight: 800; letter-spacing: 0.5px;
+            background: var(--neon-cyan);
+            color: black; padding: 4px 12px; border-radius: 2px;
+            font-size: 0.75rem; font-weight: 800; letter-spacing: 1px; font-family: 'Rajdhani';
         }
-        .price-tag { font-size: 3rem; font-weight: 800; color: white; margin: 10px 0; }
-        .price-tag span { font-size: 1rem; color: var(--text-muted); font-weight: 500; }
-        .price-old { font-size: 1.1rem; color: #64748b; text-decoration: line-through; margin-top: 10px; }
-        .features-ul { list-style: none; padding: 0; margin: 24px 0; color: var(--text-muted); flex-grow: 1; }
-        .features-ul li { margin-bottom: 12px; display: flex; align-items: center; font-size: 0.95rem; }
-        .check { color: var(--success-emerald); margin-right: 12px; font-weight: bold; }
+        .price-tag { font-family: 'Orbitron'; font-size: 3rem; font-weight: 800; color: white; margin: 10px 0; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        .price-tag span { font-size: 1rem; color: var(--text-secondary); font-weight: 500; font-family: 'Rajdhani'; }
+        .price-old { font-size: 1.1rem; color: #64748b; text-decoration: line-through; margin-top: 10px; font-family: 'Rajdhani'; }
+        .features-ul { list-style: none; padding: 0; margin: 24px 0; color: var(--text-secondary); flex-grow: 1; font-family: 'Rajdhani'; font-size: 1.1rem; }
+        .features-ul li { margin-bottom: 12px; display: flex; align-items: center; }
+        .check { color: var(--neon-cyan); margin-right: 12px; font-weight: bold; text-shadow: 0 0 5px var(--neon-cyan); }
         .cross { color: #ef4444; margin-right: 12px; opacity: 0.7; }
         .dimmed { color: #475569; }
     </style>
@@ -727,41 +810,39 @@ if menu == "Inicio / Dashboard":
     with col_p1:
         st.markdown("""
         <div class="pricing-card">
-            <h3 style="color:white; margin:0; font-size: 1.4rem;">Plan Inicial</h3>
-            <div class="price-tag">$0 <span>COP/mes</span></div>
+            <h3 style="color:white; margin:0; font-size: 1.4rem;">STARTER LEVEL</h3>
+            <div class="price-tag">$0 <span>COP/mo</span></div>
             <ul class="features-ul">
-                <li><span class="check">✓</span> Dashboard Contable</li>
-                <li><span class="check">✓</span> 5 Consultas IA/día</li>
-                <li class="dimmed"><span class="cross">✕</span> Agente Tributario</li>
-                <li class="dimmed"><span class="cross">✕</span> Conexión Bancaria</li>
+                <li><span class="check">✓</span> Dashboard Access</li>
+                <li><span class="check">✓</span> 5 AI Queries/day</li>
+                <li class="dimmed"><span class="cross">✕</span> Tax Agent</li>
+                <li class="dimmed"><span class="cross">✕</span> Bank Connection</li>
             </ul>
         </div>""", unsafe_allow_html=True)
-        st.button("Continuar Gratis", key="btn_free", use_container_width=True)
+        st.button("CONTINUE FREE", key="btn_free", use_container_width=True)
 
     with col_p2:
         st.markdown("""
         <div class="pricing-card pro">
-            <div class="pro-badge">RECOMENDADO 🚀</div>
-            <h3 style="color:white; margin:0; font-size: 1.4rem;">Asistente PRO</h3>
-            <div class="price-old">$120.000</div> <div class="price-tag">$49.900 <span>COP/mes</span></div>
+            <div class="pro-badge">RECOMMENDED</div>
+            <h3 style="color:white; margin:0; font-size: 1.4rem;">PRO AGENT</h3>
+            <div class="price-old">$120.000</div> <div class="price-tag">$49.900 <span>COP/mo</span></div>
             <ul class="features-ul">
-                <li><span class="check">✓</span> <strong>Todo lo del Plan Inicial</strong></li>
-                <li><span class="check">✓</span> Consultas IA Ilimitadas</li>
-                <li><span class="check">✓</span> Predicción de Impuestos</li>
-                <li><span class="check">✓</span> Soporte Prioritario 24/7</li>
+                <li><span class="check">✓</span> <strong>Everything in Starter</strong></li>
+                <li><span class="check">✓</span> Unlimited AI Queries</li>
+                <li><span class="check">✓</span> Tax Prediction Model</li>
+                <li><span class="check">✓</span> 24/7 Priority Uplink</li>
             </ul>
         </div>""", unsafe_allow_html=True)
-        st.button("🔥 Actualizar a PRO", key="btn_pro", type="primary", use_container_width=True)
+        st.button("⚡ UPGRADE TO PRO", key="btn_pro", type="primary", use_container_width=True)
 
     if not db_conectada:
-        st.warning("⚠️ La base de datos no está conectada. Revisa el Google Sheet 'DB_Alcontador'.")
+        st.warning("⚠️ DATABASE OFFLINE. Check 'DB_Alcontador' connection.")
 
 # ---------------------------------------------------------
 # ELSE: CAMBIO DE MENÚ (ESTE SÍ TOCA EL BORDE IZQUIERDO)
 # ---------------------------------------------------------
 else:
-    st.markdown('<div class="animated-module-bg">', unsafe_allow_html=True)
-
     # 1. AUDITORÍA
     if menu == "Auditoría Cruce DIAN":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/921/921591.png' class='pro-module-icon'><div class='pro-module-title'><h2>Auditor de Exógena (Cruce DIAN)</h2></div></div>""", unsafe_allow_html=True)
@@ -1311,4 +1392,4 @@ else:
 # PIE DE PÁGINA
 # ==============================================================================
 st.markdown("---")
-st.markdown("<center><strong>Asistente Contable Pro</strong> | Enterprise Financial Suite</center>", unsafe_allow_html=True)
+st.markdown("<center><strong>Asistente Contable Pro</strong> | v14.5 Enterprise</center>", unsafe_allow_html=True)
