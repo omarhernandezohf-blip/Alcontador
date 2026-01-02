@@ -483,9 +483,9 @@ def consultar_ia_gemini(prompt):
     Ideal para: Narrador Financiero, Análisis de Tesorería y Auditoría NIIF.
     """
     try:
-        # Intentamos usar la versión estable '001' si la corta falla
+        # Intentamos usar la versión '2.5-flash' disponible
         try:
-            model = genai.GenerativeModel('gemini-1.5-flash-001')
+            model = genai.GenerativeModel('gemini-2.5-flash')
             response = model.generate_content(prompt)
             return response.text
         except Exception as e:
@@ -508,7 +508,7 @@ def ocr_factura(imagen):
     """
     try:
         # Usamos versión estable
-        model = genai.GenerativeModel('gemini-1.5-flash-001')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         prompt = """Extrae datos JSON estricto: {"fecha": "YYYY-MM-DD", "nit": "num", "proveedor": "txt", "concepto": "txt", "base": num, "iva": num, "total": num}"""
         response = model.generate_content([prompt, imagen])
         return json.loads(response.text.replace("```json", "").replace("```", "").strip())
