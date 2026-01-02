@@ -483,12 +483,20 @@ def consultar_ia_gemini(prompt):
     Ideal para: Narrador Financiero, Análisis de Tesorería y Auditoría NIIF.
     """
     try:
-        # AQUÍ ESTÁ EL CAMBIO: Usamos 'pro' para razonamiento avanzado
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        response = model.generate_content(prompt)
-        return response.text
+        # Intentamos usar la versión estable '001' si la corta falla
+        try:
+            model = genai.GenerativeModel('gemini-1.5-flash-001')
+            response = model.generate_content(prompt)
+            return response.text
+        except Exception as e:
+            # Fallback o diagnóstico
+            try:
+                available_models = [m.name for m in genai.list_models()]
+                return f"Error IA: {str(e)}. Modelos disponibles: {available_models}"
+            except:
+                return f"Error de conexión IA: {str(e)}"
     except Exception as e:
-        return f"Error de conexión IA: {str(e)}"
+        return f"Error crítico IA: {str(e)}"
 
 # ------------------------------------------------------------------------------
 # OCR DE FACTURAS (VELOCIDAD)
@@ -499,12 +507,15 @@ def ocr_factura(imagen):
     Ideal para: Procesar imágenes masivas sin hacer esperar al usuario.
     """
     try:
-        # MANTENEMOS 'flash' AQUÍ para velocidad
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # Usamos versión estable
+        model = genai.GenerativeModel('gemini-1.5-flash-001')
         prompt = """Extrae datos JSON estricto: {"fecha": "YYYY-MM-DD", "nit": "num", "proveedor": "txt", "concepto": "txt", "base": num, "iva": num, "total": num}"""
         response = model.generate_content([prompt, imagen])
         return json.loads(response.text.replace("```json", "").replace("```", "").strip())
-    except:
+    except Exception as e:
+        # En OCR fallamos silenciosamente o retornamos None como antes,
+        # pero podríamos loguear el error si tuviéramos un sistema de logs.
+        print(f"Error OCR: {e}")
         return None
 
 # ------------------------------------------------------------------------------
