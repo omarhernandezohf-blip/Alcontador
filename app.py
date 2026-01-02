@@ -180,13 +180,18 @@ def login_section():
 
     if google_secrets_ok:
         try:
+            # Clean secrets to prevent whitespace errors (common copy-paste issue)
+            c_id = st.secrets["google"]["client_id"].strip()
+            c_secret = st.secrets["google"]["client_secret"].strip()
+            c_redirect = st.secrets["google"]["redirect_uri"].strip()
+
             client_config = {
                 "web": {
-                    "client_id": st.secrets["google"]["client_id"],
-                    "client_secret": st.secrets["google"]["client_secret"],
+                    "client_id": c_id,
+                    "client_secret": c_secret,
                     "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                     "token_uri": "https://oauth2.googleapis.com/token",
-                    "redirect_uris": [st.secrets["google"]["redirect_uri"]],
+                    "redirect_uris": [c_redirect],
                 }
             }
 
@@ -194,7 +199,7 @@ def login_section():
             flow = google_auth_oauthlib.flow.Flow.from_client_config(
                 client_config,
                 scopes=['openid', 'https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile'],
-                redirect_uri=st.secrets["google"]["redirect_uri"]
+                redirect_uri=c_redirect
             )
 
             # Check for authorization code in URL
@@ -226,13 +231,16 @@ def login_section():
                 auth_url, _ = flow.authorization_url(prompt='consent')
         except Exception as e:
             # Silently fail Google Auth setup if configured incorrectly, allow Manual Fallback
+            # Log error for admin viewing if possible, but keep UI clean
+            print(f"Auth Setup Error: {e}")
             pass
 
     # --- UI RENDER (Combined Google + Manual) ---
 
-    # Prepare button HTML to avoid f-string complexity and indentation issues
     if auth_url:
-        login_btn = f'<a href="{auth_url}" target="_self"><button style="background: var(--primary); border: none; color: white; padding: 1rem 2rem; font-size: 1.1rem; font-family: \'Inter\', sans-serif; font-weight: 600; cursor: pointer; border-radius: 8px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); transition: all 0.2s ease;">🔐 Sign in with Google</button></a>'
+        # Secure the URL for HTML attribute injection
+        safe_auth_url = html.escape(auth_url)
+        login_btn = f'<a href="{safe_auth_url}" target="_self"><button style="background: var(--primary); border: none; color: white; padding: 1rem 2rem; font-size: 1.1rem; font-family: \'Inter\', sans-serif; font-weight: 600; cursor: pointer; border-radius: 8px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); transition: all 0.2s ease;">🔐 Sign in with Google</button></a>'
     else:
         login_btn = '<div style="color:#ef4444; border:1px solid #ef4444; padding:10px; border-radius: 8px; font-family:\'Inter\', sans-serif;">⚠️ GOOGLE AUTH OFFLINE</div>'
 
