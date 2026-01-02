@@ -14,214 +14,150 @@ import html
 import google_auth_oauthlib.flow
 from googleapiclient.discovery import build
 
-# --- CONFIGURACIÓN DE ESTILO GLOBAL (ULTRA-TECH THEME) ---
+# --- CONFIGURACIÓN DE ESTILO GLOBAL (ENTERPRISE TRUST THEME) ---
 st.markdown("""
     <style>
         /* --- FONTS --- */
-        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;600&family=Orbitron:wght@900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Manrope:wght@400;600;800&display=swap');
 
         /* --- VARIABLES --- */
         :root {
             --bg-void: #020617;
             --bg-deep: #0f172a;
-            --bg-night: #1e1b4b;
-            --neon-cyan: #06b6d4;
-            --neon-purple: #8b5cf6;
-            --glass-heavy: rgba(17, 24, 39, 0.7);
-            --border-tech: rgba(56, 189, 248, 0.3);
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --shadow-glow: 0 0 15px rgba(6, 182, 212, 0.3);
+            --primary: #6366f1; /* Electric Indigo */
+            --secondary: #3b82f6; /* Slate Blue */
+            --success: #10b981; /* Emerald */
+            --text-primary: #ffffff;
+            --text-body: #94a3b8;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --shadow-soft: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
+            --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.15);
         }
 
-        /* --- LIVING BACKGROUND --- */
+        /* --- BASE & BACKGROUND --- */
         .stApp {
-            background: linear-gradient(-45deg, #020617, #0f172a, #1e1b4b, #0f172a) !important;
-            background-size: 400% 400% !important;
-            animation: gradientBG 15s ease infinite;
+            background: radial-gradient(circle at top right, #1e293b, transparent 40%),
+                        radial-gradient(circle at bottom left, #1e1b4b, transparent 40%),
+                        linear-gradient(180deg, #0f172a 0%, #020617 100%) !important;
+            background-attachment: fixed !important;
             font-family: 'Inter', sans-serif;
-            color: var(--text-secondary);
-        }
-
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        /* Tech Grid Overlay */
-        .stApp::before {
-            content: "";
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-image:
-                linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px);
-            background-size: 40px 40px;
-            pointer-events: none;
-            z-index: -1;
-            mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
+            color: var(--text-body);
         }
 
         /* --- TYPOGRAPHY --- */
         h1, h2, h3, h4, h5, h6 {
-            font-family: 'Rajdhani', sans-serif !important;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: white !important;
+            font-family: 'Inter', sans-serif !important;
+            color: var(--text-primary) !important;
+            font-weight: 800 !important;
+            letter-spacing: -0.5px !important;
         }
 
-        /* --- GLASSMORPHISM 2.0 --- */
+        p, div, span, label {
+            font-family: 'Inter', sans-serif;
+            color: var(--text-body);
+        }
+
+        /* --- GLASSMORPHISM CARDS --- */
         div[data-testid="stExpander"], .glass-card, .pricing-card, .pro-module-header {
-            background: var(--glass-heavy) !important;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--border-tech) !important;
-            border-radius: 4px !important; /* Tech look is sharper */
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: var(--glass-bg) !important;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.08) !important;
+            border-top: 1px solid rgba(255,255,255,0.15) !important; /* Highlight top */
+            border-radius: 12px !important;
+            box-shadow: var(--shadow-soft);
         }
 
-        div[data-testid="stExpander"]:hover, .glass-card:hover, .pricing-card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-glow);
-            border-color: var(--neon-cyan) !important;
-        }
-
-        /* --- WIDGET STYLING --- */
-        .stTextInput > div > div > input,
-        .stNumberInput > div > div > input,
-        .stSelectbox > div > div > div {
-            background-color: rgba(255, 255, 255, 0.05) !important;
-            color: white !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            border-radius: 4px;
-            font-family: 'Rajdhani', sans-serif;
-        }
-
-        .stTextInput > div > div > input:focus,
-        .stNumberInput > div > div > input:focus,
-        .stSelectbox > div > div > div:focus {
-            border-color: var(--neon-cyan) !important;
-            box-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
-        }
-
-        /* --- DATAFRAMES - TERMINAL STYLE --- */
-        [data-testid="stDataFrame"] {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border-tech);
-            font-family: 'Courier New', monospace;
-            border-radius: 4px;
-        }
-
-        [data-testid="stDataFrame"] table {
-            color: var(--neon-cyan) !important;
-        }
-
-        [data-testid="stDataFrame"] thead tr th {
-             background-color: rgba(6, 182, 212, 0.1) !important;
-             color: white !important;
-             font-family: 'Rajdhani', sans-serif !important;
-             text-transform: uppercase;
-        }
-
-        /* --- SIDEBAR - CONTROL DOCK --- */
+        /* --- SIDEBAR (CONTROL DOCK) --- */
         [data-testid="stSidebar"] {
-            background: rgba(2, 6, 23, 0.95) !important;
-            border-right: 1px solid var(--border-tech);
+            background: #020617 !important;
+            border-right: 1px solid rgba(255,255,255,0.05);
         }
 
+        /* Radio Buttons as Nav Tabs */
         .stRadio > div[role="radiogroup"] > label {
             background: transparent !important;
             border: none;
-            padding: 10px 15px !important;
-            color: #64748b !important;
-            border-left: 2px solid transparent;
-            font-family: 'Rajdhani', sans-serif;
-            letter-spacing: 0.5px;
+            padding: 12px 16px !important;
+            color: var(--text-body) !important;
+            border-left: 3px solid transparent;
             transition: all 0.2s ease;
+            font-weight: 500;
         }
 
         .stRadio > div[role="radiogroup"] > label:hover {
-             color: white !important;
-             background: rgba(6, 182, 212, 0.05) !important;
-             text-shadow: 0 0 5px rgba(6, 182, 212, 0.5);
+            color: var(--text-primary) !important;
+            background: rgba(255,255,255,0.03) !important;
         }
 
         .stRadio > div[role="radiogroup"] > label[data-checked="true"] {
-            background: linear-gradient(90deg, rgba(6, 182, 212, 0.1), transparent) !important;
-            border-left: 2px solid var(--neon-cyan);
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), transparent) !important;
+            border-left: 3px solid var(--primary) !important;
+            color: var(--text-primary) !important;
+            font-weight: 600;
+        }
+
+        /* --- WIDGETS --- */
+        .stTextInput > div > div > input,
+        .stNumberInput > div > div > input,
+        .stSelectbox > div > div > div {
+            background-color: rgba(15, 23, 42, 0.6) !important;
             color: white !important;
-            font-weight: 700;
-            text-shadow: 0 0 8px var(--neon-cyan);
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 8px;
         }
 
         /* --- BUTTONS --- */
         .stButton > button {
-            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple)) !important;
-            border: none !important;
+            background: var(--primary) !important;
             color: white !important;
-            font-family: 'Rajdhani', sans-serif !important;
-            font-weight: 700 !important;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-radius: 2px !important;
-            /* Tech Shape */
-            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            border-radius: 8px !important;
+            border: none !important;
+            font-weight: 600 !important;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            transition: all 0.2s;
         }
-
         .stButton > button:hover {
-            filter: brightness(1.2);
-            text-shadow: 0 0 8px white;
-            transform: translateY(-2px);
+            background: #4f46e5 !important; /* Darker Indigo */
+            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.5);
+            transform: translateY(-1px);
         }
 
-        /* Hide Streamlit Defaults */
+        /* --- DATAFRAMES --- */
+        [data-testid="stDataFrame"] {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+        }
+
+        /* --- METRICS --- */
+        [data-testid="stMetricValue"] {
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            color: var(--text-primary) !important;
+            text-shadow: 0 0 20px rgba(255,255,255,0.1);
+        }
+        [data-testid="stMetricLabel"] {
+            color: var(--text-body) !important;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        /* Hide Defaults */
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
         header {visibility: hidden;}
 
-        /* --- METRICS --- */
-        [data-testid="stMetricValue"] {
-             font-family: 'Orbitron', sans-serif;
-             font-weight: 900;
-             color: #f8fafc !important;
-             text-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
-        }
-        [data-testid="stMetricLabel"] {
-             color: var(--neon-cyan) !important;
-             font-family: 'Rajdhani', sans-serif;
-             font-size: 0.9rem;
-             letter-spacing: 1px;
-             text-transform: uppercase;
-        }
-
-        /* --- HELPERS --- */
-        .pro-module-icon {
-            width: 40px; height: 40px; margin-right: 15px;
-            filter: drop-shadow(0 0 5px var(--neon-cyan));
-        }
-
+        /* Helpers */
+        .pro-module-icon { width: 32px; height: 32px; margin-right: 12px; opacity: 0.9; }
         .detail-box {
-            background: rgba(6, 182, 212, 0.05);
-            border-left: 2px solid var(--neon-cyan);
-            padding: 15px;
-            margin-bottom: 20px;
-            color: var(--text-secondary);
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 1.1rem;
+            background: rgba(59, 130, 246, 0.05);
+            border-left: 3px solid var(--secondary);
+            padding: 16px;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 24px;
         }
-
-        .detail-box strong { color: white; }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #020617; }
-        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 0px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--neon-cyan); }
-
     </style>
 """, unsafe_allow_html=True)
 
@@ -293,15 +229,21 @@ def login_section():
             pass
 
     # --- UI RENDER (Combined Google + Manual) ---
+
+    # Prepare button HTML to avoid f-string complexity and indentation issues
+    if auth_url:
+        login_btn = f'<a href="{auth_url}" target="_self"><button style="background: var(--primary); border: none; color: white; padding: 1rem 2rem; font-size: 1.1rem; font-family: \'Inter\', sans-serif; font-weight: 600; cursor: pointer; border-radius: 8px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); transition: all 0.2s ease;">🔐 Sign in with Google</button></a>'
+    else:
+        login_btn = '<div style="color:#ef4444; border:1px solid #ef4444; padding:10px; border-radius: 8px; font-family:\'Inter\', sans-serif;">⚠️ GOOGLE AUTH OFFLINE</div>'
+
+    # Note: Indentation is stripped to prevent Markdown Code Block rendering
     st.markdown(f"""
-    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 70vh;">
-        <h1 style="font-family: 'Orbitron'; font-size: 3rem; margin-bottom: 1rem; text-align: center;">SYSTEM ACCESS</h1>
-        <p style="color: var(--text-secondary); margin-bottom: 2rem; font-family: 'Rajdhani'; font-size: 1.2rem;">AUTHENTICATION REQUIRED FOR ENTERPRISE SUITE</p>
-
-        {'<a href="' + auth_url + '" target="_self"><button style="background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple)); border: none; color: white; padding: 1rem 2rem; font-size: 1.2rem; font-family: \'Rajdhani\'; font-weight: 700; text-transform: uppercase; cursor: pointer; clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); box-shadow: 0 0 20px rgba(6, 182, 212, 0.4); transition: all 0.3s ease;">🔐 INICIAR SESIÓN CON GOOGLE</button></a>' if auth_url else '<div style="color:#ef4444; border:1px solid #ef4444; padding:10px; font-family:\'Rajdhani\';">⚠️ GOOGLE AUTH OFFLINE</div>'}
-
-    </div>
-    """, unsafe_allow_html=True)
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 70vh;">
+    <h1 style="font-family: 'Inter', sans-serif; font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; text-align: center; letter-spacing: -1px;">System Access</h1>
+    <p style="color: var(--text-body); margin-bottom: 2rem; font-family: 'Inter', sans-serif; font-size: 1.1rem;">Authentication required for Enterprise Suite</p>
+    {login_btn}
+</div>
+""", unsafe_allow_html=True)
 
     # --- FALLBACK LOGIN (Manual Override) ---
     c1, c2, c3 = st.columns([1,1,1])
@@ -651,13 +593,13 @@ with st.sidebar:
 
     # Show User Profile
     if user_pic:
-        st.markdown(f"<img src='{user_pic}' style='width: 50px; height: 50px; border-radius: 50%; margin-bottom: 10px; border: 2px solid var(--neon-cyan);'>", unsafe_allow_html=True)
+        st.markdown(f"<img src='{user_pic}' style='width: 50px; height: 50px; border-radius: 50%; margin-bottom: 10px; border: 2px solid var(--primary);'>", unsafe_allow_html=True)
 
     st.markdown(f"""
     <div style='background: rgba(255,255,255,0.05); padding: 15px; border-radius: 4px; border-left: 3px solid {plan_bg}; margin-bottom: 20px;'>
         <small style='color: #94a3b8; text-transform:uppercase;'>OPERATOR:</small><br>
-        <strong style='font-size: 1.1rem; color:white; font-family: "Rajdhani";'>{user_name}</strong><br>
-        <span style="font-size: 0.8rem; color: var(--neon-cyan);">{user_plan_safe} ACCESS</span><br>
+        <strong style='font-size: 1.1rem; color:white; font-family: "Inter", sans-serif;'>{user_name}</strong><br>
+        <span style="font-size: 0.8rem; color: var(--primary);">{user_plan_safe} ACCESS</span><br>
         <small style='color: #64748b;'>{estado_ia_safe}</small><br>
         <small style='color: {'#06b6d4' if db_conectada else '#ef4444'}; font-weight:bold;'>{status_db_safe}</small>
     </div>
@@ -706,40 +648,41 @@ with st.sidebar:
 # ==============================================================================
 
 if menu == "Inicio / Dashboard":
-    # 1. HEADER EJECUTIVO (HERO SECTION - ULTRA TECH)
+    # 1. HEADER EJECUTIVO (HERO SECTION - ENTERPRISE TRUST)
     st.markdown("""
     <div class="hero-container">
         <div class="hero-content">
-            <h1 class="hero-title">ASISTENTE CONTABLE <span style="color: var(--neon-cyan)">PRO</span></h1>
-            <div class="hero-subtitle">SYSTEM ONLINE • v14.5 ENTERPRISE • <span style="color: var(--neon-purple)">AI CORE ACTIVE</span></div>
+            <h1 class="hero-title">Asistente Contable <span style="color: var(--primary)">PRO</span></h1>
+            <div class="hero-subtitle">v14.5 Enterprise Suite • <span style="color: var(--success)">System Online</span></div>
         </div>
-        <div class="hero-decoration"></div>
     </div>
     <style>
         .hero-container {
             position: relative;
             padding: 3rem 2rem;
             margin-bottom: 2rem;
-            background: linear-gradient(90deg, rgba(6, 182, 212, 0.1), transparent);
-            border-left: 4px solid var(--neon-cyan);
-            border-radius: 4px;
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), transparent);
+            border-left: 4px solid var(--primary);
+            border-radius: 8px;
             overflow: hidden;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(12px);
+            box-shadow: var(--shadow-soft);
         }
         .hero-title {
-            font-family: 'Orbitron', sans-serif !important;
-            font-size: 3.5rem !important;
+            font-family: 'Inter', sans-serif !important;
+            font-size: 3rem !important;
+            font-weight: 800 !important;
             margin: 0;
-            letter-spacing: 2px;
-            text-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
+            letter-spacing: -1px;
+            color: white;
+            text-shadow: 0 0 40px rgba(99, 102, 241, 0.3);
         }
         .hero-subtitle {
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 1.2rem;
-            color: var(--text-secondary);
+            font-family: 'Inter', sans-serif;
+            font-size: 1.1rem;
+            color: var(--text-body);
             margin-top: 0.5rem;
-            letter-spacing: 3px;
-            text-transform: uppercase;
+            font-weight: 500;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -750,11 +693,11 @@ if menu == "Inicio / Dashboard":
         color = "#10b981" if is_positive else "#f43f5e"
         arrow = "↑" if is_positive else "↓"
         st.markdown(f"""
-        <div class="glass-card" style="height: 100%; display: flex; flex-direction: column; justify-content: center; padding: 20px;">
-            <div style="color: var(--neon-cyan); font-family: 'Rajdhani'; font-size: 0.9rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px;">{label}</div>
-            <div style="font-family: 'Orbitron'; font-size: 1.8rem; font-weight: 900; color: white; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 0 10px rgba(255,255,255,0.3);">{value}</div>
-            <div style="color: {color}; font-size: 1rem; font-weight: 600; font-family: 'Rajdhani';">
-                {arrow} {delta} <span style="color: var(--text-secondary); font-weight: 400;">vs last cycle</span>
+        <div class="glass-card" style="height: 100%; display: flex; flex-direction: column; justify-content: center; padding: 24px;">
+            <div style="color: var(--text-body); font-family: 'Inter'; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">{label}</div>
+            <div style="font-family: 'Inter'; font-size: 2rem; font-weight: 800; color: white; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -1px;">{value}</div>
+            <div style="color: {color}; font-size: 0.95rem; font-weight: 600; font-family: 'Inter';">
+                {arrow} {delta} <span style="color: var(--text-body); font-weight: 400;">vs last cycle</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -795,34 +738,35 @@ if menu == "Inicio / Dashboard":
     st.markdown("""
     <style>
         .pricing-card {
-            background: var(--glass-heavy);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--border-tech);
-            border-radius: 4px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
             padding: 2.5rem;
             height: 100%;
             display: flex; flex-direction: column;
             transition: all 0.3s ease;
+            box-shadow: var(--shadow-soft);
         }
-        .pricing-card:hover { transform: translateY(-5px); border-color: var(--neon-cyan); box-shadow: 0 0 20px rgba(6, 182, 212, 0.2); }
+        .pricing-card:hover { transform: translateY(-5px); border-color: var(--primary); box-shadow: 0 8px 30px rgba(99, 102, 241, 0.2); }
         .pricing-card.pro {
-            background: linear-gradient(145deg, rgba(15, 23, 42, 0.9) 0%, rgba(6, 182, 212, 0.1) 100%);
-            border: 1px solid var(--neon-cyan);
-            box-shadow: 0 0 30px rgba(6, 182, 212, 0.1);
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.9) 0%, rgba(99, 102, 241, 0.1) 100%);
+            border: 1px solid var(--primary);
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.15);
             position: relative;
         }
         .pro-badge {
             position: absolute; top: -12px; right: 24px;
-            background: var(--neon-cyan);
-            color: black; padding: 4px 12px; border-radius: 2px;
-            font-size: 0.75rem; font-weight: 800; letter-spacing: 1px; font-family: 'Rajdhani';
+            background: var(--success);
+            color: white; padding: 4px 12px; border-radius: 99px;
+            font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px; font-family: 'Inter';
         }
-        .price-tag { font-family: 'Orbitron'; font-size: 3rem; font-weight: 800; color: white; margin: 10px 0; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
-        .price-tag span { font-size: 1rem; color: var(--text-secondary); font-weight: 500; font-family: 'Rajdhani'; }
-        .price-old { font-size: 1.1rem; color: #64748b; text-decoration: line-through; margin-top: 10px; font-family: 'Rajdhani'; }
-        .features-ul { list-style: none; padding: 0; margin: 24px 0; color: var(--text-secondary); flex-grow: 1; font-family: 'Rajdhani'; font-size: 1.1rem; }
+        .price-tag { font-family: 'Inter'; font-size: 3rem; font-weight: 800; color: white; margin: 10px 0; letter-spacing: -1px; }
+        .price-tag span { font-size: 1rem; color: var(--text-body); font-weight: 500; font-family: 'Inter'; }
+        .price-old { font-size: 1.1rem; color: #64748b; text-decoration: line-through; margin-top: 10px; font-family: 'Inter'; }
+        .features-ul { list-style: none; padding: 0; margin: 24px 0; color: var(--text-body); flex-grow: 1; font-family: 'Inter'; font-size: 1rem; }
         .features-ul li { margin-bottom: 12px; display: flex; align-items: center; }
-        .check { color: var(--neon-cyan); margin-right: 12px; font-weight: bold; text-shadow: 0 0 5px var(--neon-cyan); }
+        .check { color: var(--success); margin-right: 12px; font-weight: bold; }
         .cross { color: #ef4444; margin-right: 12px; opacity: 0.7; }
         .dimmed { color: #475569; }
     </style>
