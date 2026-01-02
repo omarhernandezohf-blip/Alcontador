@@ -10,6 +10,7 @@ import io
 from datetime import datetime, timedelta
 import xml.etree.ElementTree as ET
 import os
+import html
 
 # --- CONFIGURACIÓN DE ESTILO GLOBAL (FONDO DE TODA LA PÁGINA) ---
 st.markdown("""
@@ -482,12 +483,20 @@ def consultar_ia_gemini(prompt):
     Ideal para: Narrador Financiero, Análisis de Tesorería y Auditoría NIIF.
     """
     try:
-        # AQUÍ ESTÁ EL CAMBIO: Usamos 'pro' para razonamiento avanzado
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        response = model.generate_content(prompt)
-        return response.text
+        # Intentamos usar la versión estable '001' si la corta falla
+        try:
+            model = genai.GenerativeModel('gemini-1.5-flash-001')
+            response = model.generate_content(prompt)
+            return response.text
+        except Exception as e:
+            # Fallback o diagnóstico
+            try:
+                available_models = [m.name for m in genai.list_models()]
+                return f"Error IA: {str(e)}. Modelos disponibles: {available_models}"
+            except:
+                return f"Error de conexión IA: {str(e)}"
     except Exception as e:
-        return f"Error de conexión IA: {str(e)}"
+        return f"Error crítico IA: {str(e)}"
 
 # ------------------------------------------------------------------------------
 # OCR DE FACTURAS (VELOCIDAD)
@@ -498,12 +507,15 @@ def ocr_factura(imagen):
     Ideal para: Procesar imágenes masivas sin hacer esperar al usuario.
     """
     try:
-        # MANTENEMOS 'flash' AQUÍ para velocidad
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # Usamos versión estable
+        model = genai.GenerativeModel('gemini-1.5-flash-001')
         prompt = """Extrae datos JSON estricto: {"fecha": "YYYY-MM-DD", "nit": "num", "proveedor": "txt", "concepto": "txt", "base": num, "iva": num, "total": num}"""
         response = model.generate_content([prompt, imagen])
         return json.loads(response.text.replace("```json", "").replace("```", "").strip())
-    except:
+    except Exception as e:
+        # En OCR fallamos silenciosamente o retornamos None como antes, 
+        # pero podríamos loguear el error si tuviéramos un sistema de logs.
+        print(f"Error OCR: {e}")
         return None
 
 # ------------------------------------------------------------------------------
@@ -583,12 +595,17 @@ with st.sidebar:
         plan_bg = "#FFD700" if st.session_state['user_plan'] == 'PRO' else "#A9A9A9"
         status_db = "🟢 DB Online" if db_conectada else "🔴 DB Offline"
         
+        # Security: Escape variables injected into HTML
+        user_plan_safe = html.escape(str(st.session_state['user_plan']))
+        estado_ia_safe = html.escape(str(estado_ia))
+        status_db_safe = html.escape(str(status_db))
+        
         st.markdown(f"""
         <div style='background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; border-left: 5px solid {plan_bg}; margin-bottom: 20px;'>
             <small style='color: #cbd5e1;'>Bienvenido,</small><br>
-            <strong style='font-size: 1.1rem;'>Usuario {st.session_state['user_plan']}</strong><br>
-            <small>{estado_ia}</small><br>
-            <small style='color: {'#22c55e' if db_conectada else '#ef4444'}; font-weight:bold;'>{status_db}</small>
+            <strong style='font-size: 1.1rem;'>Usuario {user_plan_safe}</strong><br>
+            <small>{estado_ia_safe}</small><br>
+            <small style='color: {'#22c55e' if db_conectada else '#ef4444'}; font-weight:bold;'>{status_db_safe}</small>
         </div>
         """, unsafe_allow_html=True)
         
@@ -937,12 +954,15 @@ else:
                 total_rows = len(df_banco)
                 
                 # ALGORITMO DE MATCHING INTELIGENTE
-                for idx_b, row_b in df_banco.iterrows():
-                    bar.progress((idx_b+1)/total_rows)
-                    vb = row_b[col_valor_b]
-                    fb = row_b['Fecha_Dt']
+                # Optimización: Usamos zip para iterar más rápido que iterrows
+                # Extraemos las columnas necesarias a listas/arrays para velocidad
+                # Nota: Necesitamos el índice original (idx_b) para actualizar 'Conciliado'
+                for i, (idx_b, vb, fb, fecha_b_orig, desc_b) in enumerate(zip(df_banco.index, df_banco[col_valor_b], df_banco['Fecha_Dt'], df_banco[col_fecha_b], df_banco[col_desc_b])):
+                    bar.progress((i+1)/total_rows)
                     
                     # Busca coincidencias: Mismo valor, no conciliado aun, y fecha +/- 3 días
+                    # Nota: df_libro se filtra repetidamente. Para grandes volúmenes esto debería ser vectorizado,
+                    # pero dada la lógica 'first match consumes', la iteración es necesaria para mantener estado.
                     cands = df_libro[
                         (df_libro[col_valor_l] == vb) & 
                         (~df_libro['Conciliado']) & 
@@ -957,9 +977,9 @@ else:
                         
                         f_libro_str = df_libro.at[match_idx, col_fecha_l]
                         matches.append({
-                            "Fecha Banco": str(row_b[col_fecha_b]),
+                            "Fecha Banco": str(fecha_b_orig),
                             "Fecha Libro": str(f_libro_str),
-                            "Descripción": str(row_b[col_desc_b]),
+                            "Descripción": str(desc_b),
                             "Valor Cruzado": f"${vb:,.2f}",
                             "Estado": "✅ AUTOMÁTICO"
                         })
@@ -1041,45 +1061,47 @@ else:
 
             if st.button("▶️ ANALIZAR RIESGOS FISCALES", type="primary"):
                 registrar_log(st.session_state['username'], "Auditoria Gastos", "Inicio escaneo 771-5")
-                res = []
-                errores_lectura = 0
                 
-                for r in df.to_dict('records'):
-                    try:
-                        # Convertimos a float seguro
-                        val_check = float(r[cv]) if pd.notnull(r[cv]) else 0
-                    except:
-                        val_check = 0
-                        errores_lectura += 1
-                        
-                    # Aplicamos la lógica de auditoría
-                    h, rs = analizar_gasto_fila(r, cv, cm, cc)
-                    
-                    if rs != "BAJO": 
-                        res.append({
-                            "Fecha": str(r[cf]), 
-                            "Tercero": str(r[ct]), 
-                            "Valor": f"${val_check:,.0f}", 
-                            "Método Pago": str(r[cm]),
-                            "Riesgo": rs, 
-                            "Hallazgo": h
-                        })
+                # Optimización: Uso de apply en lugar de iterar con to_dict('records')
+                # Pre-calculamos valores seguros numéricos
+                df['val_check_safe'] = pd.to_numeric(df[cv], errors='coerce').fillna(0)
+                
+                # Definimos una función wrapper para usar en apply
+                def wrapper_analisis(row):
+                    return analizar_gasto_fila(row, cv, cm, cc)
+
+                # Ejecutamos análisis vectorizado (row-wise pero optimizado por pandas)
+                analisis_result = df.apply(wrapper_analisis, axis=1)
+                
+                # Expandimos los resultados
+                df['Hallazgo_Temp'] = analisis_result.apply(lambda x: x[0])
+                df['Riesgo_Temp'] = analisis_result.apply(lambda x: x[1])
+                
+                # Filtramos resultados
+                df_riesgos = df[df['Riesgo_Temp'] != "BAJO"].copy()
                 
                 st.divider()
-                if not res:
+                if df_riesgos.empty:
                     st.balloons()
                     st.success("✅ ¡Excelente! No se encontraron riesgos fiscales evidentes en los gastos analizados.")
                 else:
-                    st.warning(f"⚠️ Se encontraron {len(res)} operaciones con riesgo fiscal.")
+                    st.warning(f"⚠️ Se encontraron {len(df_riesgos)} operaciones con riesgo fiscal.")
                     
-                    # Convertimos a DataFrame
-                    df_res = pd.DataFrame(res)
+                    # Construimos DataFrame de reporte
+                    df_res = pd.DataFrame({
+                        "Fecha": df_riesgos[cf].astype(str),
+                        "Tercero": df_riesgos[ct].astype(str),
+                        "Valor": df_riesgos['val_check_safe'].apply(lambda x: f"${x:,.0f}"),
+                        "Método Pago": df_riesgos[cm].astype(str),
+                        "Riesgo": df_riesgos['Riesgo_Temp'],
+                        "Hallazgo": df_riesgos['Hallazgo_Temp']
+                    })
                     
                     # Métricas rápidas
                     col_a, col_b = st.columns(2)
                     riesgo_alto = len(df_res[df_res['Riesgo'] == 'ALTO'])
                     col_a.metric("Rechazos Fiscales (Efectivo)", riesgo_alto)
-                    col_b.metric("Alertas de Retención", len(res) - riesgo_alto)
+                    col_b.metric("Alertas de Retención", len(df_res) - riesgo_alto)
 
                     st.dataframe(df_res, use_container_width=True)
                     
@@ -1133,28 +1155,34 @@ else:
                 cns = c3.selectbox("Pagos No Salariales (Bonos/Auxilios)", opciones_ns, index=0, key="ugpp_ns")
 
             if st.button("▶️ ESCANEAR RIESGO UGPP", type="primary"):
-                res = []
-                for r in dn.to_dict('records'):
-                    try:
-                        salario = float(r[cs]) if pd.notnull(r[cs]) else 0
-                        no_salarial = 0.0 if cns == "< No Aplica / Es $0 >" else (float(r[cns]) if pd.notnull(r[cns]) else 0)
-                        
-                        total_rem = salario + no_salarial
-                        limite = total_rem * 0.40
-                        exceso = no_salarial - limite if no_salarial > limite else 0
-                        estado = "RIESGO ALTO" if exceso > 0 else "OK"
-
-                        res.append({
-                            "Empleado": str(r[cn]),
-                            "Salario": f"${salario:,.0f}",
-                            "No Salarial": f"${no_salarial:,.0f}",
-                            "Límite 40%": f"${limite:,.0f}",
-                            "Exceso IBC": f"${exceso:,.0f}",
-                            "Estado": estado
-                        })
-                    except: pass
+                # Optimización: Vectorización con Pandas
                 
-                df_res = pd.DataFrame(res)
+                # Conversión numérica segura
+                dn['salario_safe'] = pd.to_numeric(dn[cs], errors='coerce').fillna(0)
+                if cns == "< No Aplica / Es $0 >":
+                    dn['no_salarial_safe'] = 0.0
+                else:
+                    dn['no_salarial_safe'] = pd.to_numeric(dn[cns], errors='coerce').fillna(0)
+                
+                # Cálculos vectorizados
+                dn['total_rem'] = dn['salario_safe'] + dn['no_salarial_safe']
+                dn['limite_40'] = dn['total_rem'] * 0.40
+                dn['exceso'] = dn['no_salarial_safe'] - dn['limite_40']
+                # Si no hay exceso (negativo), ponemos 0
+                dn['exceso'] = dn['exceso'].clip(lower=0)
+                
+                dn['estado'] = dn['exceso'].apply(lambda x: "RIESGO ALTO" if x > 0 else "OK")
+                
+                # Construcción del DataFrame de resultados
+                df_res = pd.DataFrame({
+                    "Empleado": dn[cn].astype(str),
+                    "Salario": dn['salario_safe'].apply(lambda x: f"${x:,.0f}"),
+                    "No Salarial": dn['no_salarial_safe'].apply(lambda x: f"${x:,.0f}"),
+                    "Límite 40%": dn['limite_40'].apply(lambda x: f"${x:,.0f}"),
+                    "Exceso IBC": dn['exceso'].apply(lambda x: f"${x:,.0f}"),
+                    "Estado": dn['estado']
+                })
+                
                 riesgos = df_res[df_res['Estado'] == "RIESGO ALTO"]
                 
                 st.divider()
@@ -1238,13 +1266,17 @@ else:
                             errores += 1
 
                         # Calculamos
-                        c, cr = calcular_costo_empresa_fila(r, cs, ca, col_arl, ce)
+                        # CORRECCIÓN BUG: La función retorna 4 valores, no 2. Desempaquetamos correctamente.
+                        costo_total, total_seg, total_prest, paraf = calcular_costo_empresa_fila(r, cs, ca, col_arl, ce)
+                        
+                        # Agrupamos para visualización
+                        total_aportes_prestaciones = total_seg + total_prest + paraf
                         
                         rc.append({
                             "Empleado": str(r[cn]),
                             "Salario Base": f"${val_salario:,.0f}",
-                            "Prestaciones y Aportes": f"${cr:,.0f}",
-                            "Costo Total Mensual": f"${c:,.0f}"
+                            "Prestaciones y Aportes": f"${total_aportes_prestaciones:,.0f}",
+                            "Costo Total Mensual": f"${costo_total:,.0f}"
                         })
                     
                     if errores > 0:
