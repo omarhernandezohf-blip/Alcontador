@@ -234,86 +234,105 @@ st.markdown("""
 # ------------------------------------------------------------------------------
 
 def login_section():
-    # Load secrets
-    if "google" not in st.secrets:
-        st.error("Missing Google Secrets configuration.")
-        st.stop()
+    # Load secrets safely
+    try:
+        google_secrets_ok = "google" in st.secrets
+    except Exception:
+        google_secrets_ok = False
 
-    client_config = {
-        "web": {
-            "client_id": st.secrets["google"]["client_id"],
-            "client_secret": st.secrets["google"]["client_secret"],
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-            "redirect_uris": [st.secrets["google"]["redirect_uri"]],
-        }
-    }
+    auth_url = None
 
-    # Initialize Flow
-    flow = google_auth_oauthlib.flow.Flow.from_client_config(
-        client_config,
-        scopes=['openid', 'https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile'],
-        redirect_uri=st.secrets["google"]["redirect_uri"]
-    )
-
-    # Check for authorization code in URL
-    if "code" in st.query_params:
+    if google_secrets_ok:
         try:
-            code = st.query_params["code"]
-            flow.fetch_token(code=code)
-            credentials = flow.credentials
+            client_config = {
+                "web": {
+                    "client_id": st.secrets["google"]["client_id"],
+                    "client_secret": st.secrets["google"]["client_secret"],
+                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                    "token_uri": "https://oauth2.googleapis.com/token",
+                    "redirect_uris": [st.secrets["google"]["redirect_uri"]],
+                }
+            }
 
-            # Fetch User Info
-            user_info_service = build('oauth2', 'v2', credentials=credentials)
-            user_info = user_info_service.userinfo().get().execute()
+            # Initialize Flow
+            flow = google_auth_oauthlib.flow.Flow.from_client_config(
+                client_config,
+                scopes=['openid', 'https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile'],
+                redirect_uri=st.secrets["google"]["redirect_uri"]
+            )
 
-            # Store in Session State
-            st.session_state['logged_in'] = True
-            st.session_state['user_info'] = user_info
-            st.session_state['username'] = user_info.get('name')
-            st.session_state['user_email'] = user_info.get('email')
-            st.session_state['user_picture'] = user_info.get('picture')
-            st.session_state['user_plan'] = 'PRO' # Default to PRO for authorized users for now
+            # Check for authorization code in URL
+            if "code" in st.query_params:
+                try:
+                    code = st.query_params["code"]
+                    flow.fetch_token(code=code)
+                    credentials = flow.credentials
 
-            # Clear query params to prevent re-execution
-            st.query_params.clear()
-            st.rerun()
+                    # Fetch User Info
+                    user_info_service = build('oauth2', 'v2', credentials=credentials)
+                    user_info = user_info_service.userinfo().get().execute()
 
+                    # Store in Session State
+                    st.session_state['logged_in'] = True
+                    st.session_state['user_info'] = user_info
+                    st.session_state['username'] = user_info.get('name')
+                    st.session_state['user_email'] = user_info.get('email')
+                    st.session_state['user_picture'] = user_info.get('picture')
+                    st.session_state['user_plan'] = 'PRO' # Default to PRO for authorized users for now
+
+                    # Clear query params to prevent re-execution
+                    st.query_params.clear()
+                    st.rerun()
+
+                except Exception as e:
+                    st.error(f"Authentication Failed: {e}")
+            else:
+                auth_url, _ = flow.authorization_url(prompt='consent')
         except Exception as e:
-            st.error(f"Authentication Failed: {e}")
-    else:
-        # Show Login Screen
-        auth_url, _ = flow.authorization_url(prompt='consent')
+            # Silently fail Google Auth setup if configured incorrectly, allow Manual Fallback
+            pass
 
-        st.markdown(f"""
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh;">
-            <h1 style="font-family: 'Orbitron'; font-size: 3rem; margin-bottom: 1rem; text-align: center;">SYSTEM ACCESS</h1>
-            <p style="color: var(--text-secondary); margin-bottom: 2rem; font-family: 'Rajdhani'; font-size: 1.2rem;">AUTHENTICATION REQUIRED FOR ENTERPRISE SUITE</p>
-            <a href="{auth_url}" target="_self">
-                <button style="
-                    background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple));
-                    border: none;
-                    color: white;
-                    padding: 1rem 2rem;
-                    font-size: 1.2rem;
-                    font-family: 'Rajdhani';
-                    font-weight: 700;
-                    text-transform: uppercase;
-                    cursor: pointer;
-                    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
-                    box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
-                    transition: all 0.3s ease;
-                ">
-                    🔐 INICIAR SESIÓN CON GOOGLE
-                </button>
-            </a>
-        </div>
-        """, unsafe_allow_html=True)
-        st.stop()
+    # --- UI RENDER (Combined Google + Manual) ---
+    st.markdown(f"""
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 70vh;">
+        <h1 style="font-family: 'Orbitron'; font-size: 3rem; margin-bottom: 1rem; text-align: center;">SYSTEM ACCESS</h1>
+        <p style="color: var(--text-secondary); margin-bottom: 2rem; font-family: 'Rajdhani'; font-size: 1.2rem;">AUTHENTICATION REQUIRED FOR ENTERPRISE SUITE</p>
 
-# --- CHECK LOGIN STATUS ---
-if not st.session_state.get('logged_in', False):
-    login_section()
+        {'<a href="' + auth_url + '" target="_self"><button style="background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple)); border: none; color: white; padding: 1rem 2rem; font-size: 1.2rem; font-family: \'Rajdhani\'; font-weight: 700; text-transform: uppercase; cursor: pointer; clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); box-shadow: 0 0 20px rgba(6, 182, 212, 0.4); transition: all 0.3s ease;">🔐 INICIAR SESIÓN CON GOOGLE</button></a>' if auth_url else '<div style="color:#ef4444; border:1px solid #ef4444; padding:10px; font-family:\'Rajdhani\';">⚠️ GOOGLE AUTH OFFLINE</div>'}
+
+    </div>
+    """, unsafe_allow_html=True)
+
+    # --- FALLBACK LOGIN (Manual Override) ---
+    c1, c2, c3 = st.columns([1,1,1])
+    with c2:
+        with st.expander("⚠️ EMERGENCY OVERRIDE"):
+            st.markdown("<small style='color: #94a3b8;'>Use this channel if Google Auth is offline (Error 403/500).</small>", unsafe_allow_html=True)
+            u = st.text_input("Operator ID", key="login_u")
+            p = st.text_input("Access Key", type="password", key="login_p")
+
+            if st.button("INITIATE MANUAL OVERRIDE", type="primary"):
+                if u == "admin" and p == "admin":
+                    st.session_state['user_plan'] = 'PRO'
+                    st.session_state['logged_in'] = True
+                    st.session_state['username'] = 'Admin (Manual)'
+                    st.session_state['user_email'] = 'admin@internal.system'
+                    st.session_state['user_picture'] = ''
+                    registrar_log("Admin", "Login Manual", "Acceso de emergencia usado")
+                    st.rerun()
+                elif u == "cliente" and p == "cliente":
+                    st.session_state['user_plan'] = 'FREE'
+                    st.session_state['logged_in'] = True
+                    st.session_state['username'] = 'Cliente (Manual)'
+                    st.session_state['user_email'] = 'client@internal.system'
+                    st.session_state['user_picture'] = ''
+                    registrar_log("Cliente", "Login Manual", "Acceso cliente manual")
+                    st.rerun()
+                else:
+                    st.error("❌ INVALID CREDENTIALS")
+                    registrar_log(u, "Login Fallido", "Manual override fallido")
+
+    st.stop()
 
 # ------------------------------------------------------------------------------
 # B. CONEXIÓN A BASE DE DATOS (GOOGLE SHEETS)
@@ -355,6 +374,9 @@ def registrar_log(usuario, accion, detalle):
             # Si falla el registro del log, no detenemos la aplicación
             pass 
 
+# --- CHECK LOGIN STATUS (Moved after registrar_log definition) ---
+if not st.session_state.get('logged_in', False):
+    login_section()
 
 # ------------------------------------------------------------------------------
 # C. CONFIGURACIÓN DE INTELIGENCIA ARTIFICIAL (GEMINI)
