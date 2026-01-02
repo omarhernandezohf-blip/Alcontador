@@ -15,20 +15,204 @@ import html
 # --- CONFIGURACIÓN DE ESTILO GLOBAL (FONDO DE TODA LA PÁGINA) ---
 st.markdown("""
     <style>
-        /* 1. Fondo General de la App (El degradado que te gustó) */
+        /* --- FONTS --- */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Manrope:wght@400;600;800&display=swap');
+
+        /* --- VARIABLES --- */
+        :root {
+            --bg-deep: #020617;
+            --bg-slate: #0f172a;
+            --glass-surface: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --primary-indigo: #6366f1;
+            --secondary-blue: #3b82f6;
+            --success-emerald: #10b981;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --shadow-soft: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
+        }
+
+        /* --- GLOBAL RESET & BACKGROUND --- */
         .stApp {
-            background: radial-gradient(circle at 50% -20%, #1e293b, #0f172a);
-            color: white;
+            background: linear-gradient(to bottom, #0f172a, #020617) !important;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-muted);
+        }
+
+        /* Noise Overlay */
+        .stApp::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Manrope', sans-serif;
+            color: white !important;
+            letter-spacing: -0.5px;
+            font-weight: 800;
+        }
+
+        p, span, div, label {
+            color: var(--text-muted);
+        }
+
+        /* --- GLASSMORPHISM CARD SYSTEM --- */
+        .glass-card {
+            background: var(--glass-surface);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            box-shadow: var(--shadow-soft);
+            padding: 24px;
+        }
+
+        /* --- SIDEBAR --- */
+        [data-testid="stSidebar"] {
+            background-color: #050b14 !important;
+            border-right: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* Sidebar Nav Tabs */
+        .stRadio > div[role="radiogroup"] > label {
+            background: transparent !important;
+            border: none;
+            padding: 12px 16px !important;
+            color: #64748b !important;
+            border-left: 3px solid transparent;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .stRadio > div[role="radiogroup"] > label:hover {
+            color: white !important;
+            background: rgba(255,255,255,0.03) !important;
+        }
+
+        .stRadio > div[role="radiogroup"] > label[data-checked="true"] {
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.15), transparent) !important;
+            border-left: 3px solid #00f3ff; /* Neon Cyan Indicator */
+            color: white !important;
+            font-weight: 700;
+        }
+
+        /* --- INPUTS & WIDGETS --- */
+        .stTextInput > div > div > input,
+        .stSelectbox > div > div > div,
+        .stNumberInput > div > div > input {
+            background-color: rgba(15, 23, 42, 0.8) !important;
+            border: 1px solid rgba(255,255,255,0.1) !important;
+            color: white !important;
+            border-radius: 8px;
         }
         
-        /* 2. Ajuste para que los textos no se pierdan */
-        h1, h2, h3, p, span {
-            color: #f8fafc !important; /* Blanco hueso suave */
+        .stTextInput > div > div > input:focus,
+        .stSelectbox > div > div > div:focus {
+             border-color: var(--primary-indigo) !important;
+             box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        /* --- BUTTONS --- */
+        .stButton > button {
+            background: linear-gradient(135deg, var(--primary-indigo) 0%, var(--secondary-blue) 100%) !important;
+            color: white !important;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .stButton > button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.5);
+        }
+
+        /* --- DATAFRAMES --- */
+        [data-testid="stDataFrame"] {
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        /* --- MODULE HEADER SPECIFIC --- */
+        .pro-module-header {
+            display: flex;
+            align-items: center;
+            background: linear-gradient(90deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0) 100%);
+            padding: 24px;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary-indigo);
+            border: 1px solid var(--glass-border);
+            border-left-width: 4px;
+            backdrop-filter: blur(12px);
+            margin-bottom: 24px;
+        }
+
+        .pro-module-title h2 {
+            margin: 0;
+            font-size: 1.8rem;
+            color: white !important;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        /* --- METRICS --- */
+        [data-testid="stMetricValue"] {
+             font-family: 'Manrope', sans-serif;
+             font-weight: 800;
+             color: #f8fafc !important;
+             text-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+        }
+        [data-testid="stMetricLabel"] {
+             color: #94a3b8 !important;
+             font-size: 0.85rem;
+             letter-spacing: 1px;
+             text-transform: uppercase;
         }
         
-        /* 3. Ocultar el menú estándar de Streamlit para que se vea más limpio */
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Hide Streamlit Defaults */
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
+        header {visibility: hidden;}
+
+        /* --- MISSING COMPONENTS --- */
+        .pro-module-icon {
+            width: 50px; height: 50px; margin-right: 20px;
+            filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.5));
+        }
+
+        .detail-box {
+            background: rgba(15, 23, 42, 0.4);
+            border-left: 3px solid var(--secondary-blue);
+            border-radius: 0 8px 8px 0;
+            padding: 16px;
+            margin-bottom: 24px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .detail-box strong { color: var(--text-main); font-weight: 600; }
+
+        .animated-module-bg {
+             animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -127,225 +311,8 @@ elif 12 <= hora_actual < 18:
 else:
     saludo = "Buenas noches"
 
-# Inyección de CSS para el tema "Cyberpunk / High-Tech Corporativo"
-st.markdown("""
-    <style>
-    /* --- IMPORTACIÓN DE FUENTES --- */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap');
-    
-    /* --- VARIABLES DE COLOR DEL TEMA --- */
-    :root {
-        --primary-blue: #0A66C2; 
-        --secondary-blue: #004182;
-        --neon-cyan: #00f3ff;
-        --neon-purple: #bc13fe;
-        --tech-bg: #0f172a; 
-        --text-light: #e2e8f0;
-        --card-bg: rgba(30, 41, 59, 0.4);
-    }
-
-    /* --- AJUSTES GLOBALES DE LA APP --- */
-    .stApp {
-        background-color: var(--tech-bg) !important;
-        color: var(--text-light) !important;
-    }
-
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
-        color: var(--text-light);
-    }
-
-    /* --- ANIMACIÓN DE FONDO PARA LOS MÓDULOS --- */
-    @keyframes subtle-shift {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
-
-    .animated-module-bg {
-        background: linear-gradient(270deg, #0f172a, #1e293b, #0f172a);
-        background-size: 400% 400%;
-        animation: subtle-shift 30s ease infinite;
-        padding: 30px;
-        border-radius: 16px;
-        box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
-        margin-top: 20px;
-        border: 1px solid rgba(255,255,255,0.05);
-    }
-
-    /* --- HERO HEADER (BANNER PRINCIPAL) --- */
-    .hero-impact-container {
-        position: relative;
-        width: 100%;
-        height: 500px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
-        border-radius: 20px;
-        overflow: hidden;
-        box-shadow: 0 0 80px rgba(10, 102, 194, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        margin-bottom: 40px;
-        text-align: center;
-    }
-
-    .hero-impact-bg {
-        position: absolute;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background-image: 
-            radial-gradient(#ffffff 1px, transparent 1px),
-            radial-gradient(#ffffff 1px, transparent 1px);
-        background-size: 50px 50px;
-        background-position: 0 0, 25px 25px;
-        opacity: 0.05;
-        animation: moveBackground 60s linear infinite;
-    }
-
-    @keyframes moveBackground {
-        from { background-position: 0 0, 25px 25px; }
-        to { background-position: 100px 100px, 125px 125px; }
-    }
-
-    .hero-impact-title {
-        font-size: 5.5rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: -3px;
-        margin: 0;
-        background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        text-shadow: 0 0 60px rgba(10, 102, 194, 0.5);
-        z-index: 2;
-        animation: fadeInUp 1s ease-out;
-    }
-
-    .hero-impact-subtitle {
-        font-size: 1.8rem;
-        color: #60a5fa;
-        font-weight: 400;
-        margin-top: 20px;
-        z-index: 2;
-        background: rgba(15, 23, 42, 0.6);
-        padding: 10px 30px;
-        border-radius: 50px;
-        border: 1px solid rgba(96, 165, 250, 0.3);
-        backdrop-filter: blur(5px);
-        animation: fadeInUp 1.5s ease-out;
-    }
-
-    @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(30px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .hero-glow-bottom {
-        position: absolute;
-        bottom: -100px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 80%;
-        height: 200px;
-        background: radial-gradient(ellipse at center, rgba(10, 102, 194, 0.4) 0%, transparent 70%);
-        z-index: 1;
-        filter: blur(50px);
-    }
-
-    /* --- TARJETAS INFORMATIVAS (CARDS) --- */
-    .info-card {
-        background: var(--card-bg);
-        border-left: 5px solid var(--primary-blue);
-        padding: 25px;
-        border-radius: 12px;
-        transition: transform 0.3s ease, background 0.3s ease;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-    .info-card:hover {
-        transform: translateY(-5px);
-        background: rgba(30, 41, 59, 0.8);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    }
-    .info-icon { font-size: 2rem; margin-bottom: 10px; display: block; }
-    .info-title { font-size: 1.2rem; font-weight: 700; color: white !important; margin-bottom: 8px; }
-    .info-text { font-size: 0.95rem; color: #cbd5e1 !important; }
-
-    /* --- ENCABEZADOS DE LOS MÓDULOS --- */
-    .pro-module-header {
-        display: flex;
-        align-items: center;
-        background: linear-gradient(90deg, rgba(10, 102, 194, 0.2) 0%, rgba(15, 23, 42, 0) 100%);
-        padding: 30px;
-        border-radius: 12px;
-        border-left: 6px solid var(--primary-blue);
-        margin-bottom: 25px;
-        backdrop-filter: blur(10px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-    }
-    .pro-module-icon {
-        width: 85px; height: auto; margin-right: 30px;
-        filter: drop-shadow(0 5px 10px rgba(0,0,0,0.4)); 
-        transition: transform 0.4s ease;
-    }
-    .pro-module-header:hover .pro-module-icon { transform: scale(1.1) rotate(5deg); }
-    .pro-module-title h2 { margin: 0; font-size: 2.4rem; font-weight: 800; color: white !important; letter-spacing: -1px; }
-
-    /* --- CAJAS DE DETALLE Y TEXTO --- */
-    .detail-box {
-        background: rgba(30, 41, 59, 0.6);
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 20px;
-        font-size: 0.95rem;
-        color: #cbd5e1;
-    }
-    .detail-box strong { color: #60a5fa; }
-
-    /* --- BARRA LATERAL (SIDEBAR) --- */
-    [data-testid="stSidebar"] {
-        background-color: #0b0f19 !important;
-        border-right: 1px solid rgba(255,255,255,0.05);
-    }
-    
-    .stRadio > div[role="radiogroup"] > label {
-        background: transparent !important; border: none; padding: 12px 5px !important;
-        color: #94a3b8 !important; font-weight: 500 !important; font-size: 0.95rem !important;
-        transition: all 0.2s;
-        border-bottom: 1px solid rgba(255,255,255,0.02);
-    }
-    .stRadio > div[role="radiogroup"] > label:hover { 
-        color: #ffffff !important; padding-left: 10px !important; 
-    }
-    .stRadio > div[role="radiogroup"] > label[data-checked="true"] {
-        color: var(--primary-blue) !important; font-weight: 700 !important;
-        background: linear-gradient(90deg, rgba(10, 102, 194, 0.1) 0%, transparent 100%) !important;
-        border-left: 3px solid var(--primary-blue);
-    }
-
-    /* --- BOTONES PERSONALIZADOS --- */
-    .stButton>button {
-        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%) !important;
-        color: white !important; border-radius: 8px; font-weight: 700; border: none;
-        padding: 15px 30px; height: auto; width: 100%;
-        box-shadow: 0 4px 15px rgba(10, 102, 194, 0.3);
-        transition: all 0.3s ease;
-        text-transform: uppercase; letter-spacing: 1px; font-size: 0.9rem;
-    }
-    .stButton>button:hover {
-        box-shadow: 0 8px 25px rgba(10, 102, 194, 0.6); transform: translateY(-2px);
-    }
-    
-    /* --- SCROLLBAR --- */
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #0f172a; }
-    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-    </style>
-    """, unsafe_allow_html=True)
+# Styles consolidated in the global block above
+pass
 
 # ==============================================================================
 # ==============================================================================
@@ -564,11 +531,15 @@ def parsear_xml_dian(archivo_xml):
 
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/2830/2830303.png", width=80)
-    st.markdown("### 💼 Suite Financiera")
+    st.markdown("### 💼 Suite Financiera", unsafe_allow_html=True)
     
     # --- LOGICA DE LOGIN Y REGISTRO ---
     if not st.session_state.get('logged_in', False):
-        st.warning("🔒 Modo Invitado")
+        st.markdown("""
+        <div style="background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 8px; padding: 10px; margin-bottom: 15px;">
+            <span style="color: #fbbf24; font-weight: 600;">🔒 Modo Invitado</span>
+        </div>
+        """, unsafe_allow_html=True)
         with st.expander("Ingresar a tu Cuenta", expanded=True):
             u = st.text_input("Usuario (Prueba: admin)")
             p = st.text_input("Contraseña (Prueba: admin)", type="password")
@@ -657,54 +628,28 @@ with st.sidebar:
 if menu == "Inicio / Dashboard":
     # 1. HEADER EJECUTIVO (Ahora solo aparece en Inicio)
     st.markdown("""
-    <style>
-        .dashboard-header {
-            padding: 2rem 1rem;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            border-radius: 12px;
-            border-left: 5px solid #3b82f6;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-        .dashboard-title {
-            color: #ffffff; font-family: 'Helvetica Neue', sans-serif;
-            font-size: 2.5rem; font-weight: 700; margin: 0; letter-spacing: -0.5px;
-        }
-        .dashboard-subtitle {
-            color: #94a3b8; font-family: 'Helvetica Neue', sans-serif;
-            font-size: 1.1rem; margin-top: 0.5rem; font-weight: 400;
-        }
-    </style>
-    <div class="dashboard-header">
-        <h1 class="dashboard-title">ASISTENTE CONTABLE PRO</h1>
-        <div class="dashboard-subtitle">Plataforma de Inteligencia Financiera Corporativa • Panel de Control</div>
+    <div class="glass-card" style="margin-bottom: 2rem; border-left: 4px solid var(--primary-indigo);">
+        <h1 style="margin:0; font-size: 2.8rem;">ASISTENTE CONTABLE PRO</h1>
+        <div style="color: var(--text-muted); font-size: 1.1rem; margin-top: 0.5rem; font-weight: 500;">
+            Plataforma de Inteligencia Financiera Corporativa <span style="color:var(--secondary-blue)">• Panel de Control</span>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
     # 2. BENTO GRID DASHBOARD (Métricas y Gráficos)
-    st.markdown("""
-    <style>
-        .bento-box {
-            background-color: #1e293b; padding: 20px; border-radius: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); height: 100%; transition: transform 0.2s;
-        }
-        .bento-box:hover { transform: translateY(-5px); border-color: rgba(59, 130, 246, 0.5); }
-        .metric-label { color: #94a3b8; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
-        .metric-value { color: white; font-size: 1.8rem; font-weight: 700; }
-        .metric-delta { font-size: 0.9rem; font-weight: 600; }
-        .positive { color: #4ade80; } .negative { color: #f87171; }
-    </style>
-    """, unsafe_allow_html=True)
+    # The CSS styles for .bento-box are already consolidated in the main style block under .glass-card,
+    # but we will use a specific inline style or just the class to leverage the glass effect.
 
     def metric_card(label, value, delta, is_positive=True):
-        delta_color = "positive" if is_positive else "negative"
+        color = "#10b981" if is_positive else "#f43f5e"
         arrow = "↑" if is_positive else "↓"
         st.markdown(f"""
-        <div class="bento-box">
-            <div class="metric-label">{label}</div>
-            <div class="metric-value">{value}</div>
-            <div class="metric-delta {delta_color}">{arrow} {delta} vs mes anterior</div>
+        <div class="glass-card" style="height: 100%; display: flex; flex-direction: column; justify-content: center;">
+            <div style="color: var(--text-muted); font-size: 0.85rem; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px;">{label}</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: white; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{value}</div>
+            <div style="color: {color}; font-size: 0.95rem; font-weight: 600;">
+                {arrow} {delta} <span style="color: var(--text-muted); font-weight: 400;">vs mes anterior</span>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -741,18 +686,40 @@ if menu == "Inicio / Dashboard":
     st.markdown("---")
     st.markdown("### 💎 Planes de Suscripción")
     
+    # Pricing styles updated to use global vars and cleaner look
     st.markdown("""
     <style>
-        .pricing-card { background-color: #0f172a; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 2rem; flex: 1; transition: transform 0.3s ease; }
-        .pricing-card:hover { transform: translateY(-5px); border-color: #3b82f6; }
-        .pricing-card.pro { background: linear-gradient(145deg, #0f172a 0%, #1e3a8a 100%); border: 1px solid #3b82f6; box-shadow: 0 0 30px rgba(59, 130, 246, 0.15); position: relative; }
-        .pro-badge { position: absolute; top: -12px; right: 20px; background: #ea580c; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
-        .price-tag { font-size: 2.5rem; font-weight: 800; color: white; margin: 5px 0; }
-        .price-tag span { font-size: 1rem; color: #94a3b8; font-weight: 400; }
-        .price-old { font-size: 1.1rem; color: #64748b; text-decoration: line-through; }
-        .features-ul { list-style: none; padding: 0; margin: 20px 0; color: #cbd5e1; }
-        .features-ul li { margin-bottom: 10px; display: flex; align-items: center; }
-        .check { color: #4ade80; margin-right: 10px; } .cross { color: #ef4444; margin-right: 10px; } .dimmed { color: #64748b; text-decoration: line-through; }
+        .pricing-card {
+            background: var(--glass-surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 2.5rem;
+            height: 100%;
+            display: flex; flex-direction: column;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+        .pricing-card:hover { transform: translateY(-5px); border-color: var(--secondary-blue); }
+        .pricing-card.pro {
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 58, 138, 0.4) 100%);
+            border: 1px solid var(--primary-indigo);
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.15);
+            position: relative;
+        }
+        .pro-badge {
+            position: absolute; top: -12px; right: 24px;
+            background: linear-gradient(90deg, #f59e0b, #ea580c);
+            color: white; padding: 4px 12px; border-radius: 20px;
+            font-size: 0.75rem; font-weight: 800; letter-spacing: 0.5px;
+        }
+        .price-tag { font-size: 3rem; font-weight: 800; color: white; margin: 10px 0; }
+        .price-tag span { font-size: 1rem; color: var(--text-muted); font-weight: 500; }
+        .price-old { font-size: 1.1rem; color: #64748b; text-decoration: line-through; margin-top: 10px; }
+        .features-ul { list-style: none; padding: 0; margin: 24px 0; color: var(--text-muted); flex-grow: 1; }
+        .features-ul li { margin-bottom: 12px; display: flex; align-items: center; font-size: 0.95rem; }
+        .check { color: var(--success-emerald); margin-right: 12px; font-weight: bold; }
+        .cross { color: #ef4444; margin-right: 12px; opacity: 0.7; }
+        .dimmed { color: #475569; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -760,7 +727,7 @@ if menu == "Inicio / Dashboard":
     with col_p1:
         st.markdown("""
         <div class="pricing-card">
-            <h3 style="color:white; margin:0">Plan Inicial</h3>
+            <h3 style="color:white; margin:0; font-size: 1.4rem;">Plan Inicial</h3>
             <div class="price-tag">$0 <span>COP/mes</span></div>
             <ul class="features-ul">
                 <li><span class="check">✓</span> Dashboard Contable</li>
@@ -774,17 +741,17 @@ if menu == "Inicio / Dashboard":
     with col_p2:
         st.markdown("""
         <div class="pricing-card pro">
-            <div class="pro-badge">OFERTA LANZAMIENTO 🚀</div>
-            <h3 style="color:white; margin:0">Asistente PRO</h3>
+            <div class="pro-badge">RECOMENDADO 🚀</div>
+            <h3 style="color:white; margin:0; font-size: 1.4rem;">Asistente PRO</h3>
             <div class="price-old">$120.000</div> <div class="price-tag">$49.900 <span>COP/mes</span></div>
             <ul class="features-ul">
                 <li><span class="check">✓</span> <strong>Todo lo del Plan Inicial</strong></li>
                 <li><span class="check">✓</span> Consultas IA Ilimitadas</li>
                 <li><span class="check">✓</span> Predicción de Impuestos</li>
-                <li><span class="check">✓</span> Soporte Prioritario</li>
+                <li><span class="check">✓</span> Soporte Prioritario 24/7</li>
             </ul>
         </div>""", unsafe_allow_html=True)
-        st.button("🔥 Aprovechar Oferta PRO", key="btn_pro", type="primary", use_container_width=True)
+        st.button("🔥 Actualizar a PRO", key="btn_pro", type="primary", use_container_width=True)
 
     if not db_conectada:
         st.warning("⚠️ La base de datos no está conectada. Revisa el Google Sheet 'DB_Alcontador'.")
