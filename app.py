@@ -692,6 +692,65 @@ def ocr_factura(imagen):
 # ------------------------------------------------------------------------------
 # PARSEADOR DE XML (FACTURACIÓN ELECTRÓNICA DIAN)
 # ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# HELPER: SMART ADVISOR COMPONENT
+# ------------------------------------------------------------------------------
+def render_smart_advisor(summary, diagnosis, advice):
+    """
+    Renders a Glass Card with three distinct sections:
+    1. Summary (Brief overview)
+    2. Diagnosis (Critical analysis)
+    3. Advice (Actionable steps)
+    """
+    st.markdown(f"""
+    <div class="glass-card" style="padding: 20px; margin-top: 20px; border-left: 4px solid var(--accent);">
+        <h3 style="color: var(--accent); font-size: 1.2rem; margin-bottom: 15px; display: flex; align-items: center;">
+            <span style="font-size: 1.5rem; margin-right: 10px;">🧠</span> Smart Advisor
+        </h3>
+
+        <div style="margin-bottom: 15px;">
+            <strong style="color: var(--text-primary); display: block; margin-bottom: 5px;">📊 Executive Summary</strong>
+            <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5;">{summary}</p>
+        </div>
+
+        <div style="margin-bottom: 15px; background: rgba(239, 68, 68, 0.1); padding: 10px; border-radius: 8px;">
+            <strong style="color: var(--danger); display: block; margin-bottom: 5px;">🩺 Diagnosis</strong>
+            <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5;">{diagnosis}</p>
+        </div>
+
+        <div style="background: rgba(16, 185, 129, 0.1); padding: 10px; border-radius: 8px;">
+            <strong style="color: var(--success); display: block; margin-bottom: 5px;">💡 Strategic Advice</strong>
+            <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5;">{advice}</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ------------------------------------------------------------------------------
+# HELPER: EXCEL DOWNLOAD BUTTON
+# ------------------------------------------------------------------------------
+def get_excel_download(df, filename="report.xlsx", button_text="📥 Download Excel"):
+    """
+    Generates a download button for a DataFrame as an Excel file.
+    """
+    buffer = io.BytesIO()
+    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Report')
+        # Auto-adjust columns width
+        worksheet = writer.sheets['Report']
+        for i, col in enumerate(df.columns):
+            try:
+                max_len = max(df[col].astype(str).map(len).max(), len(str(col))) + 2
+            except:
+                max_len = 15
+            worksheet.set_column(i, i, max_len)
+
+    st.download_button(
+        label=button_text,
+        data=buffer.getvalue(),
+        file_name=filename,
+        mime="application/vnd.ms-excel"
+    )
+
 def parsear_xml_dian(archivo_xml):
     try:
         tree = ET.parse(archivo_xml)
@@ -960,7 +1019,7 @@ if menu == get_text("menu_dashboard"):
 # ---------------------------------------------------------
 else:
     # 1. AUDITORÍA
-    if menu == "Auditoría Cruce DIAN":
+    if menu == get_text("menu_dian"):
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/921/921591.png' class='pro-module-icon'><div class='pro-module-title'><h2>Auditor de Exógena (Cruce DIAN)</h2></div></div>""", unsafe_allow_html=True)
         st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Detectar discrepancias entre lo que reportaste y lo que la DIAN sabe de ti.<br><strong>Estrategia:</strong> Cruce matricial de NITs para evitar sanciones por inexactitud (Art. 651 ET).</div>""", unsafe_allow_html=True)
         
@@ -1022,6 +1081,11 @@ else:
                     if num_hallazgos == 0:
                         st.balloons()
                         st.success("✅ ¡Perfecto! No hay diferencias entre la DIAN y tu Contabilidad.")
+                        render_smart_advisor(
+                            summary="Audit completed successfully.",
+                            diagnosis="No significant discrepancies found between DIAN and Accounting records.",
+                            advice="Maintain current reporting standards. Periodic review recommended."
+                        )
                     else:
                         st.error(f"⚠️ Se encontraron {num_hallazgos} inconsistencias.")
                         col_met1, col_met2 = st.columns(2)
@@ -1034,14 +1098,19 @@ else:
                         else:
                             st.success("💎 REPORTE COMPLETO (PRO)")
                             st.dataframe(diferencias, use_container_width=True)
-                            # Exportación a Excel simplificada
-                            # out = io.BytesIO() ... (Código de descarga aquí)
+                            get_excel_download(diferencias, "Auditoria_DIAN.xlsx")
+
+                        render_smart_advisor(
+                            summary=f"Audit completed comparing DIAN ({len(dian_grouped)} records) vs Accounting ({len(conta_grouped)} records).",
+                            diagnosis=f"Found {num_hallazgos} inconsistencies totaling ${total_riesgo:,.0f}.",
+                            advice="Prioritize the top 3 discrepancies. Check for timing differences in reporting vs accounting dates."
+                        )
                 
                 except Exception as e:
                     st.error(f"Algo salió mal: {e}. Revisa 'Configuración manual' arriba.")
 
     # 2. MINERÍA XML (Continúa con ELIF)
-    elif menu == "Minería de XML (Facturación)":
+    elif menu == get_text("menu_xml"):
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/2823/2823523.png' class='pro-module-icon'><div class='pro-module-title'><h2>Minería de Datos XML (Facturación)</h2></div></div>""", unsafe_allow_html=True)
         st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Extraer información estructurada directamente de los archivos XML de Facturación Electrónica validados por la DIAN.</div>""", unsafe_allow_html=True)
         archivos_xml = st.file_uploader("Cargar XMLs (Lote)", type=['xml'], accept_multiple_files=True)
@@ -1051,12 +1120,18 @@ else:
             for i, f in enumerate(archivos_xml): barra.progress((i+1)/len(archivos_xml)); datos_xml.append(parsear_xml_dian(f))
             df_xml = pd.DataFrame(datos_xml)
             st.success("Extracción completada."); st.dataframe(df_xml, use_container_width=True)
-            out = io.BytesIO(); 
-            with pd.ExcelWriter(out, engine='xlsxwriter') as w: df_xml.to_excel(w, index=False)
-            st.download_button("📥 Descargar Reporte Maestro (.xlsx)", out.getvalue(), "Resumen_XML.xlsx")
+
+            get_excel_download(df_xml, "Resumen_XML.xlsx")
+
+            total_facturado = df_xml['Total a Pagar'].sum() if 'Total a Pagar' in df_xml.columns else 0
+            render_smart_advisor(
+                summary=f"Processed {len(archivos_xml)} XML files successfully.",
+                diagnosis=f"Total Extracted Amount: ${total_facturado:,.2f}.",
+                advice="Verify 'Total a Pagar' matches your declared income/expenses for this period."
+            )
             registrar_log(st.session_state['username'], "Mineria XML", f"Procesados {len(archivos_xml)} archivos")
 
-    elif menu == "Conciliación Bancaria IA":
+    elif menu == get_text("menu_bank"):
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/2489/2489756.png' class='pro-module-icon'><div class='pro-module-title'><h2>Conciliación Bancaria Inteligente</h2></div></div>""", unsafe_allow_html=True)
         st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Automatizar el emparejamiento de transacciones entre el Extracto Bancario y el Libro Auxiliar de Bancos usando lógica difusa (Fechas cercanas).</div>""", unsafe_allow_html=True)
         
@@ -1181,7 +1256,13 @@ else:
                     st.warning("Estos registros están en Contabilidad pero NO han salido del Banco:")
                     st.dataframe(df_pend_libro, use_container_width=True)
 
-    elif menu == "Auditoría Fiscal de Gastos":
+                render_smart_advisor(
+                    summary=f"Auto-match completed. {len(matches)} transactions reconciled.",
+                    diagnosis=f"Pending: {len(df_pend_banco)} in Bank, {len(df_pend_libro)} in Books.",
+                    advice="Review 'Pending in Bank' immediately as they represent actual cash movements not recorded in accounting."
+                )
+
+    elif menu == get_text("menu_expenses"):
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/1642/1642346.png' class='pro-module-icon'><div class='pro-module-title'><h2>Auditoría Fiscal Masiva (Art. 771-5)</h2></div></div>""", unsafe_allow_html=True)
         st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Verificar el cumplimiento de los requisitos de deducibilidad (Bancarización y Retenciones).<br>Detecta pagos en efectivo superiores a 100 UVT y bases de retención omitidas.</div>""", unsafe_allow_html=True)
         
@@ -1270,21 +1351,18 @@ else:
                     st.dataframe(df_res, use_container_width=True)
                     
                     # Botón Descarga
-                    buffer = io.BytesIO()
-                    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-                        df_res.to_excel(writer, index=False)
+                    get_excel_download(df_res, "Auditoria_Fiscal_Gastos.xlsx")
                     
-                    st.download_button(
-                        label="📥 DESCARGAR REPORTE DE HALLAZGOS",
-                        data=buffer.getvalue(),
-                        file_name="Auditoria_Fiscal_Gastos.xlsx",
-                        mime="application/vnd.ms-excel"
+                    render_smart_advisor(
+                        summary=f"Analyzed {len(df)} expense records.",
+                        diagnosis=f"Identified {len(df_riesgos)} risks (High/Medium). High Risk: {riesgo_alto} (Cash payments > Limit).",
+                        advice="Restrict cash payments to comply with Art 771-5. Verify withholding tax bases for medium risks."
                     )
 
     # --------------------------------------------------------------------------
     # MÓDULO 1: ESCÁNER UGPP (LEY 1393 - REGLA DEL 40%)
     # --------------------------------------------------------------------------
-    elif menu == "Escáner de Nómina (UGPP)":
+    elif menu == get_text("menu_ugpp"):
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/3135/3135817.png' class='pro-module-icon'><div class='pro-module-title'><h2>Escáner de Riesgo UGPP (Ley 1393)</h2></div></div>""", unsafe_allow_html=True)
         st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Auditar pagos laborales. Verifica si los pagos NO salariales exceden el 40% del total (Art. 30 Ley 1393).</div>""", unsafe_allow_html=True)
         
@@ -1357,11 +1435,27 @@ else:
                     st.error(f"⚠️ {len(riesgos)} empleados exceden el límite del 40%.")
                     st.dataframe(riesgos, use_container_width=True)
 
+                get_excel_download(df_res, "Reporte_UGPP_1393.xlsx")
+
+                count_riesgos = len(riesgos)
+                if count_riesgos > 0:
+                    render_smart_advisor(
+                        summary="Payroll scan completed (Law 1393).",
+                        diagnosis=f"CRITICAL: {count_riesgos} employees exceed the 40% non-salary limit.",
+                        advice="Adjust compensation packages immediately to avoid UGPP sanctions. Consider salarying part of the bonuses."
+                    )
+                else:
+                    render_smart_advisor(
+                        summary="Payroll scan completed (Law 1393).",
+                        diagnosis="All employees are within the 40% non-salary limit.",
+                        advice="No immediate action required. Maintain current compensation structure."
+                    )
+
     # --------------------------------------------------------------------------
     # MÓDULO: COSTEO DE NÓMINA REAL (EL QUE TÚ BUSCAS 💰)
     # --------------------------------------------------------------------------
     
-    elif menu == "Proyección de Tesorería":
+    elif menu == get_text("menu_treasury"):
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/5806/5806289.png' class='pro-module-icon'><div class='pro-module-title'><h2>Radar de Liquidez & Flujo de Caja</h2></div></div>""", unsafe_allow_html=True)
         st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Visualizar la salud financiera futura cruzando CxC y CxP.</div>""", unsafe_allow_html=True)
         saldo_hoy = st.number_input("💵 Saldo Disponible Hoy ($):", min_value=0.0, format="%.2f")
@@ -1378,15 +1472,25 @@ else:
                     cal = pd.merge(fi, fe, on='Fecha', how='outer').fillna(0); cal.columns = ['Fecha', 'Ingresos', 'Egresos']; cal = cal.sort_values('Fecha')
                     cal['Saldo Proyectado'] = saldo_hoy + (cal['Ingresos'] - cal['Egresos']).cumsum()
                     st.area_chart(cal.set_index('Fecha')['Saldo Proyectado']); st.dataframe(cal, use_container_width=True)
+
+                    get_excel_download(cal, "Proyeccion_Tesoreria.xlsx")
+
+                    ia_advice = "IA Analysis unavailable."
                     if api_key_valida:
                         with st.spinner("🤖 La IA está analizando tu flujo de caja..."):
-                            st.markdown(consultar_ia_gemini(f"Analiza este flujo de caja. Saldo inicial: {saldo_hoy}. Datos: {cal.head(10).to_string()}"))
+                            ia_advice = consultar_ia_gemini(f"Analiza este flujo de caja. Saldo inicial: {saldo_hoy}. Datos: {cal.head(10).to_string()}. Resumen corto, Diagnostico, Consejo.")
+
+                    render_smart_advisor(
+                        summary=f"Projection generated for {len(cal)} periods.",
+                        diagnosis=f"Final Projected Balance: ${cal['Saldo Proyectado'].iloc[-1]:,.2f}",
+                        advice=ia_advice
+                    )
                 except: st.error("Error en el formato de fechas.")
 
     # ==============================================================================
     # 🚨 MÓDULO DE NÓMINA (CORREGIDO: Auto-Detección y Protección de Errores)
     # ==============================================================================
-    elif menu == "Costeo de Nómina Real":
+    elif menu == get_text("menu_payroll"):
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/2328/2328761.png' class='pro-module-icon'><div class='pro-module-title'><h2>Calculadora de Costo Real de Nómina</h2></div></div>""", unsafe_allow_html=True)
         st.markdown("""
         <div class='detail-box'>
@@ -1449,7 +1553,16 @@ else:
                         st.success("✅ Cálculo exitoso.")
                     
                     st.markdown("### 📊 Resultado del Análisis")
-                    st.dataframe(pd.DataFrame(rc), use_container_width=True)
+                    df_rc = pd.DataFrame(rc)
+                    st.dataframe(df_rc, use_container_width=True)
+
+                    get_excel_download(df_rc, "Costeo_Nomina_Real.xlsx")
+
+                    render_smart_advisor(
+                        summary="Total Real Cost calculation complete.",
+                        diagnosis="Includes Social Security, Para-fiscals, and Social Benefits loads.",
+                        advice="Use 'Costo Total Mensual' for budgeting, not just base salary."
+                    )
 
             except Exception as e:
                 st.error(f"Error leyendo el archivo: {str(e)}. Revisa que el Excel no tenga filas vacías al inicio.")
@@ -1458,7 +1571,7 @@ else:
     # FIN DE LA CORRECCIÓN DE NÓMINA - CONTINÚAN LOS OTROS MÓDULOS
     # ==============================================================================
 
-    elif menu == "Analítica Financiera Inteligente":
+    elif menu == get_text("menu_ai"):
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/10041/10041467.png' class='pro-module-icon'><div class='pro-module-title'><h2>Inteligencia Financiera (IA)</h2></div></div>""", unsafe_allow_html=True)
         st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Detectar patrones de gasto y anomalías en cuentas contables usando IA.</div>""", unsafe_allow_html=True)
         fi = st.file_uploader("Cargar Datos Financieros (.xlsx/.csv)", type=['xlsx', 'csv'])
@@ -1467,9 +1580,22 @@ else:
             c1, c2 = st.columns(2); cd = c1.selectbox("Columna Descripción", df.columns); cv = c2.selectbox("Columna Valor", df.columns)
             if st.button("▶️ INICIAR ANÁLISIS IA"):
                 res = df.groupby(cd)[cv].sum().sort_values(ascending=False).head(10); st.bar_chart(res)
-                st.markdown(consultar_ia_gemini(f"Actúa como auditor financiero. Analiza estos saldos principales y da recomendaciones: {res.to_string()}"))
 
-    elif menu == "Narrador Financiero & NIIF":
+                df_res = res.reset_index()
+                get_excel_download(df_res, "Analisis_Financiero.xlsx")
+
+                ia_analysis = "IA module offline."
+                if api_key_valida:
+                     ia_analysis = consultar_ia_gemini(f"Actúa como auditor financiero. Analiza estos saldos principales y da recomendaciones: {res.to_string()}")
+                     st.markdown(ia_analysis)
+
+                render_smart_advisor(
+                    summary="Top 10 Accounts analyzed by volume.",
+                    diagnosis="AI-powered pattern detection initialized.",
+                    advice=ia_analysis
+                )
+
+    elif menu == get_text("menu_niif"):
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/3208/3208727.png' class='pro-module-icon'><div class='pro-module-title'><h2>Narrador Financiero & Notas NIIF</h2></div></div>""", unsafe_allow_html=True)
         st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Automatizar la redacción de informes gerenciales y Notas a Estados Financieros.</div>""", unsafe_allow_html=True)
         c1, c2 = st.columns(2); f1 = c1.file_uploader("Año Actual", type=['xlsx']); f2 = c2.file_uploader("Año Anterior", type=['xlsx'])
@@ -1481,18 +1607,30 @@ else:
                 merged = pd.merge(g1, g2, on=cta, how='inner').fillna(0); merged['Variacion'] = merged['V_Act'] - merged['V_Ant']
                 top = merged.reindex(merged.Variacion.abs().sort_values(ascending=False).index).head(10)
                 st.markdown("### 📊 Tablero de Control Gerencial"); st.bar_chart(top.set_index(cta)['Variacion'])
-                with st.spinner("🤖 El Consultor IA está redactando el informe..."):
-                    prompt = f"""Actúa como un CFO experto. Analiza la siguiente tabla de variaciones contables:{top.to_string()} GENERA: 1. Un Informe Gerencial Ejecutivo. 2. Un borrador de Nota a los Estados Financieros bajo NIIF."""
-                    st.markdown(consultar_ia_gemini(prompt))
 
-    elif menu == "Validador de RUT Oficial":
+                get_excel_download(merged, "Variaciones_Contables.xlsx")
+
+                ia_report = "IA Generation offline."
+                if api_key_valida:
+                    with st.spinner("🤖 El Consultor IA está redactando el informe..."):
+                        prompt = f"""Actúa como un CFO experto. Analiza la siguiente tabla de variaciones contables:{top.to_string()} GENERA: 1. Un Informe Gerencial Ejecutivo. 2. Un borrador de Nota a los Estados Financieros bajo NIIF."""
+                        ia_report = consultar_ia_gemini(prompt)
+                        st.markdown(ia_report)
+
+                render_smart_advisor(
+                    summary="Comparative analysis (Year-over-Year) complete.",
+                    diagnosis="Variations calculated for all accounts.",
+                    advice="Review the generated Executive Report and NIIF Notes above."
+                )
+
+    elif menu == get_text("menu_rut"):
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/9422/9422888.png' class='pro-module-icon'><div class='pro-module-title'><h2>Validador Oficial de RUT</h2></div></div>""", unsafe_allow_html=True)
         st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Asegurar la integridad de datos de terceros. Aplica algoritmo de Módulo 11.</div>""", unsafe_allow_html=True)
         nit = st.text_input("Ingrese NIT o Cédula (Sin DV):", max_chars=15)
         if st.button("🔢 VERIFICAR"):
             dv = calcular_dv_colombia(nit); st.metric("Dígito de Verificación (DV)", dv); st.link_button("🔗 Consulta Estado en Muisca (DIAN)", "https://muisca.dian.gov.co/WebRutMuisca/DefConsultaEstadoRUT.faces")
 
-    elif menu == "Digitalización OCR":
+    elif menu == get_text("menu_ocr"):
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/3588/3588241.png' class='pro-module-icon'><div class='pro-module-title'><h2>Digitalización Inteligente (OCR)</h2></div></div>""", unsafe_allow_html=True)
         st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Eliminar la digitación manual. Usa IA para leer imágenes de facturas.</div>""", unsafe_allow_html=True)
         af = st.file_uploader("Cargar Imágenes", type=["jpg", "png"], accept_multiple_files=True)
@@ -1500,7 +1638,16 @@ else:
             do = []; bar = st.progress(0)
             for i, f in enumerate(af): bar.progress((i+1)/len(af)); info = ocr_factura(Image.open(f)); 
             if info: do.append(info)
-            st.dataframe(pd.DataFrame(do), use_container_width=True)
+            df_do = pd.DataFrame(do)
+            st.dataframe(df_do, use_container_width=True)
+
+            get_excel_download(df_do, "OCR_Data.xlsx")
+
+            render_smart_advisor(
+                summary=f"Digitized {len(do)} documents.",
+                diagnosis="Structured data extracted successfully.",
+                advice="Validate extracted totals against physical documents before posting."
+            )
 
     st.markdown('</div>', unsafe_allow_html=True)
 
