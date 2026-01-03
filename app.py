@@ -236,6 +236,13 @@ def login_section():
     else:
         login_btn = '<div style="color:#ef4444; border:1px solid #ef4444; padding:10px; border-radius: 8px; font-family:\'Inter\', sans-serif;">⚠️ GOOGLE AUTH OFFLINE</div>'
 
+    # DEBUG: Verificar URI exacta
+    if "google" in st.secrets:
+        uri_debug = st.secrets["google"]["redirect_uri"]
+        st.warning(f"🕵️ DEBUG MONITOR: La URI de redirección configurada es: `{uri_debug}`")
+    else:
+        st.error("❌ DEBUG: No se detectaron secretos de Google.")
+
     # Note: Indentation is stripped to prevent Markdown Code Block rendering
     st.markdown(f"""
 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 70vh;">
