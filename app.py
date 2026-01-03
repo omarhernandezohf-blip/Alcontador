@@ -14,6 +14,110 @@ import html
 import google_auth_oauthlib.flow
 from googleapiclient.discovery import build
 
+# --- LOCALIZATION / TRANSLATIONS ---
+TRANSLATIONS = {
+    'ES': {
+        'system_access': 'Acceso al Sistema',
+        'auth_required': 'Autenticación requerida para Enterprise Suite',
+        'sign_in_google': '🔐 Iniciar Sesión con Google',
+        'google_offline': '⚠️ GOOGLE AUTH OFFLINE',
+        'welcome_back': 'Bienvenido de Nuevo',
+        'sign_in_desc': 'Inicia sesión para acceder a tu asistente financiero inteligente.',
+        'emergency_override': '⚠️ ACCESO DE EMERGENCIA',
+        'operator_id': 'ID Operador',
+        'access_key': 'Clave de Acceso',
+        'initiate_manual': 'INICIAR ACCESO MANUAL',
+        'invalid_credentials': '❌ CREDENCIALES INVÁLIDAS',
+        'current_session': 'SESIÓN ACTUAL',
+        'unlock_full': '🔓 Desbloquear Sistema Completo',
+        'upgrade_pro': '⚡ MEJORAR A PRO',
+        'logout': 'Cerrar Sesión',
+        'modules': 'MÓDULOS DEL SISTEMA',
+        'menu_dashboard': 'Inicio / Dashboard',
+        'menu_dian': 'Auditoría Cruce DIAN',
+        'menu_xml': 'Minería de XML (Facturación)',
+        'menu_bank': 'Conciliación Bancaria IA',
+        'menu_expenses': 'Auditoría Fiscal de Gastos',
+        'menu_ugpp': 'Escáner de Nómina (UGPP)',
+        'menu_treasury': 'Proyección de Tesorería',
+        'menu_payroll': 'Costeo de Nómina Real',
+        'menu_ai': 'Analítica Financiera Inteligente',
+        'menu_niif': 'Narrador Financiero & NIIF',
+        'menu_rut': 'Validador de RUT Oficial',
+        'menu_ocr': 'Digitalización OCR',
+        'hero_title_1': 'Inteligencia Financiera',
+        'hero_title_2': 'Reimaginada',
+        'hero_desc': 'Tu CFO automatizado. Auditoría fiscal en tiempo real, nómina y pronósticos inteligentes impulsados por Gemini AI.',
+        'launch_audit': 'Iniciar Auditoría',
+        'view_docs': 'Ver Documentación',
+        'live_metrics': '📊 METRICAS EN VIVO',
+        'income': 'INGRESOS TOTALES',
+        'expenses': 'GASTOS OP.',
+        'profit': 'UTILIDAD NETA',
+        'cash_flow_trend': '📈 TENDENCIA DE CAJA',
+        'expense_breakdown': '📉 DESGLOSE DE GASTOS',
+        'latest_transactions': '📝 ÚLTIMAS TRANSACCIONES',
+        'upgrade_access': '💎 MEJORAR NIVEL DE ACCESO',
+        'starter_level': 'NIVEL INICIAL',
+        'continue_free': 'CONTINUAR GRATIS',
+        'pro_agent': 'AGENTE PRO',
+        'recommended': 'RECOMENDADO',
+        'upgrade_btn': '⚡ MEJORAR A PRO',
+        'db_offline': '⚠️ BASE DE DATOS OFFLINE. Verifica conexión.',
+        'footer': 'Asistente Contable Pro | v15.0 Enterprise'
+    },
+    'EN': {
+        'system_access': 'System Access',
+        'auth_required': 'Authentication required for Enterprise Suite',
+        'sign_in_google': '🔐 Sign in with Google',
+        'google_offline': '⚠️ GOOGLE AUTH OFFLINE',
+        'welcome_back': 'Welcome Back',
+        'sign_in_desc': 'Sign in to access your intelligent financial assistant.',
+        'emergency_override': '⚠️ EMERGENCY OVERRIDE',
+        'operator_id': 'Operator ID',
+        'access_key': 'Access Key',
+        'initiate_manual': 'INITIATE MANUAL OVERRIDE',
+        'invalid_credentials': '❌ INVALID CREDENTIALS',
+        'current_session': 'CURRENT SESSION',
+        'unlock_full': '🔓 Unlock Full Power',
+        'upgrade_pro': '⚡ UPGRADE PRO',
+        'logout': 'Log Out',
+        'modules': 'SYSTEM MODULES',
+        'menu_dashboard': 'Home / Dashboard',
+        'menu_dian': 'DIAN Audit Cross-check',
+        'menu_xml': 'XML Mining (Invoicing)',
+        'menu_bank': 'AI Bank Reconciliation',
+        'menu_expenses': 'Fiscal Expense Audit',
+        'menu_ugpp': 'Payroll Scanner (UGPP)',
+        'menu_treasury': 'Treasury Projection',
+        'menu_payroll': 'Real Payroll Costing',
+        'menu_ai': 'Smart Financial Analytics',
+        'menu_niif': 'Financial Storyteller & IFRS',
+        'menu_rut': 'Official RUT Validator',
+        'menu_ocr': 'OCR Digitization',
+        'hero_title_1': 'Financial Intelligence',
+        'hero_title_2': 'Reimagined',
+        'hero_desc': 'Your automated CFO. Real-time tax auditing, payroll costing, and intelligent forecasting powered by Gemini AI.',
+        'launch_audit': 'Launch Audit',
+        'view_docs': 'View Documentation',
+        'live_metrics': '📊 LIVE METRICS STREAM',
+        'income': 'TOTAL INCOME',
+        'expenses': 'OP. EXPENSES',
+        'profit': 'NET PROFIT',
+        'cash_flow_trend': '📈 CASH FLOW TREND',
+        'expense_breakdown': '📉 EXPENSE BREAKDOWN',
+        'latest_transactions': '📝 LATEST TRANSACTIONS',
+        'upgrade_access': '💎 UPGRADE ACCESS LEVEL',
+        'starter_level': 'STARTER LEVEL',
+        'continue_free': 'CONTINUE FREE',
+        'pro_agent': 'PRO AGENT',
+        'recommended': 'RECOMMENDED',
+        'upgrade_btn': '⚡ UPGRADE TO PRO',
+        'db_offline': '⚠️ DATABASE OFFLINE. Check connection.',
+        'footer': 'Accounting Assistant Pro | v15.0 Enterprise'
+    }
+}
+
 # --- CONFIGURACIÓN DE ESTILO GLOBAL (AIVORA THEME) ---
 # Se inyecta CSS moderno basado en Bootstrap 5 y diseño Glassmorphism
 st.markdown("""
@@ -176,9 +280,35 @@ st.markdown("""
 # 2. GESTIÓN DE CONEXIONES EXTERNAS (BACKEND) Y SEGURIDAD (OAUTH2)
 # ==============================================================================
 
+# --- LANGUAGE SELECTOR (GLOBAL) ---
+# Place this early so it appears even on the Login Screen
+with st.sidebar:
+    col_lang_1, col_lang_2 = st.columns([1,3])
+    with col_lang_1:
+        st.markdown(f"<div style='margin-top: 10px; font-size:1.5rem;'>{ '🇺🇸' if st.session_state.get('language')=='EN' else '🇪🇸' }</div>", unsafe_allow_html=True)
+    with col_lang_2:
+        # Use a key that doesn't conflict if we had one before
+        lang_choice = st.selectbox(
+            "Language / Idioma",
+            ["Español (ES)", "English (EN)"],
+            index=0 if st.session_state.get('language','ES') == 'ES' else 1,
+            label_visibility="collapsed",
+            key="lang_selector_main"
+        )
+        new_lang = 'ES' if "Español" in lang_choice else 'EN'
+        if new_lang != st.session_state.get('language', 'ES'):
+            st.session_state['language'] = new_lang
+            st.rerun()
+    st.markdown("---")
+
 # ------------------------------------------------------------------------------
 # A. AUTENTICACIÓN GOOGLE OAUTH2 (THE GATEKEEPER)
 # ------------------------------------------------------------------------------
+
+def get_text(key):
+    """Helper for translations"""
+    lang = st.session_state.get('language', 'ES')
+    return TRANSLATIONS.get(lang, TRANSLATIONS['ES']).get(key, key)
 
 def login_section():
     # Load secrets safely
@@ -243,9 +373,9 @@ def login_section():
 
     # Prepare button HTML to avoid f-string complexity and indentation issues
     if auth_url:
-        login_btn = f'<a href="{auth_url}" target="_self"><button style="background: linear-gradient(135deg, var(--primary), var(--primary-hover)); border: none; color: white; padding: 1rem 2rem; font-size: 1.1rem; font-family: \'Outfit\', sans-serif; font-weight: 600; cursor: pointer; border-radius: 10px; box-shadow: var(--shadow-glow); transition: all 0.2s ease; width: 100%;">🔐 Sign in with Google</button></a>'
+        login_btn = f'<a href="{auth_url}" target="_self"><button style="background: linear-gradient(135deg, var(--primary), var(--primary-hover)); border: none; color: white; padding: 1rem 2rem; font-size: 1.1rem; font-family: \'Outfit\', sans-serif; font-weight: 600; cursor: pointer; border-radius: 10px; box-shadow: var(--shadow-glow); transition: all 0.2s ease; width: 100%;">{get_text("sign_in_google")}</button></a>'
     else:
-        login_btn = '<div style="color:#ef4444; border:1px solid #ef4444; padding:10px; border-radius: 8px; font-family:\'Outfit\', sans-serif;">⚠️ GOOGLE AUTH OFFLINE</div>'
+        login_btn = f'<div style="color:#ef4444; border:1px solid #ef4444; padding:10px; border-radius: 8px; font-family:\'Outfit\', sans-serif;">{get_text("google_offline")}</div>'
 
     # Note: Indentation is stripped to prevent Markdown Code Block rendering
     st.markdown(f"""
@@ -253,8 +383,8 @@ def login_section():
     <div style="margin-bottom: 1.5rem;">
         <span style="font-size: 3rem;">🤖</span>
     </div>
-    <h1 style="font-family: 'Outfit', sans-serif; font-size: 2rem; margin-bottom: 0.5rem; color: white;">Welcome Back</h1>
-    <p style="color: var(--text-secondary); margin-bottom: 2.5rem; font-size: 1rem;">Sign in to access your intelligent financial assistant.</p>
+    <h1 style="font-family: 'Outfit', sans-serif; font-size: 2rem; margin-bottom: 0.5rem; color: white;">{get_text("welcome_back")}</h1>
+    <p style="color: var(--text-secondary); margin-bottom: 2.5rem; font-size: 1rem;">{get_text("sign_in_desc")}</p>
     {login_btn}
 </div>
 """, unsafe_allow_html=True)
@@ -262,12 +392,12 @@ def login_section():
     # --- FALLBACK LOGIN (Manual Override) ---
     c1, c2, c3 = st.columns([1,1,1])
     with c2:
-        with st.expander("⚠️ EMERGENCY OVERRIDE"):
-            st.markdown("<small style='color: #94a3b8;'>Use this channel if Google Auth is offline (Error 403/500).</small>", unsafe_allow_html=True)
-            u = st.text_input("Operator ID", key="login_u")
-            p = st.text_input("Access Key", type="password", key="login_p")
+        with st.expander(f"{get_text('emergency_override')}"):
+            st.markdown(f"<small style='color: #94a3b8;'>Use this channel if Google Auth is offline (Error 403/500).</small>", unsafe_allow_html=True)
+            u = st.text_input(get_text("operator_id"), key="login_u")
+            p = st.text_input(get_text("access_key"), type="password", key="login_p")
 
-            if st.button("INITIATE MANUAL OVERRIDE", type="primary"):
+            if st.button(get_text("initiate_manual"), type="primary"):
                 if u == "admin" and p == "admin":
                     st.session_state['user_plan'] = 'PRO'
                     st.session_state['logged_in'] = True
@@ -285,7 +415,7 @@ def login_section():
                     registrar_log("Cliente", "Login Manual", "Acceso cliente manual")
                     st.rerun()
                 else:
-                    st.error("❌ INVALID CREDENTIALS")
+                    st.error(get_text("invalid_credentials"))
                     registrar_log(u, "Login Fallido", "Manual override fallido")
 
     st.stop()
@@ -589,6 +719,8 @@ def parsear_xml_dian(archivo_xml):
 # ==============================================================================
 
 with st.sidebar:
+    # Language selector moved to top of file
+
     st.markdown("""
         <div style="display: flex; align-items: center; margin-bottom: 20px;">
             <img src="https://cdn-icons-png.flaticon.com/512/2830/2830303.png" width="40" style="margin-right: 10px;">
@@ -621,7 +753,7 @@ with st.sidebar:
     else:
         st.markdown(f"""
         <div style='background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; border: 1px solid var(--border-glass); margin-bottom: 20px;'>
-            <small style='color: var(--text-secondary); text-transform:uppercase; letter-spacing: 1px; font-size: 0.7rem;'>CURRENT SESSION</small><br>
+            <small style='color: var(--text-secondary); text-transform:uppercase; letter-spacing: 1px; font-size: 0.7rem;'>{get_text("current_session")}</small><br>
             <div style='display: flex; align-items: center; margin-top: 5px;'>
                 <div style='width: 8px; height: 8px; background: {plan_bg}; border-radius: 50%; margin-right: 8px; box-shadow: 0 0 10px {plan_bg};'></div>
                 <strong style='font-size: 0.95rem; color:white; font-family: "Outfit", sans-serif;'>{user_name}</strong>
@@ -648,23 +780,23 @@ with st.sidebar:
     st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
     
     opciones_menu = [
-        "Inicio / Dashboard",
-        "Auditoría Cruce DIAN",
-        "Minería de XML (Facturación)",
-        "Conciliación Bancaria IA",
-        "Auditoría Fiscal de Gastos",
-        "Escáner de Nómina (UGPP)",
-        "Proyección de Tesorería",
-        "Costeo de Nómina Real",
-        "Analítica Financiera Inteligente",
-        "Narrador Financiero & NIIF",
-        "Validador de RUT Oficial",
-        "Digitalización OCR"
+        get_text("menu_dashboard"),
+        get_text("menu_dian"),
+        get_text("menu_xml"),
+        get_text("menu_bank"),
+        get_text("menu_expenses"),
+        get_text("menu_ugpp"),
+        get_text("menu_treasury"),
+        get_text("menu_payroll"),
+        get_text("menu_ai"),
+        get_text("menu_niif"),
+        get_text("menu_rut"),
+        get_text("menu_ocr")
     ]
     
-    menu = st.radio("SYSTEM MODULES:", opciones_menu)
+    menu = st.radio(get_text("modules"), opciones_menu)
     
-    st.markdown("<br><center><small style='color: #64748b;'>v14.5 ENTERPRISE</small></center>", unsafe_allow_html=True)
+    st.markdown(f"<br><center><small style='color: #64748b;'>{get_text('footer')}</small></center>", unsafe_allow_html=True)
 
 # ==============================================================================
 # ==============================================================================
@@ -672,20 +804,20 @@ with st.sidebar:
 # ==============================================================================
 # ==============================================================================
 
-if menu == "Inicio / Dashboard":
+if menu == get_text("menu_dashboard"):
     # 1. HEADER EJECUTIVO (HERO SECTION - AIVORA THEME)
-    st.markdown("""
+    st.markdown(f"""
     <div class="hero-aivora">
         <div style="margin-bottom: 20px;">
             <span style="font-size: 1rem; color: var(--accent); background: rgba(76, 201, 240, 0.1); padding: 5px 15px; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px;">v15.0 AI System</span>
         </div>
-        <h1 class="hero-title">Financial Intelligence <br><span style="color: var(--primary);">Reimagined</span></h1>
+        <h1 class="hero-title">{get_text('hero_title_1')} <br><span style="color: var(--primary);">{get_text('hero_title_2')}</span></h1>
         <p style="color: var(--text-secondary); font-size: 1.2rem; max-width: 600px; margin: 0 auto 30px;">
-            Your automated CFO. Real-time tax auditing, payroll costing, and intelligent forecasting powered by Gemini AI.
+            {get_text('hero_desc')}
         </p>
         <div style="display: flex; gap: 15px; justify-content: center;">
-            <button style="background: var(--primary); border: none; padding: 12px 24px; color: white; border-radius: 8px; font-weight: 600;">Launch Audit</button>
-            <button style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px 24px; color: white; border-radius: 8px; font-weight: 600;">View Documentation</button>
+            <button style="background: var(--primary); border: none; padding: 12px 24px; color: white; border-radius: 8px; font-weight: 600;">{get_text('launch_audit')}</button>
+            <button style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px 24px; color: white; border-radius: 8px; font-weight: 600;">{get_text('view_docs')}</button>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -708,26 +840,26 @@ if menu == "Inicio / Dashboard":
         </div>
         """, unsafe_allow_html=True)
 
-    st.markdown("### 📊 LIVE METRICS STREAM")
+    st.markdown(f"### {get_text('live_metrics')}")
     col1, col2, col3, col4 = st.columns(4)
-    with col1: metric_card("TOTAL INCOME", "$124,500", "12%", True)
-    with col2: metric_card("OP. EXPENSES", "$42,300", "5%", False)
-    with col3: metric_card("NET PROFIT", "$82,200", "18%", True)
+    with col1: metric_card(get_text("income"), "$124,500", "12%", True)
+    with col2: metric_card(get_text("expenses"), "$42,300", "5%", False)
+    with col3: metric_card(get_text("profit"), "$82,200", "18%", True)
     with col4: metric_card("EBITDA MARGIN", "34%", "2%", True)
 
     st.markdown("---")
 
     c_chart_1, c_chart_2 = st.columns([2, 1])
     with c_chart_1:
-        st.markdown("#### 📈 CASH FLOW TREND")
+        st.markdown(f"#### {get_text('cash_flow_trend')}")
         chart_data = pd.DataFrame(np.random.randn(20, 3) + [10, 10, 10], columns=['Income', 'Expenses', 'Profit'])
         st.area_chart(chart_data, color=["#06b6d4", "#ef4444", "#10b981"])
     with c_chart_2:
-        st.markdown("#### 📉 EXPENSE BREAKDOWN")
+        st.markdown(f"#### {get_text('expense_breakdown')}")
         gastos_data = pd.DataFrame({'Category': ['Payroll', 'Software', 'Office', 'Ads'], 'Amount': [5000, 2000, 1500, 3000]})
         st.bar_chart(gastos_data.set_index('Category'), color="#8b5cf6")
 
-    st.markdown("### 📝 LATEST TRANSACTIONS LOG")
+    st.markdown(f"### {get_text('latest_transactions')}")
     df_transacciones = pd.DataFrame({
         "ID": ["TRX-001", "TRX-002", "TRX-003", "TRX-004", "TRX-005"],
         "DATE": ["2024-05-01", "2024-05-02", "2024-05-02", "2024-05-03", "2024-05-03"],
@@ -739,7 +871,7 @@ if menu == "Inicio / Dashboard":
 
     # 3. SECCIÓN PLANES Y PRECIOS
     st.markdown("---")
-    st.markdown("### 💎 UPGRADE ACCESS LEVEL")
+    st.markdown(f"### {get_text('upgrade_access')}")
     
     # Styles for pricing cards are now in Global CSS, but we can add specific tweaks here if needed
     st.markdown("""
@@ -777,9 +909,9 @@ if menu == "Inicio / Dashboard":
 
     col_p1, col_p2 = st.columns(2)
     with col_p1:
-        st.markdown("""
+        st.markdown(f"""
         <div class="pricing-card">
-            <h3 style="color:white; margin:0; font-size: 1.4rem;">STARTER LEVEL</h3>
+            <h3 style="color:white; margin:0; font-size: 1.4rem;">{get_text('starter_level')}</h3>
             <div class="price-tag">$0 <span>COP/mo</span></div>
             <ul class="features-ul">
                 <li><span class="check">✓</span> Dashboard Access</li>
@@ -788,13 +920,13 @@ if menu == "Inicio / Dashboard":
                 <li class="dimmed"><span class="cross">✕</span> Bank Connection</li>
             </ul>
         </div>""", unsafe_allow_html=True)
-        st.button("CONTINUE FREE", key="btn_free", use_container_width=True)
+        st.button(get_text("continue_free"), key="btn_free", use_container_width=True)
 
     with col_p2:
-        st.markdown("""
+        st.markdown(f"""
         <div class="pricing-card pro">
-            <div class="pro-badge">RECOMMENDED</div>
-            <h3 style="color:white; margin:0; font-size: 1.4rem;">PRO AGENT</h3>
+            <div class="pro-badge">{get_text('recommended')}</div>
+            <h3 style="color:white; margin:0; font-size: 1.4rem;">{get_text('pro_agent')}</h3>
             <div class="price-old">$120.000</div> <div class="price-tag">$49.900 <span>COP/mo</span></div>
             <ul class="features-ul">
                 <li><span class="check">✓</span> <strong>Everything in Starter</strong></li>
@@ -803,10 +935,10 @@ if menu == "Inicio / Dashboard":
                 <li><span class="check">✓</span> 24/7 Priority Uplink</li>
             </ul>
         </div>""", unsafe_allow_html=True)
-        st.button("⚡ UPGRADE TO PRO", key="btn_pro", type="primary", use_container_width=True)
+        st.button(get_text("upgrade_btn"), key="btn_pro", type="primary", use_container_width=True)
 
     if not db_conectada:
-        st.warning("⚠️ DATABASE OFFLINE. Check 'DB_Alcontador' connection.")
+        st.warning(get_text("db_offline"))
 
 # ---------------------------------------------------------
 # ELSE: CAMBIO DE MENÚ (ESTE SÍ TOCA EL BORDE IZQUIERDO)
