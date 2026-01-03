@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 import xml.etree.ElementTree as ET
 import os
 import html
+import textwrap
 import google_auth_oauthlib.flow
 from googleapiclient.discovery import build
 
@@ -702,7 +703,7 @@ def render_smart_advisor(summary, diagnosis, advice):
     2. Diagnosis (Critical analysis)
     3. Advice (Actionable steps)
     """
-    st.markdown(f"""
+    st.markdown(textwrap.dedent(f"""
     <div class="glass-card" style="padding: 20px; margin-top: 20px; border-left: 4px solid var(--accent);">
         <h3 style="color: var(--accent); font-size: 1.2rem; margin-bottom: 15px; display: flex; align-items: center;">
             <span style="font-size: 1.5rem; margin-right: 10px;">🧠</span> Smart Advisor
@@ -723,7 +724,7 @@ def render_smart_advisor(summary, diagnosis, advice):
             <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5;">{advice}</p>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """), unsafe_allow_html=True)
 
 # ------------------------------------------------------------------------------
 # HELPER: MODULE EDUCATIONAL GUIDE (UX)
@@ -732,7 +733,7 @@ def render_module_guide(purpose, benefits, instructions):
     """
     Renders an educational guide component (Aivora Style).
     """
-    st.markdown(f"""
+    st.markdown(textwrap.dedent(f"""
     <div class="glass-card" style="padding: 20px; margin-bottom: 25px; border: 1px solid rgba(76, 201, 240, 0.2);">
         <h4 style="color: var(--text-primary); font-size: 1.1rem; margin-bottom: 15px; display: flex; align-items: center;">
             <span style="font-size: 1.4rem; margin-right: 10px;">📘</span> Module Guide
@@ -759,7 +760,7 @@ def render_module_guide(purpose, benefits, instructions):
             </div>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """), unsafe_allow_html=True)
 
 # ------------------------------------------------------------------------------
 # HELPER: EXCEL DOWNLOAD BUTTON
