@@ -326,7 +326,7 @@ def login_section():
             flow = google_auth_oauthlib.flow.Flow.from_client_config(
                 client_config,
                 scopes=['openid', 'https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile'],
-                redirect_uri=st.secrets["google"]["redirect_uri"]
+                redirect_uri=st.secrets["google"]["redirect_uri"] # STRICT
             )
 
             # Check for authorization code in URL
@@ -374,6 +374,11 @@ def login_section():
     <h1 style="font-family: 'Inter', sans-serif; font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; text-align: center; letter-spacing: -1px;">System Access</h1>
     <p style="color: var(--text-body); margin-bottom: 2rem; font-family: 'Inter', sans-serif; font-size: 1.1rem;">Authentication required for Enterprise Suite</p>
     {login_btn}
+    <br>
+    <div style="max-width: 400px; text-align: center; color: #64748b; font-size: 0.8rem; margin-top: 2rem; padding: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+        🔒 <strong>Privacidad y Seguridad:</strong><br>
+        Tus datos son procesados en tiempo real y no se almacenan permanentemente en nuestros servidores.
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -659,7 +664,7 @@ def ocr_factura(imagen):
     except Exception as e:
         # En OCR fallamos silenciosamente o retornamos None como antes,
         # pero podríamos loguear el error si tuviéramos un sistema de logs.
-        print(f"Error OCR: {e}")
+        # print(f"Error OCR: {e}") # REMOVED FOR SECURITY (NO LOGS)
         return None
 
 # ------------------------------------------------------------------------------
@@ -724,7 +729,7 @@ with st.sidebar:
 
     # User Info from Google
     user_name = html.escape(str(st.session_state.get('username', 'Commander')))
-    user_pic = st.session_state.get('user_picture', '')
+    user_pic = html.escape(str(st.session_state.get('user_picture', '')))
 
     # Show User Profile
     if user_pic:
@@ -772,7 +777,7 @@ with st.sidebar:
         get_text('menu_rut'): "Validador de RUT Oficial",
         get_text('menu_ocr'): "Digitalización OCR"
     }
-    
+
     opciones_menu = list(MENU_KEYS.keys())
 
     menu_selection = st.radio("SYSTEM MODULES:", opciones_menu)
