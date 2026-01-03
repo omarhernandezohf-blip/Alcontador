@@ -14,150 +14,161 @@ import html
 import google_auth_oauthlib.flow
 from googleapiclient.discovery import build
 
-# --- CONFIGURACIÓN DE ESTILO GLOBAL (ENTERPRISE TRUST THEME) ---
+# --- CONFIGURACIÓN DE ESTILO GLOBAL (AIVORA THEME) ---
+# Se inyecta CSS moderno basado en Bootstrap 5 y diseño Glassmorphism
 st.markdown("""
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        /* --- FONTS --- */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Manrope:wght@400;600;800&display=swap');
+        /* --- AIVORA THEME (BOOTSTRAP 5 + CUSTOM) --- */
 
-        /* --- VARIABLES --- */
+        /* Import Fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;700&display=swap');
+
+        /* Bootstrap 5 Variables Override */
         :root {
-            --bg-void: #020617;
-            --bg-deep: #0f172a;
-            --primary: #6366f1; /* Electric Indigo */
-            --secondary: #3b82f6; /* Slate Blue */
-            --success: #10b981; /* Emerald */
-            --text-primary: #ffffff;
-            --text-body: #94a3b8;
-            --glass-bg: rgba(30, 41, 59, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --shadow-soft: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
-            --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.15);
+            --bg-void: #0B0F19; /* Deep Void */
+            --bg-glass: rgba(17, 25, 40, 0.75);
+            --primary: #4361EE; /* Neon Blue */
+            --primary-hover: #3A0CA3;
+            --accent: #4CC9F0; /* Cyan */
+            --success: #10B981;
+            --danger: #EF4444;
+            --text-primary: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --border-glass: rgba(255, 255, 255, 0.08);
+            --shadow-glow: 0 0 20px rgba(67, 97, 238, 0.15);
         }
 
-        /* --- BASE & BACKGROUND --- */
+        /* Global Reset */
         .stApp {
-            background: radial-gradient(circle at top right, #1e293b, transparent 40%),
-                        radial-gradient(circle at bottom left, #1e1b4b, transparent 40%),
-                        linear-gradient(180deg, #0f172a 0%, #020617 100%) !important;
-            background-attachment: fixed !important;
+            background-color: var(--bg-void) !important;
+            background-image:
+                radial-gradient(at 0% 0%, rgba(67, 97, 238, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(76, 201, 240, 0.1) 0px, transparent 50%);
+            color: var(--text-secondary);
             font-family: 'Inter', sans-serif;
-            color: var(--text-body);
         }
 
-        /* --- TYPOGRAPHY --- */
         h1, h2, h3, h4, h5, h6 {
-            font-family: 'Inter', sans-serif !important;
+            font-family: 'Outfit', sans-serif !important;
             color: var(--text-primary) !important;
-            font-weight: 800 !important;
-            letter-spacing: -0.5px !important;
+            font-weight: 700 !important;
         }
 
-        p, div, span, label {
-            font-family: 'Inter', sans-serif;
-            color: var(--text-body);
+        /* --- COMPONENTS --- */
+
+        /* Cards (Glassmorphism) */
+        div[data-testid="stExpander"], .glass-card, .pro-module-header, .pricing-card {
+            background: var(--bg-glass) !important;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glass) !important;
+            border-radius: 16px !important;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         }
 
-        /* --- GLASSMORPHISM CARDS --- */
-        div[data-testid="stExpander"], .glass-card, .pricing-card, .pro-module-header {
-            background: var(--glass-bg) !important;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.08) !important;
-            border-top: 1px solid rgba(255,255,255,0.15) !important; /* Highlight top */
-            border-radius: 12px !important;
-            box-shadow: var(--shadow-soft);
+        /* Buttons */
+        .stButton > button {
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover)) !important;
+            border: none !important;
+            color: white !important;
+            border-radius: 10px !important;
+            padding: 0.6rem 1.2rem !important;
+            font-weight: 600 !important;
+            font-family: 'Outfit', sans-serif !important;
+            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+            transition: all 0.3s ease;
         }
 
-        /* --- SIDEBAR (CONTROL DOCK) --- */
-        [data-testid="stSidebar"] {
-            background: #020617 !important;
-            border-right: 1px solid rgba(255,255,255,0.05);
+        .stButton > button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(67, 97, 238, 0.5);
         }
 
-        /* Radio Buttons as Nav Tabs */
-        .stRadio > div[role="radiogroup"] > label {
-            background: transparent !important;
-            border: none;
-            padding: 12px 16px !important;
-            color: var(--text-body) !important;
-            border-left: 3px solid transparent;
-            transition: all 0.2s ease;
-            font-weight: 500;
-        }
-
-        .stRadio > div[role="radiogroup"] > label:hover {
-            color: var(--text-primary) !important;
-            background: rgba(255,255,255,0.03) !important;
-        }
-
-        .stRadio > div[role="radiogroup"] > label[data-checked="true"] {
-            background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), transparent) !important;
-            border-left: 3px solid var(--primary) !important;
-            color: var(--text-primary) !important;
-            font-weight: 600;
-        }
-
-        /* --- WIDGETS --- */
+        /* Inputs */
         .stTextInput > div > div > input,
         .stNumberInput > div > div > input,
         .stSelectbox > div > div > div {
-            background-color: rgba(15, 23, 42, 0.6) !important;
-            color: white !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            border-radius: 8px;
-        }
-
-        /* --- BUTTONS --- */
-        .stButton > button {
-            background: var(--primary) !important;
-            color: white !important;
-            border-radius: 8px !important;
-            border: none !important;
-            font-weight: 600 !important;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-            transition: all 0.2s;
-        }
-        .stButton > button:hover {
-            background: #4f46e5 !important; /* Darker Indigo */
-            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.5);
-            transform: translateY(-1px);
-        }
-
-        /* --- DATAFRAMES --- */
-        [data-testid="stDataFrame"] {
-            background: rgba(15, 23, 42, 0.5);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 8px;
-        }
-
-        /* --- METRICS --- */
-        [data-testid="stMetricValue"] {
-            font-family: 'Inter', sans-serif;
-            font-weight: 700;
+            background-color: rgba(255, 255, 255, 0.03) !important;
+            border: 1px solid var(--border-glass) !important;
+            border-radius: 10px !important;
             color: var(--text-primary) !important;
-            text-shadow: 0 0 20px rgba(255,255,255,0.1);
-        }
-        [data-testid="stMetricLabel"] {
-            color: var(--text-body) !important;
-            font-size: 0.85rem;
-            font-weight: 500;
         }
 
-        /* Hide Defaults */
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        header {visibility: hidden;}
+        /* Sidebar */
+        [data-testid="stSidebar"] {
+            background-color: #05080F !important; /* Darker than void */
+            border-right: 1px solid var(--border-glass);
+        }
+
+        /* DataFrames */
+        [data-testid="stDataFrame"] {
+            background: transparent !important;
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+        }
+
+        /* Metrics */
+        [data-testid="stMetricLabel"] {
+            color: var(--text-secondary) !important;
+            font-size: 0.9rem !important;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        [data-testid="stMetricValue"] {
+            color: var(--text-primary) !important;
+            font-size: 2rem !important;
+            font-family: 'Outfit', sans-serif !important;
+        }
+
+        /* Custom Hero Section */
+        .hero-aivora {
+            text-align: center;
+            padding: 4rem 1rem;
+            margin-bottom: 2rem;
+            border-radius: 20px;
+            background: linear-gradient(180deg, rgba(67,97,238,0.05) 0%, transparent 100%);
+            border: 1px solid var(--border-glass);
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+        }
+
+        /* Login Page Specific */
+        .login-container {
+            max-width: 450px;
+            margin: 10vh auto;
+            padding: 3rem;
+            background: var(--bg-glass);
+            border-radius: 24px;
+            border: 1px solid var(--border-glass);
+            text-align: center;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
 
         /* Helpers */
         .pro-module-icon { width: 32px; height: 32px; margin-right: 12px; opacity: 0.9; }
         .detail-box {
-            background: rgba(59, 130, 246, 0.05);
-            border-left: 3px solid var(--secondary);
+            background: rgba(67, 97, 238, 0.1);
+            border-left: 3px solid var(--primary);
             padding: 16px;
             border-radius: 0 8px 8px 0;
             margin-bottom: 24px;
         }
+
+        /* Hide Streamlit Defaults */
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        header {visibility: hidden;}
     </style>
 """, unsafe_allow_html=True)
 
@@ -232,15 +243,18 @@ def login_section():
 
     # Prepare button HTML to avoid f-string complexity and indentation issues
     if auth_url:
-        login_btn = f'<a href="{auth_url}" target="_self"><button style="background: var(--primary); border: none; color: white; padding: 1rem 2rem; font-size: 1.1rem; font-family: \'Inter\', sans-serif; font-weight: 600; cursor: pointer; border-radius: 8px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); transition: all 0.2s ease;">🔐 Sign in with Google</button></a>'
+        login_btn = f'<a href="{auth_url}" target="_self"><button style="background: linear-gradient(135deg, var(--primary), var(--primary-hover)); border: none; color: white; padding: 1rem 2rem; font-size: 1.1rem; font-family: \'Outfit\', sans-serif; font-weight: 600; cursor: pointer; border-radius: 10px; box-shadow: var(--shadow-glow); transition: all 0.2s ease; width: 100%;">🔐 Sign in with Google</button></a>'
     else:
-        login_btn = '<div style="color:#ef4444; border:1px solid #ef4444; padding:10px; border-radius: 8px; font-family:\'Inter\', sans-serif;">⚠️ GOOGLE AUTH OFFLINE</div>'
+        login_btn = '<div style="color:#ef4444; border:1px solid #ef4444; padding:10px; border-radius: 8px; font-family:\'Outfit\', sans-serif;">⚠️ GOOGLE AUTH OFFLINE</div>'
 
     # Note: Indentation is stripped to prevent Markdown Code Block rendering
     st.markdown(f"""
-<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 70vh;">
-    <h1 style="font-family: 'Inter', sans-serif; font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; text-align: center; letter-spacing: -1px;">System Access</h1>
-    <p style="color: var(--text-body); margin-bottom: 2rem; font-family: 'Inter', sans-serif; font-size: 1.1rem;">Authentication required for Enterprise Suite</p>
+<div class="login-container">
+    <div style="margin-bottom: 1.5rem;">
+        <span style="font-size: 3rem;">🤖</span>
+    </div>
+    <h1 style="font-family: 'Outfit', sans-serif; font-size: 2rem; margin-bottom: 0.5rem; color: white;">Welcome Back</h1>
+    <p style="color: var(--text-secondary); margin-bottom: 2.5rem; font-size: 1rem;">Sign in to access your intelligent financial assistant.</p>
     {login_btn}
 </div>
 """, unsafe_allow_html=True)
@@ -575,12 +589,16 @@ def parsear_xml_dian(archivo_xml):
 # ==============================================================================
 
 with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/2830/2830303.png", width=80)
-    st.markdown("### 💼 Suite Financiera", unsafe_allow_html=True)
+    st.markdown("""
+        <div style="display: flex; align-items: center; margin-bottom: 20px;">
+            <img src="https://cdn-icons-png.flaticon.com/512/2830/2830303.png" width="40" style="margin-right: 10px;">
+            <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.2rem; color: white;">AIVORA <span style="color: var(--primary);">FINANCE</span></span>
+        </div>
+    """, unsafe_allow_html=True)
     
     # --- PANEL DE USUARIO LOGUEADO (SIDEBAR) ---
-    plan_bg = "#FFD700" if st.session_state['user_plan'] == 'PRO' else "#A9A9A9"
-    status_db = "🟢 DB Online" if db_conectada else "🔴 DB Offline"
+    plan_bg = "var(--primary)" if st.session_state['user_plan'] == 'PRO' else "#64748b"
+    status_db = "🟢 Online" if db_conectada else "🔴 Offline"
     
     # Security: Escape variables injected into HTML
     user_plan_safe = html.escape(str(st.session_state.get('user_plan', 'FREE')))
@@ -593,34 +611,41 @@ with st.sidebar:
 
     # Show User Profile
     if user_pic:
-        st.markdown(f"<img src='{user_pic}' style='width: 50px; height: 50px; border-radius: 50%; margin-bottom: 10px; border: 2px solid var(--primary);'>", unsafe_allow_html=True)
-
-    st.markdown(f"""
-    <div style='background: rgba(255,255,255,0.05); padding: 15px; border-radius: 4px; border-left: 3px solid {plan_bg}; margin-bottom: 20px;'>
-        <small style='color: #94a3b8; text-transform:uppercase;'>OPERATOR:</small><br>
-        <strong style='font-size: 1.1rem; color:white; font-family: "Inter", sans-serif;'>{user_name}</strong><br>
-        <span style="font-size: 0.8rem; color: var(--primary);">{user_plan_safe} ACCESS</span><br>
-        <small style='color: #64748b;'>{estado_ia_safe}</small><br>
-        <small style='color: {'#06b6d4' if db_conectada else '#ef4444'}; font-weight:bold;'>{status_db_safe}</small>
-    </div>
-    """, unsafe_allow_html=True)
+        st.markdown(f"""
+        <div style="text-align: center; margin-bottom: 20px;">
+            <img src='{user_pic}' style='width: 64px; height: 64px; border-radius: 50%; margin-bottom: 10px; border: 2px solid var(--primary); padding: 2px;'>
+            <h4 style="margin: 0; font-size: 1rem;">{user_name}</h4>
+            <span style="font-size: 0.75rem; color: var(--accent); background: rgba(76, 201, 240, 0.1); padding: 2px 8px; border-radius: 12px;">{user_plan_safe}</span>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown(f"""
+        <div style='background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; border: 1px solid var(--border-glass); margin-bottom: 20px;'>
+            <small style='color: var(--text-secondary); text-transform:uppercase; letter-spacing: 1px; font-size: 0.7rem;'>CURRENT SESSION</small><br>
+            <div style='display: flex; align-items: center; margin-top: 5px;'>
+                <div style='width: 8px; height: 8px; background: {plan_bg}; border-radius: 50%; margin-right: 8px; box-shadow: 0 0 10px {plan_bg};'></div>
+                <strong style='font-size: 0.95rem; color:white; font-family: "Outfit", sans-serif;'>{user_name}</strong>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
     if st.session_state['user_plan'] == 'FREE':
-        st.markdown("---")
-        st.write("🔓 UNLOCK FULL SYSTEM")
-        # Enlace de pago WOMPI
-        st.link_button(
-            "💎 UPGRADE TO PRO",
-            "https://checkout.wompi.co/l/TU_LINK_AQUI"
-        )
-        st.caption("Access all enterprise modules.")
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, rgba(67, 97, 238, 0.2), transparent); border-radius: 12px; padding: 15px; border: 1px solid rgba(67, 97, 238, 0.3); margin-bottom: 20px;">
+            <strong style="color: white; font-size: 0.9rem;">🔓 Unlock Full Power</strong>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 10px;">Get unlimited AI queries & tax automation.</p>
+            <a href="https://checkout.wompi.co/l/TU_LINK_AQUI" target="_blank" style="text-decoration: none;">
+                <button style="width: 100%; background: var(--primary); border: none; color: white; padding: 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer;">⚡ UPGRADE PRO</button>
+            </a>
+        </div>
+        """, unsafe_allow_html=True)
 
-    if st.button("TERMINATE SESSION"):
+    if st.button("Log Out", use_container_width=True):
         registrar_log(st.session_state.get('username', 'Unknown'), "Logout", "Salida del sistema")
         st.session_state.clear()
         st.rerun()
 
-    st.markdown("---")
+    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
     
     opciones_menu = [
         "Inicio / Dashboard",
@@ -648,56 +673,37 @@ with st.sidebar:
 # ==============================================================================
 
 if menu == "Inicio / Dashboard":
-    # 1. HEADER EJECUTIVO (HERO SECTION - ENTERPRISE TRUST)
+    # 1. HEADER EJECUTIVO (HERO SECTION - AIVORA THEME)
     st.markdown("""
-    <div class="hero-container">
-        <div class="hero-content">
-            <h1 class="hero-title">Asistente Contable <span style="color: var(--primary)">PRO</span></h1>
-            <div class="hero-subtitle">v14.5 Enterprise Suite • <span style="color: var(--success)">System Online</span></div>
+    <div class="hero-aivora">
+        <div style="margin-bottom: 20px;">
+            <span style="font-size: 1rem; color: var(--accent); background: rgba(76, 201, 240, 0.1); padding: 5px 15px; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px;">v15.0 AI System</span>
+        </div>
+        <h1 class="hero-title">Financial Intelligence <br><span style="color: var(--primary);">Reimagined</span></h1>
+        <p style="color: var(--text-secondary); font-size: 1.2rem; max-width: 600px; margin: 0 auto 30px;">
+            Your automated CFO. Real-time tax auditing, payroll costing, and intelligent forecasting powered by Gemini AI.
+        </p>
+        <div style="display: flex; gap: 15px; justify-content: center;">
+            <button style="background: var(--primary); border: none; padding: 12px 24px; color: white; border-radius: 8px; font-weight: 600;">Launch Audit</button>
+            <button style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px 24px; color: white; border-radius: 8px; font-weight: 600;">View Documentation</button>
         </div>
     </div>
-    <style>
-        .hero-container {
-            position: relative;
-            padding: 3rem 2rem;
-            margin-bottom: 2rem;
-            background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), transparent);
-            border-left: 4px solid var(--primary);
-            border-radius: 8px;
-            overflow: hidden;
-            backdrop-filter: blur(12px);
-            box-shadow: var(--shadow-soft);
-        }
-        .hero-title {
-            font-family: 'Inter', sans-serif !important;
-            font-size: 3rem !important;
-            font-weight: 800 !important;
-            margin: 0;
-            letter-spacing: -1px;
-            color: white;
-            text-shadow: 0 0 40px rgba(99, 102, 241, 0.3);
-        }
-        .hero-subtitle {
-            font-family: 'Inter', sans-serif;
-            font-size: 1.1rem;
-            color: var(--text-body);
-            margin-top: 0.5rem;
-            font-weight: 500;
-        }
-    </style>
     """, unsafe_allow_html=True)
 
     # 2. BENTO GRID DASHBOARD (Métricas y Gráficos)
 
     def metric_card(label, value, delta, is_positive=True):
-        color = "#10b981" if is_positive else "#f43f5e"
+        color = "var(--success)" if is_positive else "var(--danger)"
         arrow = "↑" if is_positive else "↓"
+        # Using Aivora glass-card style from global CSS
         st.markdown(f"""
-        <div class="glass-card" style="height: 100%; display: flex; flex-direction: column; justify-content: center; padding: 24px;">
-            <div style="color: var(--text-body); font-family: 'Inter'; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">{label}</div>
-            <div style="font-family: 'Inter'; font-size: 2rem; font-weight: 800; color: white; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -1px;">{value}</div>
-            <div style="color: {color}; font-size: 0.95rem; font-weight: 600; font-family: 'Inter';">
-                {arrow} {delta} <span style="color: var(--text-body); font-weight: 400;">vs last cycle</span>
+        <div class="glass-card" style="height: 100%; padding: 24px; position: relative; overflow: hidden;">
+            <div style="position: absolute; top: -10px; right: -10px; width: 60px; height: 60px; background: {color}; filter: blur(40px); opacity: 0.2;"></div>
+            <div style="color: var(--text-secondary); font-family: 'Outfit', sans-serif; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px;">{label}</div>
+            <div style="font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 700; color: white; margin-bottom: 5px;">{value}</div>
+            <div style="color: {color}; font-size: 0.9rem; font-weight: 600; font-family: 'Inter'; display: flex; align-items: center;">
+                <span style="background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px; margin-right: 8px;">{arrow} {delta}</span>
+                <span style="color: var(--text-secondary); font-weight: 400;">vs last month</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -735,39 +741,36 @@ if menu == "Inicio / Dashboard":
     st.markdown("---")
     st.markdown("### 💎 UPGRADE ACCESS LEVEL")
     
+    # Styles for pricing cards are now in Global CSS, but we can add specific tweaks here if needed
     st.markdown("""
     <style>
         .pricing-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
             padding: 2.5rem;
             height: 100%;
             display: flex; flex-direction: column;
             transition: all 0.3s ease;
-            box-shadow: var(--shadow-soft);
         }
-        .pricing-card:hover { transform: translateY(-5px); border-color: var(--primary); box-shadow: 0 8px 30px rgba(99, 102, 241, 0.2); }
+        .pricing-card:hover { transform: translateY(-5px); border-color: var(--primary) !important; box-shadow: 0 8px 30px rgba(67, 97, 238, 0.2); }
         .pricing-card.pro {
-            background: linear-gradient(145deg, rgba(15, 23, 42, 0.9) 0%, rgba(99, 102, 241, 0.1) 100%);
-            border: 1px solid var(--primary);
-            box-shadow: 0 0 30px rgba(99, 102, 241, 0.15);
+            background: linear-gradient(145deg, rgba(11, 15, 25, 0.9) 0%, rgba(67, 97, 238, 0.1) 100%) !important;
+            border: 1px solid var(--primary) !important;
+            box-shadow: 0 0 30px rgba(67, 97, 238, 0.15);
             position: relative;
         }
         .pro-badge {
             position: absolute; top: -12px; right: 24px;
             background: var(--success);
             color: white; padding: 4px 12px; border-radius: 99px;
-            font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px; font-family: 'Inter';
+            font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px; font-family: 'Outfit', sans-serif;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
         }
-        .price-tag { font-family: 'Inter'; font-size: 3rem; font-weight: 800; color: white; margin: 10px 0; letter-spacing: -1px; }
-        .price-tag span { font-size: 1rem; color: var(--text-body); font-weight: 500; font-family: 'Inter'; }
-        .price-old { font-size: 1.1rem; color: #64748b; text-decoration: line-through; margin-top: 10px; font-family: 'Inter'; }
-        .features-ul { list-style: none; padding: 0; margin: 24px 0; color: var(--text-body); flex-grow: 1; font-family: 'Inter'; font-size: 1rem; }
+        .price-tag { font-family: 'Outfit', sans-serif; font-size: 3rem; font-weight: 800; color: white; margin: 10px 0; }
+        .price-tag span { font-size: 1rem; color: var(--text-secondary); font-weight: 500; font-family: 'Inter'; }
+        .price-old { font-size: 1.1rem; color: var(--text-secondary); text-decoration: line-through; margin-top: 10px; font-family: 'Inter'; }
+        .features-ul { list-style: none; padding: 0; margin: 24px 0; color: var(--text-secondary); flex-grow: 1; font-family: 'Inter'; font-size: 1rem; }
         .features-ul li { margin-bottom: 12px; display: flex; align-items: center; }
         .check { color: var(--success); margin-right: 12px; font-weight: bold; }
-        .cross { color: #ef4444; margin-right: 12px; opacity: 0.7; }
+        .cross { color: var(--danger); margin-right: 12px; opacity: 0.7; }
         .dimmed { color: #475569; }
     </style>
     """, unsafe_allow_html=True)
