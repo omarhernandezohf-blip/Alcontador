@@ -201,8 +201,23 @@ st.markdown("""
 
         /* Sidebar */
         [data-testid="stSidebar"] {
-            background-color: #05080F !important; /* Darker than void */
-            border-right: 1px solid var(--border-glass);
+            background-color: rgba(11, 15, 25, 0.7) !important;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 5px 0 30px rgba(0,0,0,0.1);
+        }
+
+        /* Sidebar Elements Override */
+        [data-testid="stSidebar"] .stButton > button {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid var(--border-glass) !important;
+            box-shadow: none !important;
+        }
+        [data-testid="stSidebar"] .stButton > button:hover {
+            background: var(--primary) !important;
+            border-color: var(--primary) !important;
         }
 
         /* DataFrames */
