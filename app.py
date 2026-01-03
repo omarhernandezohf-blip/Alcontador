@@ -726,6 +726,42 @@ def render_smart_advisor(summary, diagnosis, advice):
     """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------------------
+# HELPER: MODULE EDUCATIONAL GUIDE (UX)
+# ------------------------------------------------------------------------------
+def render_module_guide(purpose, benefits, instructions):
+    """
+    Renders an educational guide component (Aivora Style).
+    """
+    st.markdown(f"""
+    <div class="glass-card" style="padding: 20px; margin-bottom: 25px; border: 1px solid rgba(76, 201, 240, 0.2);">
+        <h4 style="color: var(--text-primary); font-size: 1.1rem; margin-bottom: 15px; display: flex; align-items: center;">
+            <span style="font-size: 1.4rem; margin-right: 10px;">📘</span> Module Guide
+        </h4>
+
+        <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+            <div>
+                <strong style="color: var(--accent); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Purpose</strong>
+                <p style="color: var(--text-secondary); font-size: 0.95rem; margin-top: 5px;">{purpose}</p>
+            </div>
+
+            <div style="background: rgba(255, 255, 255, 0.03); padding: 12px; border-radius: 8px;">
+                <strong style="color: var(--success); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">🚀 Benefits</strong>
+                <ul style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0; padding-left: 20px; margin-top: 5px;">
+                    {''.join([f'<li style="margin-bottom: 4px;">{b}</li>' for b in benefits])}
+                </ul>
+            </div>
+
+            <div>
+                <strong style="color: var(--primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">🔢 How to Use</strong>
+                <ol style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0; padding-left: 20px; margin-top: 5px;">
+                    {''.join([f'<li style="margin-bottom: 4px;">{i}</li>' for i in instructions])}
+                </ol>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ------------------------------------------------------------------------------
 # HELPER: EXCEL DOWNLOAD BUTTON
 # ------------------------------------------------------------------------------
 def get_excel_download(df, filename="report.xlsx", button_text="📥 Download Excel"):
@@ -1021,7 +1057,21 @@ else:
     # 1. AUDITORÍA
     if menu == get_text("menu_dian"):
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/921/921591.png' class='pro-module-icon'><div class='pro-module-title'><h2>Auditor de Exógena (Cruce DIAN)</h2></div></div>""", unsafe_allow_html=True)
-        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Detectar discrepancias entre lo que reportaste y lo que la DIAN sabe de ti.<br><strong>Estrategia:</strong> Cruce matricial de NITs para evitar sanciones por inexactitud (Art. 651 ET).</div>""", unsafe_allow_html=True)
+
+        render_module_guide(
+            purpose="Compare information reported by third parties to DIAN against your internal accounting records to ensure consistency.",
+            benefits=[
+                "Detect unreported income or nonexistent costs.",
+                "Prevent penalties for inaccuracy in magnetic media (Art. 651 ET).",
+                "Validate tax compliance before official deadlines."
+            ],
+            instructions=[
+                "Download the 'Información Exógena' Excel report from the DIAN portal.",
+                "Upload the DIAN file in the left panel.",
+                "Upload your accounting auxiliary ledger (by third party) in the right panel.",
+                "Map the columns (NIT, Value) and execute the audit."
+            ]
+        )
         
         col_dian, col_conta = st.columns(2)
         with col_dian:
@@ -1112,7 +1162,22 @@ else:
     # 2. MINERÍA XML (Continúa con ELIF)
     elif menu == get_text("menu_xml"):
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/2823/2823523.png' class='pro-module-icon'><div class='pro-module-title'><h2>Minería de Datos XML (Facturación)</h2></div></div>""", unsafe_allow_html=True)
-        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Extraer información estructurada directamente de los archivos XML de Facturación Electrónica validados por la DIAN.</div>""", unsafe_allow_html=True)
+
+        render_module_guide(
+            purpose="Extract structured data directly from XML Electronic Invoice files validated by DIAN.",
+            benefits=[
+                "Automate data entry from supplier invoices.",
+                "Validate mathematical consistency of taxes (IVA, Retentions) in XMLs.",
+                "Generate a consolidated Excel report from hundreds of files instantly."
+            ],
+            instructions=[
+                "Click 'Browse files' to select multiple .xml files from your computer.",
+                "Wait for the batch processing to complete.",
+                "Review the extracted summary table.",
+                "Download the master Excel report."
+            ]
+        )
+
         archivos_xml = st.file_uploader("Cargar XMLs (Lote)", type=['xml'], accept_multiple_files=True)
         if archivos_xml and st.button("▶️ INICIAR PROCESAMIENTO"):
             st.toast("Procesando lote de archivos...")
@@ -1133,7 +1198,21 @@ else:
 
     elif menu == get_text("menu_bank"):
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/2489/2489756.png' class='pro-module-icon'><div class='pro-module-title'><h2>Conciliación Bancaria Inteligente</h2></div></div>""", unsafe_allow_html=True)
-        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Automatizar el emparejamiento de transacciones entre el Extracto Bancario y el Libro Auxiliar de Bancos usando lógica difusa (Fechas cercanas).</div>""", unsafe_allow_html=True)
+
+        render_module_guide(
+            purpose="Automate the matching of transactions between your Bank Statement and Accounting Ledger using fuzzy logic (approximate dates).",
+            benefits=[
+                "Reduce manual matching time by up to 90%.",
+                "Identify missing transactions in both Bank and Books.",
+                "Generate a ready-to-sign Reconciliation Report."
+            ],
+            instructions=[
+                "Upload your Bank Statement (Excel) on the left.",
+                "Upload your Accounting Ledger (Excel) on the right.",
+                "Select the columns for Date, Value, and Description for both files.",
+                "Run the reconciliation to see matched and pending items."
+            ]
+        )
         
         col_banco, col_libro = st.columns(2)
         with col_banco: st.subheader("🏦 Extracto Bancario"); file_banco = st.file_uploader("Subir Excel Banco", type=['xlsx'])
@@ -1264,7 +1343,21 @@ else:
 
     elif menu == get_text("menu_expenses"):
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/1642/1642346.png' class='pro-module-icon'><div class='pro-module-title'><h2>Auditoría Fiscal Masiva (Art. 771-5)</h2></div></div>""", unsafe_allow_html=True)
-        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Verificar el cumplimiento de los requisitos de deducibilidad (Bancarización y Retenciones).<br>Detecta pagos en efectivo superiores a 100 UVT y bases de retención omitidas.</div>""", unsafe_allow_html=True)
+
+        render_module_guide(
+            purpose="Verify compliance with tax deductibility requirements (Bancarization and Withholding Taxes).",
+            benefits=[
+                "Detect cash payments exceeding 100 UVT (Art 771-5 risk).",
+                "Identify expenses where Withholding Tax (Retefuente) was omitted.",
+                "Secure tax deductions against DIAN audits."
+            ],
+            instructions=[
+                "Upload the Expense Ledger (Auxiliar de Gastos) in Excel.",
+                "Map the columns: Date, Third Party, Value, Payment Method.",
+                "Click 'Analyze Risks' to scan for non-compliance.",
+                "Download the findings report."
+            ]
+        )
         
         ar = st.file_uploader("Cargar Auxiliar de Gastos (.xlsx)", type=['xlsx'])
         
@@ -1364,7 +1457,20 @@ else:
     # --------------------------------------------------------------------------
     elif menu == get_text("menu_ugpp"):
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/3135/3135817.png' class='pro-module-icon'><div class='pro-module-title'><h2>Escáner de Riesgo UGPP (Ley 1393)</h2></div></div>""", unsafe_allow_html=True)
-        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Auditar pagos laborales. Verifica si los pagos NO salariales exceden el 40% del total (Art. 30 Ley 1393).</div>""", unsafe_allow_html=True)
+
+        render_module_guide(
+            purpose="Audit labor payments to verify if non-salary payments exceed 40% of total remuneration (Art. 30 Law 1393).",
+            benefits=[
+                "Avoid costly sanctions from the UGPP unit.",
+                "Ensure correct Base Contribution Income (IBC) calculation.",
+                "Optimize compensation packages legally."
+            ],
+            instructions=[
+                "Upload the Payroll detail file (Excel).",
+                "Select columns for Employee Name, Base Salary, and Non-Salary Payments.",
+                "Run the scan to identify employees exceeding the 40% limit."
+            ]
+        )
         
         an = st.file_uploader("Cargar Nómina UGPP (.xlsx)", type=['xlsx'], key="upl_ugpp")
         if an:
@@ -1457,7 +1563,22 @@ else:
     
     elif menu == get_text("menu_treasury"):
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/5806/5806289.png' class='pro-module-icon'><div class='pro-module-title'><h2>Radar de Liquidez & Flujo de Caja</h2></div></div>""", unsafe_allow_html=True)
-        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Visualizar la salud financiera futura cruzando CxC y CxP.</div>""", unsafe_allow_html=True)
+
+        render_module_guide(
+            purpose="Visualize future financial health by crossing Accounts Receivable (CxC) and Accounts Payable (CxP).",
+            benefits=[
+                "Predict cash flow gaps before they happen.",
+                "Plan payments and collections strategically.",
+                "Get an AI analysis of your liquidity trend."
+            ],
+            instructions=[
+                "Enter your current available cash balance.",
+                "Upload your AR (Cartera) and AP (Proveedores) files.",
+                "Map the Due Date and Value columns.",
+                "Generate the projection chart."
+            ]
+        )
+
         saldo_hoy = st.number_input("💵 Saldo Disponible Hoy ($):", min_value=0.0, format="%.2f")
         c1, c2 = st.columns(2); fcxc = c1.file_uploader("Cartera (CxC)", type=['xlsx']); fcxp = c2.file_uploader("Proveedores (CxP)", type=['xlsx'])
         if fcxc and fcxp:
@@ -1492,12 +1613,21 @@ else:
     # ==============================================================================
     elif menu == get_text("menu_payroll"):
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/2328/2328761.png' class='pro-module-icon'><div class='pro-module-title'><h2>Calculadora de Costo Real de Nómina</h2></div></div>""", unsafe_allow_html=True)
-        st.markdown("""
-        <div class='detail-box'>
-            <strong>Objetivo:</strong> Ver el desglose exacto de cuánto le cuesta un empleado a la empresa.<br>
-            <strong>Incluye:</strong> Salud, Pensión, ARL, Parafiscales, Primas, Cesantías, Intereses y Vacaciones.
-        </div>
-        """, unsafe_allow_html=True)
+
+        render_module_guide(
+            purpose="Calculate the exact total cost of an employee to the company, including social security and benefits.",
+            benefits=[
+                "Understand the true burden (approx. 50% above salary).",
+                "Budget accurately for hiring and compensation.",
+                "Break down costs: Health, Pension, ARL, Para-fiscals, and Provisions."
+            ],
+            instructions=[
+                "Upload a list of employees with their Base Salary.",
+                "Indicate if they have Transport Aid and if the company is Exonerated (cree).",
+                "Optionally select the ARL risk level.",
+                "Calculate to see the full cost breakdown."
+            ]
+        )
         
         ac = st.file_uploader("Cargar Listado Personal (.xlsx)", type=['xlsx'])
         if ac:
@@ -1573,7 +1703,21 @@ else:
 
     elif menu == get_text("menu_ai"):
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/10041/10041467.png' class='pro-module-icon'><div class='pro-module-title'><h2>Inteligencia Financiera (IA)</h2></div></div>""", unsafe_allow_html=True)
-        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Detectar patrones de gasto y anomalías en cuentas contables usando IA.</div>""", unsafe_allow_html=True)
+
+        render_module_guide(
+            purpose="Leverage Artificial Intelligence to detect spending patterns, anomalies, and insights in your financial data.",
+            benefits=[
+                "Identify unusual high-value transactions.",
+                "Analyze expense distribution automatically.",
+                "Receive strategic recommendations from the AI Advisor."
+            ],
+            instructions=[
+                "Upload a financial dataset (Excel or CSV).",
+                "Select the Description and Value columns.",
+                "Click 'Start AI Analysis' to generate charts and insights."
+            ]
+        )
+
         fi = st.file_uploader("Cargar Datos Financieros (.xlsx/.csv)", type=['xlsx', 'csv'])
         if fi and api_key_valida:
             df = pd.read_csv(fi) if fi.name.endswith('.csv') else pd.read_excel(fi)
@@ -1597,7 +1741,22 @@ else:
 
     elif menu == get_text("menu_niif"):
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/3208/3208727.png' class='pro-module-icon'><div class='pro-module-title'><h2>Narrador Financiero & Notas NIIF</h2></div></div>""", unsafe_allow_html=True)
-        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Automatizar la redacción de informes gerenciales y Notas a Estados Financieros.</div>""", unsafe_allow_html=True)
+
+        render_module_guide(
+            purpose="Automate the drafting of Management Reports and Notes to Financial Statements (NIIF).",
+            benefits=[
+                "Save hours of writing and analysis time.",
+                "Compare Year-over-Year variations instantly.",
+                "Generate professional, executive-level text."
+            ],
+            instructions=[
+                "Upload the Trial Balance for the Current Year.",
+                "Upload the Trial Balance for the Previous Year.",
+                "Select the Account Name and Value columns.",
+                "Generate the Strategic Report."
+            ]
+        )
+
         c1, c2 = st.columns(2); f1 = c1.file_uploader("Año Actual", type=['xlsx']); f2 = c2.file_uploader("Año Anterior", type=['xlsx'])
         if f1 and f2 and api_key_valida:
             d1 = pd.read_excel(f1); d2 = pd.read_excel(f2)
@@ -1625,14 +1784,43 @@ else:
 
     elif menu == get_text("menu_rut"):
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/9422/9422888.png' class='pro-module-icon'><div class='pro-module-title'><h2>Validador Oficial de RUT</h2></div></div>""", unsafe_allow_html=True)
-        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Asegurar la integridad de datos de terceros. Aplica algoritmo de Módulo 11.</div>""", unsafe_allow_html=True)
+
+        render_module_guide(
+            purpose="Ensure data integrity of third parties by calculating the Verification Digit (DV) using the official Modulo 11 algorithm.",
+            benefits=[
+                "Verify if a NIT is valid.",
+                "Correct data entry errors in ERPs.",
+                "Quick link to the official DIAN MUISCA status check."
+            ],
+            instructions=[
+                "Enter the NIT or ID number (without the verification digit).",
+                "Click 'Verify'.",
+                "Copy the calculated DV or use the external link to check status."
+            ]
+        )
+
         nit = st.text_input("Ingrese NIT o Cédula (Sin DV):", max_chars=15)
         if st.button("🔢 VERIFICAR"):
             dv = calcular_dv_colombia(nit); st.metric("Dígito de Verificación (DV)", dv); st.link_button("🔗 Consulta Estado en Muisca (DIAN)", "https://muisca.dian.gov.co/WebRutMuisca/DefConsultaEstadoRUT.faces")
 
     elif menu == get_text("menu_ocr"):
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/3588/3588241.png' class='pro-module-icon'><div class='pro-module-title'><h2>Digitalización Inteligente (OCR)</h2></div></div>""", unsafe_allow_html=True)
-        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Eliminar la digitación manual. Usa IA para leer imágenes de facturas.</div>""", unsafe_allow_html=True)
+
+        render_module_guide(
+            purpose="Eliminate manual data entry by using AI to extract structured data from images of invoices.",
+            benefits=[
+                "Speed up invoice processing.",
+                "Reduce typing errors.",
+                "Digitize physical paper trails into Excel data."
+            ],
+            instructions=[
+                "Upload images (.jpg, .png) of invoices or receipts.",
+                "Click 'Process Images'.",
+                "Review the extracted JSON data table.",
+                "Download the results."
+            ]
+        )
+
         af = st.file_uploader("Cargar Imágenes", type=["jpg", "png"], accept_multiple_files=True)
         if af and st.button("🧠 PROCESAR IMÁGENES") and api_key_valida:
             do = []; bar = st.progress(0)
