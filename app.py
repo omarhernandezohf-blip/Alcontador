@@ -182,6 +182,26 @@ TRANSLATIONS = {
         'menu_ocr': "Digitalización OCR",
 
         # Guide Content
+        'title_treasury': "Radar de Liquidez & Flujo de Caja",
+        'desc_treasury': "Gestión estratégica de tesorería que permite visualizar la salud financiera futura cruzando en tiempo real las Cuentas por Cobrar (Ingresos proyectados) contra las Cuentas por Pagar (Compromisos). Fundamental para evitar brechas de liquidez.",
+        'ben_treasury': ["Proyección de saldo disponible", "Alerta de déficit de caja", "Visualización gráfica de brechas"],
+
+        'title_fin_ai': "Inteligencia Financiera (IA)",
+        'desc_fin_ai': "Potente motor de análisis que utiliza algoritmos de Inteligencia Artificial para auditar el 100% de sus movimientos contables, detectando anomalías, patrones de gasto inusuales y desviaciones presupuestales que pasarían desapercibidas al ojo humano.",
+        'ben_fin_ai': ["Detección de anomalías en gastos", "Auditoría preventiva automática", "Identificación de patrones ocultos"],
+
+        'title_narrator': "Narrador Financiero & Notas NIIF",
+        'desc_narrator': "Transforma datos numéricos complejos en narrativa de negocios clara y concisa. Automatiza la redacción de informes gerenciales y las revelaciones (Notas) requeridas por las Normas Internacionales de Información Financiera (NIIF).",
+        'ben_narrator': ["Redacción automática de notas NIIF", "Informes gerenciales en segundos", "Interpretación cualitativa de cifras"],
+
+        'title_rut': "Validador Oficial de RUT",
+        'desc_rut': "Herramienta de cumplimiento tributario que verifica la integridad de los Números de Identificación Tributaria (NIT) utilizando el algoritmo oficial de 'Módulo 11' de la DIAN, asegurando que sus terceros estén correctamente registrados.",
+        'ben_rut': ["Validación de Dígito de Verificación", "Prevención de errores en exógena", "Algoritmo oficial DIAN"],
+
+        'title_ocr': "Digitalización Inteligente (OCR)",
+        'desc_ocr': "Sistema de Reconocimiento Óptico de Caracteres que extrae automáticamente la información clave de facturas físicas o imágenes, eliminando la digitación manual, reduciendo errores humanos y acelerando el procesamiento contable.",
+        'ben_ocr': ["Cero digitación manual", "Procesamiento masivo de facturas", "Ahorro de tiempo administrativo"],
+
         'title_dian': "Auditor de Exógena (Cruce DIAN)",
         'desc_dian': "Detectar discrepancias entre lo que reportaste y lo que la DIAN sabe de ti. Cruce matricial de NITs para evitar sanciones por inexactitud (Art. 651 ET).",
         'ben_dian': ["Evita sanciones del Art. 651", "Cruce automático de NITs", "Reporte detallado de diferencias"],
@@ -217,6 +237,26 @@ TRANSLATIONS = {
         'menu_ocr': "OCR Digitization",
 
         # Guide Content
+        'title_treasury': "Liquidity Radar & Cash Flow",
+        'desc_treasury': "Strategic treasury management to visualize future financial health by crossing Accounts Receivable (Projected Income) against Accounts Payable (Commitments) in real time.",
+        'ben_treasury': ["Available balance projection", "Cash deficit alert", "Gap visualization"],
+
+        'title_fin_ai': "Financial Intelligence (AI)",
+        'desc_fin_ai': "Powerful analysis engine using AI to audit 100% of accounting movements, detecting anomalies, unusual spending patterns, and budget deviations.",
+        'ben_fin_ai': ["Expense anomaly detection", "Automatic preventive audit", "Hidden pattern identification"],
+
+        'title_narrator': "Financial Narrator & IFRS Notes",
+        'desc_narrator': "Transforms complex numeric data into clear business narrative. Automates drafting of management reports and IFRS disclosures.",
+        'ben_narrator': ["Auto-drafting of IFRS notes", "Instant management reports", "Qualitative interpretation"],
+
+        'title_rut': "Official RUT Validator",
+        'desc_rut': "Tax compliance tool verifying Tax ID (NIT) integrity using the official DIAN 'Module 11' algorithm.",
+        'ben_rut': ["Verification Digit validation", "Exogenous error prevention", "Official DIAN algorithm"],
+
+        'title_ocr': "Smart Digitization (OCR)",
+        'desc_ocr': "Optical Character Recognition system extracting key info from physical invoices or images, eliminating manual entry.",
+        'ben_ocr': ["Zero manual entry", "Massive invoice processing", "Time saving"],
+
         'title_dian': "Exogenous Auditor (DIAN Cross-check)",
         'desc_dian': "Detect discrepancies between your reports and DIAN's fiscal data. Matrix matching of Tax IDs to avoid inaccuracy penalties (Art. 651 ET).",
         'ben_dian': ["Avoid Art. 651 penalties", "Automatic Tax ID matching", "Detailed discrepancy report"],
@@ -1328,8 +1368,12 @@ else:
                             render_smart_advisor(consultar_ia_gemini(f"Analiza este riesgo UGPP. {len(riesgos)} empleados exceden el 40%. Total exceso: {dn['exceso'].sum()}. ¿Qué sanción aplica?"))
 
     elif menu == "Proyección de Tesorería":
-        st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/5806/5806289.png' class='pro-module-icon'><div class='pro-module-title'><h2>Radar de Liquidez & Flujo de Caja</h2></div></div>""", unsafe_allow_html=True)
-        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Visualizar la salud financiera futura cruzando CxC y CxP.</div>""", unsafe_allow_html=True)
+        render_module_guide(
+            get_text('title_treasury'),
+            "https://cdn-icons-png.flaticon.com/512/5806/5806289.png",
+            get_text('desc_treasury'),
+            get_text('ben_treasury')
+        )
         saldo_hoy = st.number_input("💵 Saldo Disponible Hoy ($):", min_value=0.0, format="%.2f")
         c1, c2 = st.columns(2); fcxc = c1.file_uploader("Cartera (CxC)", type=['xlsx']); fcxp = c2.file_uploader("Proveedores (CxP)", type=['xlsx'])
         if fcxc and fcxp:
@@ -1421,8 +1465,12 @@ else:
     # ==============================================================================
 
     elif menu == "Analítica Financiera Inteligente":
-        st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/10041/10041467.png' class='pro-module-icon'><div class='pro-module-title'><h2>Inteligencia Financiera (IA)</h2></div></div>""", unsafe_allow_html=True)
-        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Detectar patrones de gasto y anomalías en cuentas contables usando IA.</div>""", unsafe_allow_html=True)
+        render_module_guide(
+            get_text('title_fin_ai'),
+            "https://cdn-icons-png.flaticon.com/512/10041/10041467.png",
+            get_text('desc_fin_ai'),
+            get_text('ben_fin_ai')
+        )
         fi = st.file_uploader("Cargar Datos Financieros (.xlsx/.csv)", type=['xlsx', 'csv'])
         if fi and api_key_valida:
             df = pd.read_csv(fi) if fi.name.endswith('.csv') else pd.read_excel(fi)
@@ -1432,8 +1480,12 @@ else:
                 render_smart_advisor(consultar_ia_gemini(f"Actúa como auditor financiero. Analiza estos saldos principales y da recomendaciones: {res.to_string()}"))
 
     elif menu == "Narrador Financiero & NIIF":
-        st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/3208/3208727.png' class='pro-module-icon'><div class='pro-module-title'><h2>Narrador Financiero & Notas NIIF</h2></div></div>""", unsafe_allow_html=True)
-        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Automatizar la redacción de informes gerenciales y Notas a Estados Financieros.</div>""", unsafe_allow_html=True)
+        render_module_guide(
+            get_text('title_narrator'),
+            "https://cdn-icons-png.flaticon.com/512/3208/3208727.png",
+            get_text('desc_narrator'),
+            get_text('ben_narrator')
+        )
         c1, c2 = st.columns(2); f1 = c1.file_uploader("Año Actual", type=['xlsx']); f2 = c2.file_uploader("Año Anterior", type=['xlsx'])
         if f1 and f2 and api_key_valida:
             d1 = pd.read_excel(f1); d2 = pd.read_excel(f2)
@@ -1448,15 +1500,23 @@ else:
                     render_smart_advisor(consultar_ia_gemini(prompt))
 
     elif menu == "Validador de RUT Oficial":
-        st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/9422/9422888.png' class='pro-module-icon'><div class='pro-module-title'><h2>Validador Oficial de RUT</h2></div></div>""", unsafe_allow_html=True)
-        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Asegurar la integridad de datos de terceros. Aplica algoritmo de Módulo 11.</div>""", unsafe_allow_html=True)
+        render_module_guide(
+            get_text('title_rut'),
+            "https://cdn-icons-png.flaticon.com/512/9422/9422888.png",
+            get_text('desc_rut'),
+            get_text('ben_rut')
+        )
         nit = st.text_input("Ingrese NIT o Cédula (Sin DV):", max_chars=15)
         if st.button("🔢 VERIFICAR"):
             dv = calcular_dv_colombia(nit); st.metric("Dígito de Verificación (DV)", dv); st.link_button("🔗 Consulta Estado en Muisca (DIAN)", "https://muisca.dian.gov.co/WebRutMuisca/DefConsultaEstadoRUT.faces")
 
     elif menu == "Digitalización OCR":
-        st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/3588/3588241.png' class='pro-module-icon'><div class='pro-module-title'><h2>Digitalización Inteligente (OCR)</h2></div></div>""", unsafe_allow_html=True)
-        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Eliminar la digitación manual. Usa IA para leer imágenes de facturas.</div>""", unsafe_allow_html=True)
+        render_module_guide(
+            get_text('title_ocr'),
+            "https://cdn-icons-png.flaticon.com/512/3588/3588241.png",
+            get_text('desc_ocr'),
+            get_text('ben_ocr')
+        )
         af = st.file_uploader("Cargar Imágenes", type=["jpg", "png"], accept_multiple_files=True)
         if af and st.button("🧠 PROCESAR IMÁGENES") and api_key_valida:
             do = []; bar = st.progress(0)
