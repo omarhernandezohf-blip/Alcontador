@@ -11,284 +11,153 @@ from datetime import datetime, timedelta
 import xml.etree.ElementTree as ET
 import os
 import html
-import textwrap
 import google_auth_oauthlib.flow
 from googleapiclient.discovery import build
 
-# --- LOCALIZATION / TRANSLATIONS ---
-TRANSLATIONS = {
-    'ES': {
-        'system_access': 'Acceso al Sistema',
-        'auth_required': 'Autenticación requerida para Enterprise Suite',
-        'sign_in_google': '🔐 Iniciar Sesión con Google',
-        'google_offline': '⚠️ GOOGLE AUTH OFFLINE',
-        'welcome_back': 'Bienvenido de Nuevo',
-        'sign_in_desc': 'Inicia sesión para acceder a tu asistente financiero inteligente.',
-        'emergency_override': '⚠️ ACCESO DE EMERGENCIA',
-        'operator_id': 'ID Operador',
-        'access_key': 'Clave de Acceso',
-        'initiate_manual': 'INICIAR ACCESO MANUAL',
-        'invalid_credentials': '❌ CREDENCIALES INVÁLIDAS',
-        'current_session': 'SESIÓN ACTUAL',
-        'unlock_full': '🔓 Desbloquear Sistema Completo',
-        'upgrade_pro': '⚡ MEJORAR A PRO',
-        'logout': 'Cerrar Sesión',
-        'modules': 'MÓDULOS DEL SISTEMA',
-        'menu_dashboard': 'Inicio / Dashboard',
-        'menu_dian': 'Auditoría Cruce DIAN',
-        'menu_xml': 'Minería de XML (Facturación)',
-        'menu_bank': 'Conciliación Bancaria IA',
-        'menu_expenses': 'Auditoría Fiscal de Gastos',
-        'menu_ugpp': 'Escáner de Nómina (UGPP)',
-        'menu_treasury': 'Proyección de Tesorería',
-        'menu_payroll': 'Costeo de Nómina Real',
-        'menu_ai': 'Analítica Financiera Inteligente',
-        'menu_niif': 'Narrador Financiero & NIIF',
-        'menu_rut': 'Validador de RUT Oficial',
-        'menu_ocr': 'Digitalización OCR',
-        'hero_title_1': 'Inteligencia Financiera',
-        'hero_title_2': 'Reimaginada',
-        'hero_desc': 'Tu CFO automatizado. Auditoría fiscal en tiempo real, nómina y pronósticos inteligentes impulsados por Gemini AI.',
-        'launch_audit': 'Iniciar Auditoría',
-        'view_docs': 'Ver Documentación',
-        'live_metrics': '📊 METRICAS EN VIVO',
-        'income': 'INGRESOS TOTALES',
-        'expenses': 'GASTOS OP.',
-        'profit': 'UTILIDAD NETA',
-        'cash_flow_trend': '📈 TENDENCIA DE CAJA',
-        'expense_breakdown': '📉 DESGLOSE DE GASTOS',
-        'latest_transactions': '📝 ÚLTIMAS TRANSACCIONES',
-        'upgrade_access': '💎 MEJORAR NIVEL DE ACCESO',
-        'starter_level': 'NIVEL INICIAL',
-        'continue_free': 'CONTINUAR GRATIS',
-        'pro_agent': 'AGENTE PRO',
-        'recommended': 'RECOMENDADO',
-        'upgrade_btn': '⚡ MEJORAR A PRO',
-        'db_offline': '⚠️ BASE DE DATOS OFFLINE. Verifica conexión.',
-        'footer': 'Asistente Contable Pro | v15.0 Enterprise'
-    },
-    'EN': {
-        'system_access': 'System Access',
-        'auth_required': 'Authentication required for Enterprise Suite',
-        'sign_in_google': '🔐 Sign in with Google',
-        'google_offline': '⚠️ GOOGLE AUTH OFFLINE',
-        'welcome_back': 'Welcome Back',
-        'sign_in_desc': 'Sign in to access your intelligent financial assistant.',
-        'emergency_override': '⚠️ EMERGENCY OVERRIDE',
-        'operator_id': 'Operator ID',
-        'access_key': 'Access Key',
-        'initiate_manual': 'INITIATE MANUAL OVERRIDE',
-        'invalid_credentials': '❌ INVALID CREDENTIALS',
-        'current_session': 'CURRENT SESSION',
-        'unlock_full': '🔓 Unlock Full Power',
-        'upgrade_pro': '⚡ UPGRADE PRO',
-        'logout': 'Log Out',
-        'modules': 'SYSTEM MODULES',
-        'menu_dashboard': 'Home / Dashboard',
-        'menu_dian': 'DIAN Audit Cross-check',
-        'menu_xml': 'XML Mining (Invoicing)',
-        'menu_bank': 'AI Bank Reconciliation',
-        'menu_expenses': 'Fiscal Expense Audit',
-        'menu_ugpp': 'Payroll Scanner (UGPP)',
-        'menu_treasury': 'Treasury Projection',
-        'menu_payroll': 'Real Payroll Costing',
-        'menu_ai': 'Smart Financial Analytics',
-        'menu_niif': 'Financial Storyteller & IFRS',
-        'menu_rut': 'Official RUT Validator',
-        'menu_ocr': 'OCR Digitization',
-        'hero_title_1': 'Financial Intelligence',
-        'hero_title_2': 'Reimagined',
-        'hero_desc': 'Your automated CFO. Real-time tax auditing, payroll costing, and intelligent forecasting powered by Gemini AI.',
-        'launch_audit': 'Launch Audit',
-        'view_docs': 'View Documentation',
-        'live_metrics': '📊 LIVE METRICS STREAM',
-        'income': 'TOTAL INCOME',
-        'expenses': 'OP. EXPENSES',
-        'profit': 'NET PROFIT',
-        'cash_flow_trend': '📈 CASH FLOW TREND',
-        'expense_breakdown': '📉 EXPENSE BREAKDOWN',
-        'latest_transactions': '📝 LATEST TRANSACTIONS',
-        'upgrade_access': '💎 UPGRADE ACCESS LEVEL',
-        'starter_level': 'STARTER LEVEL',
-        'continue_free': 'CONTINUE FREE',
-        'pro_agent': 'PRO AGENT',
-        'recommended': 'RECOMMENDED',
-        'upgrade_btn': '⚡ UPGRADE TO PRO',
-        'db_offline': '⚠️ DATABASE OFFLINE. Check connection.',
-        'footer': 'Accounting Assistant Pro | v15.0 Enterprise'
-    }
-}
-
-# --- CONFIGURACIÓN DE ESTILO GLOBAL (AIVORA THEME) ---
-# Se inyecta CSS moderno basado en Bootstrap 5 y diseño Glassmorphism
+# --- CONFIGURACIÓN DE ESTILO GLOBAL (ENTERPRISE TRUST THEME) ---
 st.markdown("""
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        /* --- AIVORA THEME (BOOTSTRAP 5 + CUSTOM) --- */
+        /* --- FONTS --- */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Manrope:wght@400;600;800&display=swap');
 
-        /* Import Fonts */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;700&display=swap');
-
-        /* Bootstrap 5 Variables Override */
+        /* --- VARIABLES --- */
         :root {
-            --bg-void: #0B0F19; /* Deep Void */
-            --bg-glass: rgba(17, 25, 40, 0.75);
-            --primary: #4361EE; /* Neon Blue */
-            --primary-hover: #3A0CA3;
-            --accent: #4CC9F0; /* Cyan */
-            --success: #10B981;
-            --danger: #EF4444;
-            --text-primary: #F8FAFC;
-            --text-secondary: #94A3B8;
-            --border-glass: rgba(255, 255, 255, 0.08);
-            --shadow-glow: 0 0 20px rgba(67, 97, 238, 0.15);
+            --bg-void: #020617;
+            --bg-deep: #0f172a;
+            --primary: #6366f1; /* Electric Indigo */
+            --secondary: #3b82f6; /* Slate Blue */
+            --success: #10b981; /* Emerald */
+            --text-primary: #ffffff;
+            --text-body: #94a3b8;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --shadow-soft: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
+            --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.15);
         }
 
-        /* Global Reset */
+        /* --- BASE & BACKGROUND --- */
         .stApp {
-            background-color: var(--bg-void) !important;
-            background-image:
-                radial-gradient(at 0% 0%, rgba(67, 97, 238, 0.15) 0px, transparent 50%),
-                radial-gradient(at 100% 0%, rgba(76, 201, 240, 0.1) 0px, transparent 50%);
-            color: var(--text-secondary);
+            background: radial-gradient(circle at top right, #1e293b, transparent 40%),
+                        radial-gradient(circle at bottom left, #1e1b4b, transparent 40%),
+                        linear-gradient(180deg, #0f172a 0%, #020617 100%) !important;
+            background-attachment: fixed !important;
             font-family: 'Inter', sans-serif;
+            color: var(--text-body);
         }
 
+        /* --- TYPOGRAPHY --- */
         h1, h2, h3, h4, h5, h6 {
-            font-family: 'Outfit', sans-serif !important;
+            font-family: 'Inter', sans-serif !important;
             color: var(--text-primary) !important;
-            font-weight: 700 !important;
+            font-weight: 800 !important;
+            letter-spacing: -0.5px !important;
         }
 
-        /* --- COMPONENTS --- */
-
-        /* Cards (Glassmorphism) */
-        div[data-testid="stExpander"], .glass-card, .pro-module-header, .pricing-card {
-            background: var(--bg-glass) !important;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--border-glass) !important;
-            border-radius: 16px !important;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        p, div, span, label {
+            font-family: 'Inter', sans-serif;
+            color: var(--text-body);
         }
 
-        /* Buttons */
-        .stButton > button {
-            background: linear-gradient(135deg, var(--primary), var(--primary-hover)) !important;
-            border: none !important;
-            color: white !important;
-            border-radius: 10px !important;
-            padding: 0.6rem 1.2rem !important;
-            font-weight: 600 !important;
-            font-family: 'Outfit', sans-serif !important;
-            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
-            transition: all 0.3s ease;
+        /* --- GLASSMORPHISM CARDS --- */
+        div[data-testid="stExpander"], .glass-card, .pricing-card, .pro-module-header {
+            background: var(--glass-bg) !important;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.08) !important;
+            border-top: 1px solid rgba(255,255,255,0.15) !important; /* Highlight top */
+            border-radius: 12px !important;
+            box-shadow: var(--shadow-soft);
         }
 
-        .stButton > button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(67, 97, 238, 0.5);
+        /* --- SIDEBAR (CONTROL DOCK) --- */
+        [data-testid="stSidebar"] {
+            background: #020617 !important;
+            border-right: 1px solid rgba(255,255,255,0.05);
         }
 
-        /* Inputs */
+        /* Radio Buttons as Nav Tabs */
+        .stRadio > div[role="radiogroup"] > label {
+            background: transparent !important;
+            border: none;
+            padding: 12px 16px !important;
+            color: var(--text-body) !important;
+            border-left: 3px solid transparent;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .stRadio > div[role="radiogroup"] > label:hover {
+            color: var(--text-primary) !important;
+            background: rgba(255,255,255,0.03) !important;
+        }
+
+        .stRadio > div[role="radiogroup"] > label[data-checked="true"] {
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), transparent) !important;
+            border-left: 3px solid var(--primary) !important;
+            color: var(--text-primary) !important;
+            font-weight: 600;
+        }
+
+        /* --- WIDGETS --- */
         .stTextInput > div > div > input,
         .stNumberInput > div > div > input,
         .stSelectbox > div > div > div {
-            background-color: rgba(255, 255, 255, 0.03) !important;
-            border: 1px solid var(--border-glass) !important;
-            border-radius: 10px !important;
-            color: var(--text-primary) !important;
+            background-color: rgba(15, 23, 42, 0.6) !important;
+            color: white !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 8px;
         }
 
-        /* Sidebar */
-        [data-testid="stSidebar"] {
-            background-color: rgba(11, 15, 25, 0.7) !important;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-right: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 5px 0 30px rgba(0,0,0,0.1);
-        }
-
-        /* Sidebar Elements Override */
-        [data-testid="stSidebar"] .stButton > button {
-            width: 100%;
-            background: rgba(255, 255, 255, 0.05) !important;
-            border: 1px solid var(--border-glass) !important;
-            box-shadow: none !important;
-        }
-        [data-testid="stSidebar"] .stButton > button:hover {
+        /* --- BUTTONS --- */
+        .stButton > button {
             background: var(--primary) !important;
-            border-color: var(--primary) !important;
+            color: white !important;
+            border-radius: 8px !important;
+            border: none !important;
+            font-weight: 600 !important;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            transition: all 0.2s;
+        }
+        .stButton > button:hover {
+            background: #4f46e5 !important; /* Darker Indigo */
+            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.5);
+            transform: translateY(-1px);
         }
 
-        /* DataFrames */
+        /* --- DATAFRAMES --- */
         [data-testid="stDataFrame"] {
-            background: transparent !important;
-            border: 1px solid var(--border-glass);
-            border-radius: 12px;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
         }
 
-        /* Metrics */
-        [data-testid="stMetricLabel"] {
-            color: var(--text-secondary) !important;
-            font-size: 0.9rem !important;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
+        /* --- METRICS --- */
         [data-testid="stMetricValue"] {
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
             color: var(--text-primary) !important;
-            font-size: 2rem !important;
-            font-family: 'Outfit', sans-serif !important;
+            text-shadow: 0 0 20px rgba(255,255,255,0.1);
+        }
+        [data-testid="stMetricLabel"] {
+            color: var(--text-body) !important;
+            font-size: 0.85rem;
+            font-weight: 500;
         }
 
-        /* Custom Hero Section */
-        .hero-aivora {
-            text-align: center;
-            padding: 4rem 1rem;
-            margin-bottom: 2rem;
-            border-radius: 20px;
-            background: linear-gradient(180deg, rgba(67,97,238,0.05) 0%, transparent 100%);
-            border: 1px solid var(--border-glass);
-        }
-
-        .hero-title {
-            font-size: 3.5rem;
-            background: linear-gradient(to right, #fff, #94a3b8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 1rem;
-            font-family: 'Outfit', sans-serif;
-            font-weight: 800;
-        }
-
-        /* Login Page Specific */
-        .login-container {
-            max-width: 450px;
-            margin: 10vh auto;
-            padding: 3rem;
-            background: var(--bg-glass);
-            border-radius: 24px;
-            border: 1px solid var(--border-glass);
-            text-align: center;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-        }
+        /* Hide Defaults */
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        header {visibility: hidden;}
 
         /* Helpers */
         .pro-module-icon { width: 32px; height: 32px; margin-right: 12px; opacity: 0.9; }
         .detail-box {
-            background: rgba(67, 97, 238, 0.1);
-            border-left: 3px solid var(--primary);
+            background: rgba(59, 130, 246, 0.05);
+            border-left: 3px solid var(--secondary);
             padding: 16px;
             border-radius: 0 8px 8px 0;
             margin-bottom: 24px;
         }
-
-        /* Hide Streamlit Defaults */
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        header {visibility: hidden;}
     </style>
 """, unsafe_allow_html=True)
 
@@ -296,35 +165,9 @@ st.markdown("""
 # 2. GESTIÓN DE CONEXIONES EXTERNAS (BACKEND) Y SEGURIDAD (OAUTH2)
 # ==============================================================================
 
-# --- LANGUAGE SELECTOR (GLOBAL) ---
-# Place this early so it appears even on the Login Screen
-with st.sidebar:
-    col_lang_1, col_lang_2 = st.columns([1,3])
-    with col_lang_1:
-        st.markdown(f"<div style='margin-top: 10px; font-size:1.5rem;'>{ '🇺🇸' if st.session_state.get('language')=='EN' else '🇪🇸' }</div>", unsafe_allow_html=True)
-    with col_lang_2:
-        # Use a key that doesn't conflict if we had one before
-        lang_choice = st.selectbox(
-            "Language / Idioma",
-            ["Español (ES)", "English (EN)"],
-            index=0 if st.session_state.get('language','ES') == 'ES' else 1,
-            label_visibility="collapsed",
-            key="lang_selector_main"
-        )
-        new_lang = 'ES' if "Español" in lang_choice else 'EN'
-        if new_lang != st.session_state.get('language', 'ES'):
-            st.session_state['language'] = new_lang
-            st.rerun()
-    st.markdown("---")
-
 # ------------------------------------------------------------------------------
 # A. AUTENTICACIÓN GOOGLE OAUTH2 (THE GATEKEEPER)
 # ------------------------------------------------------------------------------
-
-def get_text(key):
-    """Helper for translations"""
-    lang = st.session_state.get('language', 'ES')
-    return TRANSLATIONS.get(lang, TRANSLATIONS['ES']).get(key, key)
 
 def login_section():
     # Load secrets safely
@@ -351,7 +194,7 @@ def login_section():
             flow = google_auth_oauthlib.flow.Flow.from_client_config(
                 client_config,
                 scopes=['openid', 'https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile'],
-                redirect_uri=st.secrets["google"]["redirect_uri"] # Enforce exact redirect_uri
+                redirect_uri=st.secrets["google"]["redirect_uri"]
             )
 
             # Check for authorization code in URL
@@ -389,18 +232,15 @@ def login_section():
 
     # Prepare button HTML to avoid f-string complexity and indentation issues
     if auth_url:
-        login_btn = f'<a href="{auth_url}" target="_self"><button style="background: linear-gradient(135deg, var(--primary), var(--primary-hover)); border: none; color: white; padding: 1rem 2rem; font-size: 1.1rem; font-family: \'Outfit\', sans-serif; font-weight: 600; cursor: pointer; border-radius: 10px; box-shadow: var(--shadow-glow); transition: all 0.2s ease; width: 100%;">{get_text("sign_in_google")}</button></a>'
+        login_btn = f'<a href="{auth_url}" target="_self"><button style="background: var(--primary); border: none; color: white; padding: 1rem 2rem; font-size: 1.1rem; font-family: \'Inter\', sans-serif; font-weight: 600; cursor: pointer; border-radius: 8px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); transition: all 0.2s ease;">🔐 Sign in with Google</button></a>'
     else:
-        login_btn = f'<div style="color:#ef4444; border:1px solid #ef4444; padding:10px; border-radius: 8px; font-family:\'Outfit\', sans-serif;">{get_text("google_offline")}</div>'
+        login_btn = '<div style="color:#ef4444; border:1px solid #ef4444; padding:10px; border-radius: 8px; font-family:\'Inter\', sans-serif;">⚠️ GOOGLE AUTH OFFLINE</div>'
 
     # Note: Indentation is stripped to prevent Markdown Code Block rendering
     st.markdown(f"""
-<div class="login-container">
-    <div style="margin-bottom: 1.5rem;">
-        <span style="font-size: 3rem;">🤖</span>
-    </div>
-    <h1 style="font-family: 'Outfit', sans-serif; font-size: 2rem; margin-bottom: 0.5rem; color: white;">{get_text("welcome_back")}</h1>
-    <p style="color: var(--text-secondary); margin-bottom: 2.5rem; font-size: 1rem;">{get_text("sign_in_desc")}</p>
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 70vh;">
+    <h1 style="font-family: 'Inter', sans-serif; font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; text-align: center; letter-spacing: -1px;">System Access</h1>
+    <p style="color: var(--text-body); margin-bottom: 2rem; font-family: 'Inter', sans-serif; font-size: 1.1rem;">Authentication required for Enterprise Suite</p>
     {login_btn}
 </div>
 """, unsafe_allow_html=True)
@@ -408,12 +248,12 @@ def login_section():
     # --- FALLBACK LOGIN (Manual Override) ---
     c1, c2, c3 = st.columns([1,1,1])
     with c2:
-        with st.expander(f"{get_text('emergency_override')}"):
-            st.markdown(f"<small style='color: #94a3b8;'>Use this channel if Google Auth is offline (Error 403/500).</small>", unsafe_allow_html=True)
-            u = st.text_input(get_text("operator_id"), key="login_u")
-            p = st.text_input(get_text("access_key"), type="password", key="login_p")
+        with st.expander("⚠️ EMERGENCY OVERRIDE"):
+            st.markdown("<small style='color: #94a3b8;'>Use this channel if Google Auth is offline (Error 403/500).</small>", unsafe_allow_html=True)
+            u = st.text_input("Operator ID", key="login_u")
+            p = st.text_input("Access Key", type="password", key="login_p")
 
-            if st.button(get_text("initiate_manual"), type="primary"):
+            if st.button("INITIATE MANUAL OVERRIDE", type="primary"):
                 if u == "admin" and p == "admin":
                     st.session_state['user_plan'] = 'PRO'
                     st.session_state['logged_in'] = True
@@ -431,7 +271,7 @@ def login_section():
                     registrar_log("Cliente", "Login Manual", "Acceso cliente manual")
                     st.rerun()
                 else:
-                    st.error(get_text("invalid_credentials"))
+                    st.error("❌ INVALID CREDENTIALS")
                     registrar_log(u, "Login Fallido", "Manual override fallido")
 
     st.stop()
@@ -693,101 +533,6 @@ def ocr_factura(imagen):
 # ------------------------------------------------------------------------------
 # PARSEADOR DE XML (FACTURACIÓN ELECTRÓNICA DIAN)
 # ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-# HELPER: SMART ADVISOR COMPONENT
-# ------------------------------------------------------------------------------
-def render_smart_advisor(summary, diagnosis, advice):
-    """
-    Renders a Glass Card with three distinct sections:
-    1. Summary (Brief overview)
-    2. Diagnosis (Critical analysis)
-    3. Advice (Actionable steps)
-    """
-    st.markdown(textwrap.dedent(f"""
-    <div class="glass-card" style="padding: 20px; margin-top: 20px; border-left: 4px solid var(--accent);">
-        <h3 style="color: var(--accent); font-size: 1.2rem; margin-bottom: 15px; display: flex; align-items: center;">
-            <span style="font-size: 1.5rem; margin-right: 10px;">🧠</span> Smart Advisor
-        </h3>
-
-        <div style="margin-bottom: 15px;">
-            <strong style="color: var(--text-primary); display: block; margin-bottom: 5px;">📊 Executive Summary</strong>
-            <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5;">{summary}</p>
-        </div>
-
-        <div style="margin-bottom: 15px; background: rgba(239, 68, 68, 0.1); padding: 10px; border-radius: 8px;">
-            <strong style="color: var(--danger); display: block; margin-bottom: 5px;">🩺 Diagnosis</strong>
-            <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5;">{diagnosis}</p>
-        </div>
-
-        <div style="background: rgba(16, 185, 129, 0.1); padding: 10px; border-radius: 8px;">
-            <strong style="color: var(--success); display: block; margin-bottom: 5px;">💡 Strategic Advice</strong>
-            <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5;">{advice}</p>
-        </div>
-    </div>
-    """), unsafe_allow_html=True)
-
-# ------------------------------------------------------------------------------
-# HELPER: MODULE EDUCATIONAL GUIDE (UX)
-# ------------------------------------------------------------------------------
-def render_module_guide(purpose, benefits, instructions):
-    """
-    Renders an educational guide component (Aivora Style).
-    """
-    st.markdown(textwrap.dedent(f"""
-    <div class="glass-card" style="padding: 20px; margin-bottom: 25px; border: 1px solid rgba(76, 201, 240, 0.2);">
-        <h4 style="color: var(--text-primary); font-size: 1.1rem; margin-bottom: 15px; display: flex; align-items: center;">
-            <span style="font-size: 1.4rem; margin-right: 10px;">📘</span> Module Guide
-        </h4>
-
-        <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
-            <div>
-                <strong style="color: var(--accent); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Purpose</strong>
-                <p style="color: var(--text-secondary); font-size: 0.95rem; margin-top: 5px;">{purpose}</p>
-            </div>
-
-            <div style="background: rgba(255, 255, 255, 0.03); padding: 12px; border-radius: 8px;">
-                <strong style="color: var(--success); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">🚀 Benefits</strong>
-                <ul style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0; padding-left: 20px; margin-top: 5px;">
-                    {''.join([f'<li style="margin-bottom: 4px;">{b}</li>' for b in benefits])}
-                </ul>
-            </div>
-
-            <div>
-                <strong style="color: var(--primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">🔢 How to Use</strong>
-                <ol style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0; padding-left: 20px; margin-top: 5px;">
-                    {''.join([f'<li style="margin-bottom: 4px;">{i}</li>' for i in instructions])}
-                </ol>
-            </div>
-        </div>
-    </div>
-    """), unsafe_allow_html=True)
-
-# ------------------------------------------------------------------------------
-# HELPER: EXCEL DOWNLOAD BUTTON
-# ------------------------------------------------------------------------------
-def get_excel_download(df, filename="report.xlsx", button_text="📥 Download Excel"):
-    """
-    Generates a download button for a DataFrame as an Excel file.
-    """
-    buffer = io.BytesIO()
-    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False, sheet_name='Report')
-        # Auto-adjust columns width
-        worksheet = writer.sheets['Report']
-        for i, col in enumerate(df.columns):
-            try:
-                max_len = max(df[col].astype(str).map(len).max(), len(str(col))) + 2
-            except:
-                max_len = 15
-            worksheet.set_column(i, i, max_len)
-
-    st.download_button(
-        label=button_text,
-        data=buffer.getvalue(),
-        file_name=filename,
-        mime="application/vnd.ms-excel"
-    )
-
 def parsear_xml_dian(archivo_xml):
     try:
         tree = ET.parse(archivo_xml)
@@ -830,18 +575,12 @@ def parsear_xml_dian(archivo_xml):
 # ==============================================================================
 
 with st.sidebar:
-    # Language selector moved to top of file
-
-    st.markdown("""
-        <div style="display: flex; align-items: center; margin-bottom: 20px;">
-            <img src="https://cdn-icons-png.flaticon.com/512/2830/2830303.png" width="40" style="margin-right: 10px;">
-            <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.2rem; color: white;">AIVORA <span style="color: var(--primary);">FINANCE</span></span>
-        </div>
-    """, unsafe_allow_html=True)
+    st.image("https://cdn-icons-png.flaticon.com/512/2830/2830303.png", width=80)
+    st.markdown("### 💼 Suite Financiera", unsafe_allow_html=True)
     
     # --- PANEL DE USUARIO LOGUEADO (SIDEBAR) ---
-    plan_bg = "var(--primary)" if st.session_state['user_plan'] == 'PRO' else "#64748b"
-    status_db = "🟢 Online" if db_conectada else "🔴 Offline"
+    plan_bg = "#FFD700" if st.session_state['user_plan'] == 'PRO' else "#A9A9A9"
+    status_db = "🟢 DB Online" if db_conectada else "🔴 DB Offline"
     
     # Security: Escape variables injected into HTML
     user_plan_safe = html.escape(str(st.session_state.get('user_plan', 'FREE')))
@@ -854,60 +593,53 @@ with st.sidebar:
 
     # Show User Profile
     if user_pic:
-        st.markdown(f"""
-        <div style="text-align: center; margin-bottom: 20px;">
-            <img src='{user_pic}' style='width: 64px; height: 64px; border-radius: 50%; margin-bottom: 10px; border: 2px solid var(--primary); padding: 2px;'>
-            <h4 style="margin: 0; font-size: 1rem;">{user_name}</h4>
-            <span style="font-size: 0.75rem; color: var(--accent); background: rgba(76, 201, 240, 0.1); padding: 2px 8px; border-radius: 12px;">{user_plan_safe}</span>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown(f"""
-        <div style='background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; border: 1px solid var(--border-glass); margin-bottom: 20px;'>
-            <small style='color: var(--text-secondary); text-transform:uppercase; letter-spacing: 1px; font-size: 0.7rem;'>{get_text("current_session")}</small><br>
-            <div style='display: flex; align-items: center; margin-top: 5px;'>
-                <div style='width: 8px; height: 8px; background: {plan_bg}; border-radius: 50%; margin-right: 8px; box-shadow: 0 0 10px {plan_bg};'></div>
-                <strong style='font-size: 0.95rem; color:white; font-family: "Outfit", sans-serif;'>{user_name}</strong>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"<img src='{user_pic}' style='width: 50px; height: 50px; border-radius: 50%; margin-bottom: 10px; border: 2px solid var(--primary);'>", unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div style='background: rgba(255,255,255,0.05); padding: 15px; border-radius: 4px; border-left: 3px solid {plan_bg}; margin-bottom: 20px;'>
+        <small style='color: #94a3b8; text-transform:uppercase;'>OPERATOR:</small><br>
+        <strong style='font-size: 1.1rem; color:white; font-family: "Inter", sans-serif;'>{user_name}</strong><br>
+        <span style="font-size: 0.8rem; color: var(--primary);">{user_plan_safe} ACCESS</span><br>
+        <small style='color: #64748b;'>{estado_ia_safe}</small><br>
+        <small style='color: {'#06b6d4' if db_conectada else '#ef4444'}; font-weight:bold;'>{status_db_safe}</small>
+    </div>
+    """, unsafe_allow_html=True)
 
     if st.session_state['user_plan'] == 'FREE':
-        st.markdown("""
-        <div style="background: linear-gradient(135deg, rgba(67, 97, 238, 0.2), transparent); border-radius: 12px; padding: 15px; border: 1px solid rgba(67, 97, 238, 0.3); margin-bottom: 20px;">
-            <strong style="color: white; font-size: 0.9rem;">🔓 Unlock Full Power</strong>
-            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 10px;">Get unlimited AI queries & tax automation.</p>
-            <a href="https://checkout.wompi.co/l/TU_LINK_AQUI" target="_blank" style="text-decoration: none;">
-                <button style="width: 100%; background: var(--primary); border: none; color: white; padding: 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer;">⚡ UPGRADE PRO</button>
-            </a>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("---")
+        st.write("🔓 UNLOCK FULL SYSTEM")
+        # Enlace de pago WOMPI
+        st.link_button(
+            "💎 UPGRADE TO PRO",
+            "https://checkout.wompi.co/l/TU_LINK_AQUI"
+        )
+        st.caption("Access all enterprise modules.")
 
-    if st.button("Log Out", use_container_width=True):
+    if st.button("TERMINATE SESSION"):
         registrar_log(st.session_state.get('username', 'Unknown'), "Logout", "Salida del sistema")
         st.session_state.clear()
         st.rerun()
 
-    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+    st.markdown("---")
     
     opciones_menu = [
-        get_text("menu_dashboard"),
-        get_text("menu_dian"),
-        get_text("menu_xml"),
-        get_text("menu_bank"),
-        get_text("menu_expenses"),
-        get_text("menu_ugpp"),
-        get_text("menu_treasury"),
-        get_text("menu_payroll"),
-        get_text("menu_ai"),
-        get_text("menu_niif"),
-        get_text("menu_rut"),
-        get_text("menu_ocr")
+        "Inicio / Dashboard",
+        "Auditoría Cruce DIAN",
+        "Minería de XML (Facturación)",
+        "Conciliación Bancaria IA",
+        "Auditoría Fiscal de Gastos",
+        "Escáner de Nómina (UGPP)",
+        "Proyección de Tesorería",
+        "Costeo de Nómina Real",
+        "Analítica Financiera Inteligente",
+        "Narrador Financiero & NIIF",
+        "Validador de RUT Oficial",
+        "Digitalización OCR"
     ]
     
-    menu = st.radio(get_text("modules"), opciones_menu)
+    menu = st.radio("SYSTEM MODULES:", opciones_menu)
     
-    st.markdown(f"<br><center><small style='color: #64748b;'>{get_text('footer')}</small></center>", unsafe_allow_html=True)
+    st.markdown("<br><center><small style='color: #64748b;'>v14.5 ENTERPRISE</small></center>", unsafe_allow_html=True)
 
 # ==============================================================================
 # ==============================================================================
@@ -915,62 +647,81 @@ with st.sidebar:
 # ==============================================================================
 # ==============================================================================
 
-if menu == get_text("menu_dashboard"):
-    # 1. HEADER EJECUTIVO (HERO SECTION - AIVORA THEME)
-    st.markdown(f"""
-    <div class="hero-aivora">
-        <div style="margin-bottom: 20px;">
-            <span style="font-size: 1rem; color: var(--accent); background: rgba(76, 201, 240, 0.1); padding: 5px 15px; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px;">v15.0 AI System</span>
-        </div>
-        <h1 class="hero-title">{get_text('hero_title_1')} <br><span style="color: var(--primary);">{get_text('hero_title_2')}</span></h1>
-        <p style="color: var(--text-secondary); font-size: 1.2rem; max-width: 600px; margin: 0 auto 30px;">
-            {get_text('hero_desc')}
-        </p>
-        <div style="display: flex; gap: 15px; justify-content: center;">
-            <button style="background: var(--primary); border: none; padding: 12px 24px; color: white; border-radius: 8px; font-weight: 600;">{get_text('launch_audit')}</button>
-            <button style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px 24px; color: white; border-radius: 8px; font-weight: 600;">{get_text('view_docs')}</button>
+if menu == "Inicio / Dashboard":
+    # 1. HEADER EJECUTIVO (HERO SECTION - ENTERPRISE TRUST)
+    st.markdown("""
+    <div class="hero-container">
+        <div class="hero-content">
+            <h1 class="hero-title">Asistente Contable <span style="color: var(--primary)">PRO</span></h1>
+            <div class="hero-subtitle">v14.5 Enterprise Suite • <span style="color: var(--success)">System Online</span></div>
         </div>
     </div>
+    <style>
+        .hero-container {
+            position: relative;
+            padding: 3rem 2rem;
+            margin-bottom: 2rem;
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), transparent);
+            border-left: 4px solid var(--primary);
+            border-radius: 8px;
+            overflow: hidden;
+            backdrop-filter: blur(12px);
+            box-shadow: var(--shadow-soft);
+        }
+        .hero-title {
+            font-family: 'Inter', sans-serif !important;
+            font-size: 3rem !important;
+            font-weight: 800 !important;
+            margin: 0;
+            letter-spacing: -1px;
+            color: white;
+            text-shadow: 0 0 40px rgba(99, 102, 241, 0.3);
+        }
+        .hero-subtitle {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.1rem;
+            color: var(--text-body);
+            margin-top: 0.5rem;
+            font-weight: 500;
+        }
+    </style>
     """, unsafe_allow_html=True)
 
     # 2. BENTO GRID DASHBOARD (Métricas y Gráficos)
 
     def metric_card(label, value, delta, is_positive=True):
-        color = "var(--success)" if is_positive else "var(--danger)"
+        color = "#10b981" if is_positive else "#f43f5e"
         arrow = "↑" if is_positive else "↓"
-        # Using Aivora glass-card style from global CSS
         st.markdown(f"""
-        <div class="glass-card" style="height: 100%; padding: 24px; position: relative; overflow: hidden;">
-            <div style="position: absolute; top: -10px; right: -10px; width: 60px; height: 60px; background: {color}; filter: blur(40px); opacity: 0.2;"></div>
-            <div style="color: var(--text-secondary); font-family: 'Outfit', sans-serif; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px;">{label}</div>
-            <div style="font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 700; color: white; margin-bottom: 5px;">{value}</div>
-            <div style="color: {color}; font-size: 0.9rem; font-weight: 600; font-family: 'Inter'; display: flex; align-items: center;">
-                <span style="background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px; margin-right: 8px;">{arrow} {delta}</span>
-                <span style="color: var(--text-secondary); font-weight: 400;">vs last month</span>
+        <div class="glass-card" style="height: 100%; display: flex; flex-direction: column; justify-content: center; padding: 24px;">
+            <div style="color: var(--text-body); font-family: 'Inter'; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">{label}</div>
+            <div style="font-family: 'Inter'; font-size: 2rem; font-weight: 800; color: white; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -1px;">{value}</div>
+            <div style="color: {color}; font-size: 0.95rem; font-weight: 600; font-family: 'Inter';">
+                {arrow} {delta} <span style="color: var(--text-body); font-weight: 400;">vs last cycle</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-    st.markdown(f"### {get_text('live_metrics')}")
+    st.markdown("### 📊 LIVE METRICS STREAM")
     col1, col2, col3, col4 = st.columns(4)
-    with col1: metric_card(get_text("income"), "$124,500", "12%", True)
-    with col2: metric_card(get_text("expenses"), "$42,300", "5%", False)
-    with col3: metric_card(get_text("profit"), "$82,200", "18%", True)
+    with col1: metric_card("TOTAL INCOME", "$124,500", "12%", True)
+    with col2: metric_card("OP. EXPENSES", "$42,300", "5%", False)
+    with col3: metric_card("NET PROFIT", "$82,200", "18%", True)
     with col4: metric_card("EBITDA MARGIN", "34%", "2%", True)
 
     st.markdown("---")
 
     c_chart_1, c_chart_2 = st.columns([2, 1])
     with c_chart_1:
-        st.markdown(f"#### {get_text('cash_flow_trend')}")
+        st.markdown("#### 📈 CASH FLOW TREND")
         chart_data = pd.DataFrame(np.random.randn(20, 3) + [10, 10, 10], columns=['Income', 'Expenses', 'Profit'])
         st.area_chart(chart_data, color=["#06b6d4", "#ef4444", "#10b981"])
     with c_chart_2:
-        st.markdown(f"#### {get_text('expense_breakdown')}")
+        st.markdown("#### 📉 EXPENSE BREAKDOWN")
         gastos_data = pd.DataFrame({'Category': ['Payroll', 'Software', 'Office', 'Ads'], 'Amount': [5000, 2000, 1500, 3000]})
         st.bar_chart(gastos_data.set_index('Category'), color="#8b5cf6")
 
-    st.markdown(f"### {get_text('latest_transactions')}")
+    st.markdown("### 📝 LATEST TRANSACTIONS LOG")
     df_transacciones = pd.DataFrame({
         "ID": ["TRX-001", "TRX-002", "TRX-003", "TRX-004", "TRX-005"],
         "DATE": ["2024-05-01", "2024-05-02", "2024-05-02", "2024-05-03", "2024-05-03"],
@@ -982,47 +733,50 @@ if menu == get_text("menu_dashboard"):
 
     # 3. SECCIÓN PLANES Y PRECIOS
     st.markdown("---")
-    st.markdown(f"### {get_text('upgrade_access')}")
+    st.markdown("### 💎 UPGRADE ACCESS LEVEL")
     
-    # Styles for pricing cards are now in Global CSS, but we can add specific tweaks here if needed
     st.markdown("""
     <style>
         .pricing-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
             padding: 2.5rem;
             height: 100%;
             display: flex; flex-direction: column;
             transition: all 0.3s ease;
+            box-shadow: var(--shadow-soft);
         }
-        .pricing-card:hover { transform: translateY(-5px); border-color: var(--primary) !important; box-shadow: 0 8px 30px rgba(67, 97, 238, 0.2); }
+        .pricing-card:hover { transform: translateY(-5px); border-color: var(--primary); box-shadow: 0 8px 30px rgba(99, 102, 241, 0.2); }
         .pricing-card.pro {
-            background: linear-gradient(145deg, rgba(11, 15, 25, 0.9) 0%, rgba(67, 97, 238, 0.1) 100%) !important;
-            border: 1px solid var(--primary) !important;
-            box-shadow: 0 0 30px rgba(67, 97, 238, 0.15);
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.9) 0%, rgba(99, 102, 241, 0.1) 100%);
+            border: 1px solid var(--primary);
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.15);
             position: relative;
         }
         .pro-badge {
             position: absolute; top: -12px; right: 24px;
             background: var(--success);
             color: white; padding: 4px 12px; border-radius: 99px;
-            font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px; font-family: 'Outfit', sans-serif;
-            box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+            font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px; font-family: 'Inter';
         }
-        .price-tag { font-family: 'Outfit', sans-serif; font-size: 3rem; font-weight: 800; color: white; margin: 10px 0; }
-        .price-tag span { font-size: 1rem; color: var(--text-secondary); font-weight: 500; font-family: 'Inter'; }
-        .price-old { font-size: 1.1rem; color: var(--text-secondary); text-decoration: line-through; margin-top: 10px; font-family: 'Inter'; }
-        .features-ul { list-style: none; padding: 0; margin: 24px 0; color: var(--text-secondary); flex-grow: 1; font-family: 'Inter'; font-size: 1rem; }
+        .price-tag { font-family: 'Inter'; font-size: 3rem; font-weight: 800; color: white; margin: 10px 0; letter-spacing: -1px; }
+        .price-tag span { font-size: 1rem; color: var(--text-body); font-weight: 500; font-family: 'Inter'; }
+        .price-old { font-size: 1.1rem; color: #64748b; text-decoration: line-through; margin-top: 10px; font-family: 'Inter'; }
+        .features-ul { list-style: none; padding: 0; margin: 24px 0; color: var(--text-body); flex-grow: 1; font-family: 'Inter'; font-size: 1rem; }
         .features-ul li { margin-bottom: 12px; display: flex; align-items: center; }
         .check { color: var(--success); margin-right: 12px; font-weight: bold; }
-        .cross { color: var(--danger); margin-right: 12px; opacity: 0.7; }
+        .cross { color: #ef4444; margin-right: 12px; opacity: 0.7; }
         .dimmed { color: #475569; }
     </style>
     """, unsafe_allow_html=True)
 
     col_p1, col_p2 = st.columns(2)
     with col_p1:
-        st.markdown(f"""
+        st.markdown("""
         <div class="pricing-card">
-            <h3 style="color:white; margin:0; font-size: 1.4rem;">{get_text('starter_level')}</h3>
+            <h3 style="color:white; margin:0; font-size: 1.4rem;">STARTER LEVEL</h3>
             <div class="price-tag">$0 <span>COP/mo</span></div>
             <ul class="features-ul">
                 <li><span class="check">✓</span> Dashboard Access</li>
@@ -1031,13 +785,13 @@ if menu == get_text("menu_dashboard"):
                 <li class="dimmed"><span class="cross">✕</span> Bank Connection</li>
             </ul>
         </div>""", unsafe_allow_html=True)
-        st.button(get_text("continue_free"), key="btn_free", use_container_width=True)
+        st.button("CONTINUE FREE", key="btn_free", use_container_width=True)
 
     with col_p2:
-        st.markdown(f"""
+        st.markdown("""
         <div class="pricing-card pro">
-            <div class="pro-badge">{get_text('recommended')}</div>
-            <h3 style="color:white; margin:0; font-size: 1.4rem;">{get_text('pro_agent')}</h3>
+            <div class="pro-badge">RECOMMENDED</div>
+            <h3 style="color:white; margin:0; font-size: 1.4rem;">PRO AGENT</h3>
             <div class="price-old">$120.000</div> <div class="price-tag">$49.900 <span>COP/mo</span></div>
             <ul class="features-ul">
                 <li><span class="check">✓</span> <strong>Everything in Starter</strong></li>
@@ -1046,33 +800,19 @@ if menu == get_text("menu_dashboard"):
                 <li><span class="check">✓</span> 24/7 Priority Uplink</li>
             </ul>
         </div>""", unsafe_allow_html=True)
-        st.button(get_text("upgrade_btn"), key="btn_pro", type="primary", use_container_width=True)
+        st.button("⚡ UPGRADE TO PRO", key="btn_pro", type="primary", use_container_width=True)
 
     if not db_conectada:
-        st.warning(get_text("db_offline"))
+        st.warning("⚠️ DATABASE OFFLINE. Check 'DB_Alcontador' connection.")
 
 # ---------------------------------------------------------
 # ELSE: CAMBIO DE MENÚ (ESTE SÍ TOCA EL BORDE IZQUIERDO)
 # ---------------------------------------------------------
 else:
     # 1. AUDITORÍA
-    if menu == get_text("menu_dian"):
+    if menu == "Auditoría Cruce DIAN":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/921/921591.png' class='pro-module-icon'><div class='pro-module-title'><h2>Auditor de Exógena (Cruce DIAN)</h2></div></div>""", unsafe_allow_html=True)
-
-        render_module_guide(
-            purpose="Compare information reported by third parties to DIAN against your internal accounting records to ensure consistency.",
-            benefits=[
-                "Detect unreported income or nonexistent costs.",
-                "Prevent penalties for inaccuracy in magnetic media (Art. 651 ET).",
-                "Validate tax compliance before official deadlines."
-            ],
-            instructions=[
-                "Download the 'Información Exógena' Excel report from the DIAN portal.",
-                "Upload the DIAN file in the left panel.",
-                "Upload your accounting auxiliary ledger (by third party) in the right panel.",
-                "Map the columns (NIT, Value) and execute the audit."
-            ]
-        )
+        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Detectar discrepancias entre lo que reportaste y lo que la DIAN sabe de ti.<br><strong>Estrategia:</strong> Cruce matricial de NITs para evitar sanciones por inexactitud (Art. 651 ET).</div>""", unsafe_allow_html=True)
         
         col_dian, col_conta = st.columns(2)
         with col_dian:
@@ -1132,11 +872,6 @@ else:
                     if num_hallazgos == 0:
                         st.balloons()
                         st.success("✅ ¡Perfecto! No hay diferencias entre la DIAN y tu Contabilidad.")
-                        render_smart_advisor(
-                            summary="Audit completed successfully.",
-                            diagnosis="No significant discrepancies found between DIAN and Accounting records.",
-                            advice="Maintain current reporting standards. Periodic review recommended."
-                        )
                     else:
                         st.error(f"⚠️ Se encontraron {num_hallazgos} inconsistencias.")
                         col_met1, col_met2 = st.columns(2)
@@ -1149,36 +884,16 @@ else:
                         else:
                             st.success("💎 REPORTE COMPLETO (PRO)")
                             st.dataframe(diferencias, use_container_width=True)
-                            get_excel_download(diferencias, "Auditoria_DIAN.xlsx")
-
-                        render_smart_advisor(
-                            summary=f"Audit completed comparing DIAN ({len(dian_grouped)} records) vs Accounting ({len(conta_grouped)} records).",
-                            diagnosis=f"Found {num_hallazgos} inconsistencies totaling ${total_riesgo:,.0f}.",
-                            advice="Prioritize the top 3 discrepancies. Check for timing differences in reporting vs accounting dates."
-                        )
+                            # Exportación a Excel simplificada
+                            # out = io.BytesIO() ... (Código de descarga aquí)
                 
                 except Exception as e:
                     st.error(f"Algo salió mal: {e}. Revisa 'Configuración manual' arriba.")
 
     # 2. MINERÍA XML (Continúa con ELIF)
-    elif menu == get_text("menu_xml"):
+    elif menu == "Minería de XML (Facturación)":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/2823/2823523.png' class='pro-module-icon'><div class='pro-module-title'><h2>Minería de Datos XML (Facturación)</h2></div></div>""", unsafe_allow_html=True)
-
-        render_module_guide(
-            purpose="Extract structured data directly from XML Electronic Invoice files validated by DIAN.",
-            benefits=[
-                "Automate data entry from supplier invoices.",
-                "Validate mathematical consistency of taxes (IVA, Retentions) in XMLs.",
-                "Generate a consolidated Excel report from hundreds of files instantly."
-            ],
-            instructions=[
-                "Click 'Browse files' to select multiple .xml files from your computer.",
-                "Wait for the batch processing to complete.",
-                "Review the extracted summary table.",
-                "Download the master Excel report."
-            ]
-        )
-
+        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Extraer información estructurada directamente de los archivos XML de Facturación Electrónica validados por la DIAN.</div>""", unsafe_allow_html=True)
         archivos_xml = st.file_uploader("Cargar XMLs (Lote)", type=['xml'], accept_multiple_files=True)
         if archivos_xml and st.button("▶️ INICIAR PROCESAMIENTO"):
             st.toast("Procesando lote de archivos...")
@@ -1186,34 +901,14 @@ else:
             for i, f in enumerate(archivos_xml): barra.progress((i+1)/len(archivos_xml)); datos_xml.append(parsear_xml_dian(f))
             df_xml = pd.DataFrame(datos_xml)
             st.success("Extracción completada."); st.dataframe(df_xml, use_container_width=True)
-
-            get_excel_download(df_xml, "Resumen_XML.xlsx")
-
-            total_facturado = df_xml['Total a Pagar'].sum() if 'Total a Pagar' in df_xml.columns else 0
-            render_smart_advisor(
-                summary=f"Processed {len(archivos_xml)} XML files successfully.",
-                diagnosis=f"Total Extracted Amount: ${total_facturado:,.2f}.",
-                advice="Verify 'Total a Pagar' matches your declared income/expenses for this period."
-            )
+            out = io.BytesIO();
+            with pd.ExcelWriter(out, engine='xlsxwriter') as w: df_xml.to_excel(w, index=False)
+            st.download_button("📥 Descargar Reporte Maestro (.xlsx)", out.getvalue(), "Resumen_XML.xlsx")
             registrar_log(st.session_state['username'], "Mineria XML", f"Procesados {len(archivos_xml)} archivos")
 
-    elif menu == get_text("menu_bank"):
+    elif menu == "Conciliación Bancaria IA":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/2489/2489756.png' class='pro-module-icon'><div class='pro-module-title'><h2>Conciliación Bancaria Inteligente</h2></div></div>""", unsafe_allow_html=True)
-
-        render_module_guide(
-            purpose="Automate the matching of transactions between your Bank Statement and Accounting Ledger using fuzzy logic (approximate dates).",
-            benefits=[
-                "Reduce manual matching time by up to 90%.",
-                "Identify missing transactions in both Bank and Books.",
-                "Generate a ready-to-sign Reconciliation Report."
-            ],
-            instructions=[
-                "Upload your Bank Statement (Excel) on the left.",
-                "Upload your Accounting Ledger (Excel) on the right.",
-                "Select the columns for Date, Value, and Description for both files.",
-                "Run the reconciliation to see matched and pending items."
-            ]
-        )
+        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Automatizar el emparejamiento de transacciones entre el Extracto Bancario y el Libro Auxiliar de Bancos usando lógica difusa (Fechas cercanas).</div>""", unsafe_allow_html=True)
         
         col_banco, col_libro = st.columns(2)
         with col_banco: st.subheader("🏦 Extracto Bancario"); file_banco = st.file_uploader("Subir Excel Banco", type=['xlsx'])
@@ -1336,29 +1031,9 @@ else:
                     st.warning("Estos registros están en Contabilidad pero NO han salido del Banco:")
                     st.dataframe(df_pend_libro, use_container_width=True)
 
-                render_smart_advisor(
-                    summary=f"Auto-match completed. {len(matches)} transactions reconciled.",
-                    diagnosis=f"Pending: {len(df_pend_banco)} in Bank, {len(df_pend_libro)} in Books.",
-                    advice="Review 'Pending in Bank' immediately as they represent actual cash movements not recorded in accounting."
-                )
-
-    elif menu == get_text("menu_expenses"):
+    elif menu == "Auditoría Fiscal de Gastos":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/1642/1642346.png' class='pro-module-icon'><div class='pro-module-title'><h2>Auditoría Fiscal Masiva (Art. 771-5)</h2></div></div>""", unsafe_allow_html=True)
-
-        render_module_guide(
-            purpose="Verify compliance with tax deductibility requirements (Bancarization and Withholding Taxes).",
-            benefits=[
-                "Detect cash payments exceeding 100 UVT (Art 771-5 risk).",
-                "Identify expenses where Withholding Tax (Retefuente) was omitted.",
-                "Secure tax deductions against DIAN audits."
-            ],
-            instructions=[
-                "Upload the Expense Ledger (Auxiliar de Gastos) in Excel.",
-                "Map the columns: Date, Third Party, Value, Payment Method.",
-                "Click 'Analyze Risks' to scan for non-compliance.",
-                "Download the findings report."
-            ]
-        )
+        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Verificar el cumplimiento de los requisitos de deducibilidad (Bancarización y Retenciones).<br>Detecta pagos en efectivo superiores a 100 UVT y bases de retención omitidas.</div>""", unsafe_allow_html=True)
         
         ar = st.file_uploader("Cargar Auxiliar de Gastos (.xlsx)", type=['xlsx'])
         
@@ -1445,33 +1120,23 @@ else:
                     st.dataframe(df_res, use_container_width=True)
                     
                     # Botón Descarga
-                    get_excel_download(df_res, "Auditoria_Fiscal_Gastos.xlsx")
+                    buffer = io.BytesIO()
+                    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+                        df_res.to_excel(writer, index=False)
                     
-                    render_smart_advisor(
-                        summary=f"Analyzed {len(df)} expense records.",
-                        diagnosis=f"Identified {len(df_riesgos)} risks (High/Medium). High Risk: {riesgo_alto} (Cash payments > Limit).",
-                        advice="Restrict cash payments to comply with Art 771-5. Verify withholding tax bases for medium risks."
+                    st.download_button(
+                        label="📥 DESCARGAR REPORTE DE HALLAZGOS",
+                        data=buffer.getvalue(),
+                        file_name="Auditoria_Fiscal_Gastos.xlsx",
+                        mime="application/vnd.ms-excel"
                     )
 
     # --------------------------------------------------------------------------
     # MÓDULO 1: ESCÁNER UGPP (LEY 1393 - REGLA DEL 40%)
     # --------------------------------------------------------------------------
-    elif menu == get_text("menu_ugpp"):
+    elif menu == "Escáner de Nómina (UGPP)":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/3135/3135817.png' class='pro-module-icon'><div class='pro-module-title'><h2>Escáner de Riesgo UGPP (Ley 1393)</h2></div></div>""", unsafe_allow_html=True)
-
-        render_module_guide(
-            purpose="Audit labor payments to verify if non-salary payments exceed 40% of total remuneration (Art. 30 Law 1393).",
-            benefits=[
-                "Avoid costly sanctions from the UGPP unit.",
-                "Ensure correct Base Contribution Income (IBC) calculation.",
-                "Optimize compensation packages legally."
-            ],
-            instructions=[
-                "Upload the Payroll detail file (Excel).",
-                "Select columns for Employee Name, Base Salary, and Non-Salary Payments.",
-                "Run the scan to identify employees exceeding the 40% limit."
-            ]
-        )
+        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Auditar pagos laborales. Verifica si los pagos NO salariales exceden el 40% del total (Art. 30 Ley 1393).</div>""", unsafe_allow_html=True)
         
         an = st.file_uploader("Cargar Nómina UGPP (.xlsx)", type=['xlsx'], key="upl_ugpp")
         if an:
@@ -1542,44 +1207,13 @@ else:
                     st.error(f"⚠️ {len(riesgos)} empleados exceden el límite del 40%.")
                     st.dataframe(riesgos, use_container_width=True)
 
-                get_excel_download(df_res, "Reporte_UGPP_1393.xlsx")
-
-                count_riesgos = len(riesgos)
-                if count_riesgos > 0:
-                    render_smart_advisor(
-                        summary="Payroll scan completed (Law 1393).",
-                        diagnosis=f"CRITICAL: {count_riesgos} employees exceed the 40% non-salary limit.",
-                        advice="Adjust compensation packages immediately to avoid UGPP sanctions. Consider salarying part of the bonuses."
-                    )
-                else:
-                    render_smart_advisor(
-                        summary="Payroll scan completed (Law 1393).",
-                        diagnosis="All employees are within the 40% non-salary limit.",
-                        advice="No immediate action required. Maintain current compensation structure."
-                    )
-
     # --------------------------------------------------------------------------
     # MÓDULO: COSTEO DE NÓMINA REAL (EL QUE TÚ BUSCAS 💰)
     # --------------------------------------------------------------------------
     
-    elif menu == get_text("menu_treasury"):
+    elif menu == "Proyección de Tesorería":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/5806/5806289.png' class='pro-module-icon'><div class='pro-module-title'><h2>Radar de Liquidez & Flujo de Caja</h2></div></div>""", unsafe_allow_html=True)
-
-        render_module_guide(
-            purpose="Visualize future financial health by crossing Accounts Receivable (CxC) and Accounts Payable (CxP).",
-            benefits=[
-                "Predict cash flow gaps before they happen.",
-                "Plan payments and collections strategically.",
-                "Get an AI analysis of your liquidity trend."
-            ],
-            instructions=[
-                "Enter your current available cash balance.",
-                "Upload your AR (Cartera) and AP (Proveedores) files.",
-                "Map the Due Date and Value columns.",
-                "Generate the projection chart."
-            ]
-        )
-
+        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Visualizar la salud financiera futura cruzando CxC y CxP.</div>""", unsafe_allow_html=True)
         saldo_hoy = st.number_input("💵 Saldo Disponible Hoy ($):", min_value=0.0, format="%.2f")
         c1, c2 = st.columns(2); fcxc = c1.file_uploader("Cartera (CxC)", type=['xlsx']); fcxp = c2.file_uploader("Proveedores (CxP)", type=['xlsx'])
         if fcxc and fcxp:
@@ -1594,41 +1228,22 @@ else:
                     cal = pd.merge(fi, fe, on='Fecha', how='outer').fillna(0); cal.columns = ['Fecha', 'Ingresos', 'Egresos']; cal = cal.sort_values('Fecha')
                     cal['Saldo Proyectado'] = saldo_hoy + (cal['Ingresos'] - cal['Egresos']).cumsum()
                     st.area_chart(cal.set_index('Fecha')['Saldo Proyectado']); st.dataframe(cal, use_container_width=True)
-
-                    get_excel_download(cal, "Proyeccion_Tesoreria.xlsx")
-
-                    ia_advice = "IA Analysis unavailable."
                     if api_key_valida:
                         with st.spinner("🤖 La IA está analizando tu flujo de caja..."):
-                            ia_advice = consultar_ia_gemini(f"Analiza este flujo de caja. Saldo inicial: {saldo_hoy}. Datos: {cal.head(10).to_string()}. Resumen corto, Diagnostico, Consejo.")
-
-                    render_smart_advisor(
-                        summary=f"Projection generated for {len(cal)} periods.",
-                        diagnosis=f"Final Projected Balance: ${cal['Saldo Proyectado'].iloc[-1]:,.2f}",
-                        advice=ia_advice
-                    )
+                            st.markdown(consultar_ia_gemini(f"Analiza este flujo de caja. Saldo inicial: {saldo_hoy}. Datos: {cal.head(10).to_string()}"))
                 except: st.error("Error en el formato de fechas.")
 
     # ==============================================================================
     # 🚨 MÓDULO DE NÓMINA (CORREGIDO: Auto-Detección y Protección de Errores)
     # ==============================================================================
-    elif menu == get_text("menu_payroll"):
+    elif menu == "Costeo de Nómina Real":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/2328/2328761.png' class='pro-module-icon'><div class='pro-module-title'><h2>Calculadora de Costo Real de Nómina</h2></div></div>""", unsafe_allow_html=True)
-
-        render_module_guide(
-            purpose="Calculate the exact total cost of an employee to the company, including social security and benefits.",
-            benefits=[
-                "Understand the true burden (approx. 50% above salary).",
-                "Budget accurately for hiring and compensation.",
-                "Break down costs: Health, Pension, ARL, Para-fiscals, and Provisions."
-            ],
-            instructions=[
-                "Upload a list of employees with their Base Salary.",
-                "Indicate if they have Transport Aid and if the company is Exonerated (cree).",
-                "Optionally select the ARL risk level.",
-                "Calculate to see the full cost breakdown."
-            ]
-        )
+        st.markdown("""
+        <div class='detail-box'>
+            <strong>Objetivo:</strong> Ver el desglose exacto de cuánto le cuesta un empleado a la empresa.<br>
+            <strong>Incluye:</strong> Salud, Pensión, ARL, Parafiscales, Primas, Cesantías, Intereses y Vacaciones.
+        </div>
+        """, unsafe_allow_html=True)
         
         ac = st.file_uploader("Cargar Listado Personal (.xlsx)", type=['xlsx'])
         if ac:
@@ -1684,16 +1299,7 @@ else:
                         st.success("✅ Cálculo exitoso.")
                     
                     st.markdown("### 📊 Resultado del Análisis")
-                    df_rc = pd.DataFrame(rc)
-                    st.dataframe(df_rc, use_container_width=True)
-
-                    get_excel_download(df_rc, "Costeo_Nomina_Real.xlsx")
-
-                    render_smart_advisor(
-                        summary="Total Real Cost calculation complete.",
-                        diagnosis="Includes Social Security, Para-fiscals, and Social Benefits loads.",
-                        advice="Use 'Costo Total Mensual' for budgeting, not just base salary."
-                    )
+                    st.dataframe(pd.DataFrame(rc), use_container_width=True)
 
             except Exception as e:
                 st.error(f"Error leyendo el archivo: {str(e)}. Revisa que el Excel no tenga filas vacías al inicio.")
@@ -1702,62 +1308,20 @@ else:
     # FIN DE LA CORRECCIÓN DE NÓMINA - CONTINÚAN LOS OTROS MÓDULOS
     # ==============================================================================
 
-    elif menu == get_text("menu_ai"):
+    elif menu == "Analítica Financiera Inteligente":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/10041/10041467.png' class='pro-module-icon'><div class='pro-module-title'><h2>Inteligencia Financiera (IA)</h2></div></div>""", unsafe_allow_html=True)
-
-        render_module_guide(
-            purpose="Leverage Artificial Intelligence to detect spending patterns, anomalies, and insights in your financial data.",
-            benefits=[
-                "Identify unusual high-value transactions.",
-                "Analyze expense distribution automatically.",
-                "Receive strategic recommendations from the AI Advisor."
-            ],
-            instructions=[
-                "Upload a financial dataset (Excel or CSV).",
-                "Select the Description and Value columns.",
-                "Click 'Start AI Analysis' to generate charts and insights."
-            ]
-        )
-
+        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Detectar patrones de gasto y anomalías en cuentas contables usando IA.</div>""", unsafe_allow_html=True)
         fi = st.file_uploader("Cargar Datos Financieros (.xlsx/.csv)", type=['xlsx', 'csv'])
         if fi and api_key_valida:
             df = pd.read_csv(fi) if fi.name.endswith('.csv') else pd.read_excel(fi)
             c1, c2 = st.columns(2); cd = c1.selectbox("Columna Descripción", df.columns); cv = c2.selectbox("Columna Valor", df.columns)
             if st.button("▶️ INICIAR ANÁLISIS IA"):
                 res = df.groupby(cd)[cv].sum().sort_values(ascending=False).head(10); st.bar_chart(res)
+                st.markdown(consultar_ia_gemini(f"Actúa como auditor financiero. Analiza estos saldos principales y da recomendaciones: {res.to_string()}"))
 
-                df_res = res.reset_index()
-                get_excel_download(df_res, "Analisis_Financiero.xlsx")
-
-                ia_analysis = "IA module offline."
-                if api_key_valida:
-                     ia_analysis = consultar_ia_gemini(f"Actúa como auditor financiero. Analiza estos saldos principales y da recomendaciones: {res.to_string()}")
-                     st.markdown(ia_analysis)
-
-                render_smart_advisor(
-                    summary="Top 10 Accounts analyzed by volume.",
-                    diagnosis="AI-powered pattern detection initialized.",
-                    advice=ia_analysis
-                )
-
-    elif menu == get_text("menu_niif"):
+    elif menu == "Narrador Financiero & NIIF":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/3208/3208727.png' class='pro-module-icon'><div class='pro-module-title'><h2>Narrador Financiero & Notas NIIF</h2></div></div>""", unsafe_allow_html=True)
-
-        render_module_guide(
-            purpose="Automate the drafting of Management Reports and Notes to Financial Statements (NIIF).",
-            benefits=[
-                "Save hours of writing and analysis time.",
-                "Compare Year-over-Year variations instantly.",
-                "Generate professional, executive-level text."
-            ],
-            instructions=[
-                "Upload the Trial Balance for the Current Year.",
-                "Upload the Trial Balance for the Previous Year.",
-                "Select the Account Name and Value columns.",
-                "Generate the Strategic Report."
-            ]
-        )
-
+        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Automatizar la redacción de informes gerenciales y Notas a Estados Financieros.</div>""", unsafe_allow_html=True)
         c1, c2 = st.columns(2); f1 = c1.file_uploader("Año Actual", type=['xlsx']); f2 = c2.file_uploader("Año Anterior", type=['xlsx'])
         if f1 and f2 and api_key_valida:
             d1 = pd.read_excel(f1); d2 = pd.read_excel(f2)
@@ -1767,76 +1331,26 @@ else:
                 merged = pd.merge(g1, g2, on=cta, how='inner').fillna(0); merged['Variacion'] = merged['V_Act'] - merged['V_Ant']
                 top = merged.reindex(merged.Variacion.abs().sort_values(ascending=False).index).head(10)
                 st.markdown("### 📊 Tablero de Control Gerencial"); st.bar_chart(top.set_index(cta)['Variacion'])
+                with st.spinner("🤖 El Consultor IA está redactando el informe..."):
+                    prompt = f"""Actúa como un CFO experto. Analiza la siguiente tabla de variaciones contables:{top.to_string()} GENERA: 1. Un Informe Gerencial Ejecutivo. 2. Un borrador de Nota a los Estados Financieros bajo NIIF."""
+                    st.markdown(consultar_ia_gemini(prompt))
 
-                get_excel_download(merged, "Variaciones_Contables.xlsx")
-
-                ia_report = "IA Generation offline."
-                if api_key_valida:
-                    with st.spinner("🤖 El Consultor IA está redactando el informe..."):
-                        prompt = f"""Actúa como un CFO experto. Analiza la siguiente tabla de variaciones contables:{top.to_string()} GENERA: 1. Un Informe Gerencial Ejecutivo. 2. Un borrador de Nota a los Estados Financieros bajo NIIF."""
-                        ia_report = consultar_ia_gemini(prompt)
-                        st.markdown(ia_report)
-
-                render_smart_advisor(
-                    summary="Comparative analysis (Year-over-Year) complete.",
-                    diagnosis="Variations calculated for all accounts.",
-                    advice="Review the generated Executive Report and NIIF Notes above."
-                )
-
-    elif menu == get_text("menu_rut"):
+    elif menu == "Validador de RUT Oficial":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/9422/9422888.png' class='pro-module-icon'><div class='pro-module-title'><h2>Validador Oficial de RUT</h2></div></div>""", unsafe_allow_html=True)
-
-        render_module_guide(
-            purpose="Ensure data integrity of third parties by calculating the Verification Digit (DV) using the official Modulo 11 algorithm.",
-            benefits=[
-                "Verify if a NIT is valid.",
-                "Correct data entry errors in ERPs.",
-                "Quick link to the official DIAN MUISCA status check."
-            ],
-            instructions=[
-                "Enter the NIT or ID number (without the verification digit).",
-                "Click 'Verify'.",
-                "Copy the calculated DV or use the external link to check status."
-            ]
-        )
-
+        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Asegurar la integridad de datos de terceros. Aplica algoritmo de Módulo 11.</div>""", unsafe_allow_html=True)
         nit = st.text_input("Ingrese NIT o Cédula (Sin DV):", max_chars=15)
         if st.button("🔢 VERIFICAR"):
             dv = calcular_dv_colombia(nit); st.metric("Dígito de Verificación (DV)", dv); st.link_button("🔗 Consulta Estado en Muisca (DIAN)", "https://muisca.dian.gov.co/WebRutMuisca/DefConsultaEstadoRUT.faces")
 
-    elif menu == get_text("menu_ocr"):
+    elif menu == "Digitalización OCR":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/3588/3588241.png' class='pro-module-icon'><div class='pro-module-title'><h2>Digitalización Inteligente (OCR)</h2></div></div>""", unsafe_allow_html=True)
-
-        render_module_guide(
-            purpose="Eliminate manual data entry by using AI to extract structured data from images of invoices.",
-            benefits=[
-                "Speed up invoice processing.",
-                "Reduce typing errors.",
-                "Digitize physical paper trails into Excel data."
-            ],
-            instructions=[
-                "Upload images (.jpg, .png) of invoices or receipts.",
-                "Click 'Process Images'.",
-                "Review the extracted JSON data table.",
-                "Download the results."
-            ]
-        )
-
+        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Eliminar la digitación manual. Usa IA para leer imágenes de facturas.</div>""", unsafe_allow_html=True)
         af = st.file_uploader("Cargar Imágenes", type=["jpg", "png"], accept_multiple_files=True)
         if af and st.button("🧠 PROCESAR IMÁGENES") and api_key_valida:
             do = []; bar = st.progress(0)
             for i, f in enumerate(af): bar.progress((i+1)/len(af)); info = ocr_factura(Image.open(f)); 
             if info: do.append(info)
-            df_do = pd.DataFrame(do)
-            st.dataframe(df_do, use_container_width=True)
-
-            get_excel_download(df_do, "OCR_Data.xlsx")
-
-            render_smart_advisor(
-                summary=f"Digitized {len(do)} documents.",
-                diagnosis="Structured data extracted successfully.",
-                advice="Validate extracted totals against physical documents before posting."
-            )
+            st.dataframe(pd.DataFrame(do), use_container_width=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
