@@ -404,15 +404,15 @@ def login_section():
 
     # Prepare button HTML to avoid f-string complexity and indentation issues
     if auth_url:
-        login_btn = f'<a href="{auth_url}" target="_self"><button style="background: var(--primary); border: none; color: white; padding: 1rem 2rem; font-size: 1.1rem; font-family: \'Inter\', sans-serif; font-weight: 600; cursor: pointer; border-radius: 8px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); transition: all 0.2s ease;">🔐 Sign in with Google</button></a>'
+        login_btn = f'<a href="{auth_url}" target="_self"><button style="background: var(--primary); border: none; color: white; padding: 1rem 2rem; font-size: 1.1rem; font-family: \'Inter\', sans-serif; font-weight: 600; cursor: pointer; border-radius: 8px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); transition: all 0.2s ease;">🔐 Iniciar sesión con Google</button></a>'
     else:
-        login_btn = '<div style="color:#ef4444; border:1px solid #ef4444; padding:10px; border-radius: 8px; font-family:\'Inter\', sans-serif;">⚠️ GOOGLE AUTH OFFLINE</div>'
+        login_btn = '<div style="color:#ef4444; border:1px solid #ef4444; padding:10px; border-radius: 8px; font-family:\'Inter\', sans-serif;">⚠️ AUTENTICACIÓN GOOGLE NO DISPONIBLE</div>'
 
     # Note: Indentation is stripped to prevent Markdown Code Block rendering
     st.markdown(f"""
 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 70vh;">
-    <h1 style="font-family: 'Inter', sans-serif; font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; text-align: center; letter-spacing: -1px;">System Access</h1>
-    <p style="color: var(--text-body); margin-bottom: 2rem; font-family: 'Inter', sans-serif; font-size: 1.1rem;">Authentication required for Enterprise Suite</p>
+    <h1 style="font-family: 'Inter', sans-serif; font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; text-align: center; letter-spacing: -1px;">Acceso al Sistema</h1>
+    <p style="color: var(--text-body); margin-bottom: 2rem; font-family: 'Inter', sans-serif; font-size: 1.1rem;">Autenticación requerida para Enterprise Suite</p>
     {login_btn}
     <br>
     <div style="max-width: 400px; text-align: center; color: #64748b; font-size: 0.8rem; margin-top: 2rem; padding: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
@@ -425,12 +425,12 @@ def login_section():
     # --- FALLBACK LOGIN (Manual Override) ---
     c1, c2, c3 = st.columns([1,1,1])
     with c2:
-        with st.expander("⚠️ EMERGENCY OVERRIDE"):
-            st.markdown("<small style='color: #94a3b8;'>Use this channel if Google Auth is offline (Error 403/500).</small>", unsafe_allow_html=True)
-            u = st.text_input("Operator ID", key="login_u")
-            p = st.text_input("Access Key", type="password", key="login_p")
+        with st.expander("⚠️ ACCESO DE EMERGENCIA"):
+            st.markdown("<small style='color: #94a3b8;'>Use este canal si Google Auth falla (Error 403/500).</small>", unsafe_allow_html=True)
+            u = st.text_input("ID Operador", key="login_u")
+            p = st.text_input("Clave de Acceso", type="password", key="login_p")
 
-            if st.button("INITIATE MANUAL OVERRIDE", type="primary"):
+            if st.button("INICIAR ACCESO MANUAL", type="primary"):
                 if u == "admin" and p == "admin":
                     st.session_state['user_plan'] = 'PRO'
                     st.session_state['logged_in'] = True
@@ -448,7 +448,7 @@ def login_section():
                     registrar_log("Cliente", "Login Manual", "Acceso cliente manual")
                     st.rerun()
                 else:
-                    st.error("❌ INVALID CREDENTIALS")
+                    st.error("❌ CREDENCIALES INVÁLIDAS")
                     registrar_log(u, "Login Fallido", "Manual override fallido")
 
     st.stop()
