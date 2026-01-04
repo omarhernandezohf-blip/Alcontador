@@ -21,61 +21,66 @@ import uuid
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-# --- CONFIGURACIÓN DE ESTILO GLOBAL (TOP NAVBAR THEME) ---
+# --- CONFIGURACIÓN DE ESTILO GLOBAL (SIDEBAR CLÁSICO MEJORADO) ---
 st.markdown("""
     <style>
-        /* 1. OCULTAR BARRA LATERAL NATIVA (SIDEBAR) - CRÍTICO */
-        [data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] {
-            display: none !important;
+        /* 1. ASEGURAR QUE LA BARRA SE VEA */
+        [data-testid="stSidebar"] {
+            display: block !important;
+            z-index: 999998 !important;
+            background-color: #020617 !important; /* Fondo oscuro sólido */
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* 2. ESTILO DE LA NUEVA BARRA SUPERIOR */
-        .top-navbar-container {
-            background: linear-gradient(90deg, #0f172a 0%, #1e1b4b 100%);
-            padding: 10px 20px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-            margin-bottom: 25px;
+        /* 2. EL BOTÓN DE MENÚ (LA CLAVE DEL ÉXITO) */
+        [data-testid="stSidebarCollapsedControl"] {
+            display: block !important;
+            position: fixed !important; /* Fijo en la pantalla */
+            top: 20px !important;
+            left: 20px !important;
+            z-index: 99999999 !important; /* Encima de todo */
+            color: #FFFFFF !important;
+            background-color: rgba(255, 255, 255, 0.15) !important; /* Círculo semitransparente */
+            border: 2px solid rgba(255, 255, 255, 0.8) !important;
+            border-radius: 50%;
+            padding: 4px;
+            width: 45px !important;
+            height: 45px !important;
+            transition: all 0.3s;
         }
 
-        /* 3. ESTILOS GENERALES (MANTENIDOS) */
+        [data-testid="stSidebarCollapsedControl"]:hover {
+            background-color: rgba(255, 255, 255, 0.4) !important;
+            transform: scale(1.1);
+        }
+
+        /* Icono de la flecha blanco puro */
+        [data-testid="stSidebarCollapsedControl"] svg {
+            fill: #FFFFFF !important;
+            stroke: #FFFFFF !important;
+        }
+
+        /* 3. ESTILOS GENERALES (FONDO Y FUENTES) */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Manrope:wght@400;600;800&display=swap');
-
-        :root {
-            --primary: #6366f1; 
-            --secondary: #3b82f6; 
-            --text-body: #94a3b8;
-            --glass-bg: rgba(30, 41, 59, 0.7);
-        }
-
+        
         .stApp {
             background: radial-gradient(circle at top right, #1e293b, transparent 40%),
                         radial-gradient(circle at bottom left, #1e1b4b, transparent 40%),
                         linear-gradient(180deg, #0f172a 0%, #020617 100%) !important;
             background-attachment: fixed !important;
             font-family: 'Inter', sans-serif;
-            color: var(--text-body);
+            color: #94a3b8;
         }
-
-        h1, h2, h3, h4, h5, h6 { font-family: 'Inter', sans-serif !important; color: white !important; font-weight: 800 !important; }
         
-        /* Ajuste para el Selectbox del Menú */
-        .stSelectbox > div > div {
-            background-color: rgba(255,255,255,0.05) !important;
-            color: white !important;
-            border: 1px solid rgba(255,255,255,0.2) !important;
-        }
-
-        /* Ocultar elementos por defecto */
+        h1, h2, h3 { color: white !important; font-family: 'Inter', sans-serif !important; }
         #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
         
-        /* Tarjetas de Vidrio */
-        div[data-testid="stExpander"], .glass-card, .pricing-card {
-            background: var(--glass-bg) !important;
+        /* Estilo para las tarjetas */
+        .glass-card, div[data-testid="stExpander"] {
+            background: rgba(30, 41, 59, 0.7) !important;
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255,255,255,0.08) !important;
-            border-radius: 12px !important;
+            border-radius: 12px;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -947,108 +952,69 @@ def parsear_xml_dian(archivo_xml):
     except:
         return {"Archivo": archivo_xml.name, "Error": "Error XML"}
 
-# ==============================================================================
-# 5. BARRA DE NAVEGACIÓN SUPERIOR (TOP NAVBAR) - DISEÑO PROFESIONAL
-# ==============================================================================
-
-# 1. CSS PARA OCULTAR LA BARRA LATERAL VIEJA Y ESTILAR LA NUEVA SUPERIOR
+# --- CONFIGURACIÓN DE ESTILO GLOBAL (SIDEBAR CLÁSICO MEJORADO) ---
 st.markdown("""
     <style>
-        /* Ocultar la barra lateral nativa y su botón conflictivo */
-        [data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] {
-            display: none !important;
+        /* 1. ASEGURAR QUE LA BARRA SE VEA */
+        [data-testid="stSidebar"] {
+            display: block !important;
+            z-index: 999998 !important;
+            background-color: #020617 !important; /* Fondo oscuro sólido */
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* 2. EL BOTÓN DE MENÚ (LA CLAVE DEL ÉXITO) */
+        [data-testid="stSidebarCollapsedControl"] {
+            display: block !important;
+            position: fixed !important; /* Fijo en la pantalla */
+            top: 20px !important;
+            left: 20px !important;
+            z-index: 99999999 !important; /* Encima de todo */
+            color: #FFFFFF !important;
+            background-color: rgba(255, 255, 255, 0.15) !important; /* Círculo semitransparente */
+            border: 2px solid rgba(255, 255, 255, 0.8) !important;
+            border-radius: 50%;
+            padding: 4px;
+            width: 45px !important;
+            height: 45px !important;
+            transition: all 0.3s;
+        }
+
+        [data-testid="stSidebarCollapsedControl"]:hover {
+            background-color: rgba(255, 255, 255, 0.4) !important;
+            transform: scale(1.1);
+        }
+
+        /* Icono de la flecha blanco puro */
+        [data-testid="stSidebarCollapsedControl"] svg {
+            fill: #FFFFFF !important;
+            stroke: #FFFFFF !important;
+        }
+
+        /* 3. ESTILOS GENERALES (FONDO Y FUENTES) */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Manrope:wght@400;600;800&display=swap');
+        
+        .stApp {
+            background: radial-gradient(circle at top right, #1e293b, transparent 40%),
+                        radial-gradient(circle at bottom left, #1e1b4b, transparent 40%),
+                        linear-gradient(180deg, #0f172a 0%, #020617 100%) !important;
+            background-attachment: fixed !important;
+            font-family: 'Inter', sans-serif;
+            color: #94a3b8;
         }
         
-        /* Estilo de la Barra Superior */
-        .top-navbar-container {
-            background: linear-gradient(90deg, #0f172a 0%, #1e1b4b 100%);
-            padding: 15px 25px;
+        h1, h2, h3 { color: white !important; font-family: 'Inter', sans-serif !important; }
+        #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
+        
+        /* Estilo para las tarjetas */
+        .glass-card, div[data-testid="stExpander"] {
+            background: rgba(30, 41, 59, 0.7) !important;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.08) !important;
             border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-            margin-bottom: 20px;
         }
     </style>
 """, unsafe_allow_html=True)
-
-# Inicializar variable de menú por seguridad
-menu = "Inicio / Dashboard" 
-
-if st.session_state.get('logged_in', False):
-    
-    # --- CONTENEDOR DE LA BARRA SUPERIOR ---
-    with st.container():
-        st.markdown('<div class="top-navbar-container">', unsafe_allow_html=True)
-        
-        # Diseño en 3 Columnas: [Logo/Info] -- [Selector Menú] -- [Usuario/Salir]
-        col_nav_1, col_nav_2, col_nav_3 = st.columns([1.5, 2, 1], gap="medium")
-        
-        # --- COLUMNA 1: INFO DEL SISTEMA ---
-        with col_nav_1:
-            status_color = "#10b981" if db_conectada else "#ef4444"
-            st.markdown(f"""
-            <div style="display: flex; align-items: center; line-height: 1.2;">
-                <img src="https://cdn-icons-png.flaticon.com/512/2830/2830303.png" style="width: 40px; margin-right: 15px;">
-                <div>
-                    <strong style="color: white; font-size: 1.1rem;">Suite Financiera</strong><br>
-                    <small style="color: #94a3b8; font-size: 0.8rem;">v15.0 Enterprise • <span style="color:{status_color}">● DB</span></small>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        # --- COLUMNA 2: SELECTOR DE MÓDULOS (EL CORAZÓN DE LA NAVEGACIÓN) ---
-        with col_nav_2:
-            # Diccionario de Mapeo (Igual que antes)
-            MENU_KEYS = {
-                get_text('menu_dash'): "Inicio / Dashboard",
-                get_text('menu_dian'): "Auditoría Cruce DIAN",
-                get_text('menu_xml'): "Minería de XML (Facturación)",
-                get_text('menu_bank'): "Conciliación Bancaria IA",
-                get_text('menu_fiscal'): "Auditoría Fiscal de Gastos",
-                get_text('menu_ugpp'): "Escáner de Nómina (UGPP)",
-                get_text('menu_treasury'): "Proyección de Tesorería",
-                get_text('menu_payroll'): "Costeo de Nómina Real",
-                get_text('menu_fin_ai'): "Analítica Financiera Inteligente",
-                get_text('menu_narrator'): "Narrador Financiero & NIIF",
-                get_text('menu_rut'): "Validador de RUT Oficial",
-                get_text('menu_ocr'): "Digitalización OCR"
-            }
-            opciones_menu = list(MENU_KEYS.keys())
-            
-            # Selector centrado
-            menu_selection = st.selectbox(
-                get_text('lbl_modules'), 
-                opciones_menu, 
-                label_visibility="collapsed"
-            )
-            
-            # Mapeo inverso para la lógica
-            menu = MENU_KEYS.get(menu_selection, "Inicio / Dashboard")
-
-        # --- COLUMNA 3: PERFIL Y CRÉDITOS ---
-        with col_nav_3:
-            current_plan = st.session_state.get('user_plan', 'FREE')
-            credits_used = st.session_state.get('credits_used', 0)
-            limit = PLAN_CONFIG.get(current_plan, PLAN_CONFIG['FREE'])['limit']
-            user_name_short = st.session_state.get('username', 'User').split()[0]
-            
-            c_perfil, c_btn = st.columns([2, 1])
-            
-            with c_perfil:
-                st.markdown(f"""
-                <div style="text-align: right; color: #cbd5e1; font-size: 0.85rem; padding-right: 10px;">
-                    <strong>{user_name_short}</strong> <span style="color: #6366f1;">[{current_plan}]</span><br>
-                    <small>Créditos: {credits_used}/{limit}</small>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            with c_btn:
-                if st.button("🚪", help=get_text('lbl_logout')):
-                    registrar_log(st.session_state.get('username'), "Logout", "Salida TopBar")
-                    st.session_state.clear()
-                    st.rerun()
-        
-        st.markdown('</div>', unsafe_allow_html=True) # Cierre del div top-navbar-container
 # ==============================================================================
 # ==============================================================================
 # 6. CONTENIDO PRINCIPAL (DASHBOARD Y MÓDULOS)
