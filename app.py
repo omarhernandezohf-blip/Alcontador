@@ -32,32 +32,46 @@ st.set_page_config(
 # --- CONFIGURACIÓN DE ESTILO GLOBAL (ENTERPRISE TRUST THEME) ---
 st.markdown("""
     <style>
-        /* --- SIDEBAR TOGGLE VISIBILITY FIX (ULTRA VISIBLE) --- */
+        /* --- ARREGLO DE BARRA LATERAL (SOLUCIÓN DEFINITIVA) --- */
+        
+        /* 1. El botón para abrir/cerrar (Flecha) */
         [data-testid="stSidebarCollapsedControl"] {
-            z-index: 99999999 !important;
-            display: block !important;
-            color: #FFFFFF !important;
-            background-color: rgba(255, 255, 255, 0.2) !important;
-            border: 2px solid white !important;
-            border-radius: 50%;
-            padding: 4px;
+            position: fixed !important;  /* ESTO ES LO QUE FALTABA: Lo fija a la pantalla */
             top: 20px !important;
             left: 20px !important;
+            z-index: 99999999 !important; /* Encima de todo, incluso del fondo */
+            display: block !important;
+            color: #FFFFFF !important;
+            background-color: rgba(255, 255, 255, 0.15) !important; /* Fondo semitransparente para verlo */
+            border: 2px solid white !important;
+            border-radius: 50%;
+            padding: 5px;
+            width: 45px !important;  /* Tamaño forzado para poder hacer click */
+            height: 45px !important;
+            transition: background-color 0.3s;
         }
 
-        /* Forzar color blanco en la flecha del icono */
+        [data-testid="stSidebarCollapsedControl"]:hover {
+            background-color: rgba(255, 255, 255, 0.4) !important;
+        }
+
+        /* 2. El icono de la flecha (Color Blanco) */
         [data-testid="stSidebarCollapsedControl"] svg {
             fill: #FFFFFF !important;
             stroke: #FFFFFF !important;
+            width: 24px !important;
+            height: 24px !important;
+        }
+
+        /* 3. La Barra Lateral en sí (Fondo oscuro sólido) */
+        [data-testid="stSidebar"] {
+            z-index: 999998 !important;
+            background-color: #020617 !important; /* Color sólido para tapar las estrellas */
+            border-right: 1px solid rgba(255,255,255,0.1);
         }
 
         [data-testid="stSidebarNav"] {
             z-index: 999999 !important;
-        }
-
-        [data-testid="stSidebar"] {
-            z-index: 999998 !important;
-            background-color: #020617 !important;
         }
 
         /* --- FONTS --- */
@@ -107,15 +121,9 @@ st.markdown("""
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255,255,255,0.08) !important;
-            border-top: 1px solid rgba(255,255,255,0.15) !important; /* Highlight top */
+            border-top: 1px solid rgba(255,255,255,0.15) !important;
             border-radius: 12px !important;
             box-shadow: var(--shadow-soft);
-        }
-
-        /* --- SIDEBAR (CONTROL DOCK) --- */
-        [data-testid="stSidebar"] {
-            background: #020617 !important;
-            border-right: 1px solid rgba(255,255,255,0.05);
         }
 
         /* Radio Buttons as Nav Tabs */
@@ -162,7 +170,7 @@ st.markdown("""
             transition: all 0.2s;
         }
         .stButton > button:hover {
-            background: #4f46e5 !important; /* Darker Indigo */
+            background: #4f46e5 !important;
             box-shadow: 0 6px 16px rgba(99, 102, 241, 0.5);
             transform: translateY(-1px);
         }
