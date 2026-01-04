@@ -21,78 +21,34 @@ import uuid
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-# --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(
-    page_title="Alcontador Empresarial",
-    page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-# --- CONFIGURACIÓN DE ESTILO GLOBAL (ENTERPRISE TRUST THEME) ---
+# --- CONFIGURACIÓN DE ESTILO GLOBAL (TOP NAVBAR THEME) ---
 st.markdown("""
     <style>
-        /* --- ARREGLO DE BARRA LATERAL (SOLUCIÓN DEFINITIVA) --- */
-        
-        /* 1. El botón para abrir/cerrar (Flecha) */
-        [data-testid="stSidebarCollapsedControl"] {
-            position: fixed !important;  /* ESTO ES LO QUE FALTABA: Lo fija a la pantalla */
-            top: 20px !important;
-            left: 20px !important;
-            z-index: 99999999 !important; /* Encima de todo, incluso del fondo */
-            display: block !important;
-            color: #FFFFFF !important;
-            background-color: rgba(255, 255, 255, 0.15) !important; /* Fondo semitransparente para verlo */
-            border: 2px solid white !important;
-            border-radius: 50%;
-            padding: 5px;
-            width: 45px !important;  /* Tamaño forzado para poder hacer click */
-            height: 45px !important;
-            transition: background-color 0.3s;
+        /* 1. OCULTAR BARRA LATERAL NATIVA (SIDEBAR) - CRÍTICO */
+        [data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] {
+            display: none !important;
         }
 
-        [data-testid="stSidebarCollapsedControl"]:hover {
-            background-color: rgba(255, 255, 255, 0.4) !important;
+        /* 2. ESTILO DE LA NUEVA BARRA SUPERIOR */
+        .top-navbar-container {
+            background: linear-gradient(90deg, #0f172a 0%, #1e1b4b 100%);
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            margin-bottom: 25px;
         }
 
-        /* 2. El icono de la flecha (Color Blanco) */
-        [data-testid="stSidebarCollapsedControl"] svg {
-            fill: #FFFFFF !important;
-            stroke: #FFFFFF !important;
-            width: 24px !important;
-            height: 24px !important;
-        }
-
-        /* 3. La Barra Lateral en sí (Fondo oscuro sólido) */
-        [data-testid="stSidebar"] {
-            z-index: 999998 !important;
-            background-color: #020617 !important; /* Color sólido para tapar las estrellas */
-            border-right: 1px solid rgba(255,255,255,0.1);
-        }
-
-        [data-testid="stSidebarNav"] {
-            z-index: 999999 !important;
-        }
-
-        /* --- FONTS --- */
+        /* 3. ESTILOS GENERALES (MANTENIDOS) */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Manrope:wght@400;600;800&display=swap');
 
-        /* --- VARIABLES --- */
         :root {
-            --bg-void: #020617;
-            --bg-deep: #0f172a;
-            --primary: #6366f1; /* Electric Indigo */
-            --secondary: #3b82f6; /* Slate Blue */
-            --success: #10b981; /* Emerald */
-            --text-primary: #ffffff;
+            --primary: #6366f1; 
+            --secondary: #3b82f6; 
             --text-body: #94a3b8;
             --glass-bg: rgba(30, 41, 59, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --shadow-soft: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
-            --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.15);
         }
 
-        /* --- BASE & BACKGROUND --- */
         .stApp {
             background: radial-gradient(circle at top right, #1e293b, transparent 40%),
                         radial-gradient(circle at bottom left, #1e1b4b, transparent 40%),
@@ -102,112 +58,24 @@ st.markdown("""
             color: var(--text-body);
         }
 
-        /* --- TYPOGRAPHY --- */
-        h1, h2, h3, h4, h5, h6 {
-            font-family: 'Inter', sans-serif !important;
-            color: var(--text-primary) !important;
-            font-weight: 800 !important;
-            letter-spacing: -0.5px !important;
+        h1, h2, h3, h4, h5, h6 { font-family: 'Inter', sans-serif !important; color: white !important; font-weight: 800 !important; }
+        
+        /* Ajuste para el Selectbox del Menú */
+        .stSelectbox > div > div {
+            background-color: rgba(255,255,255,0.05) !important;
+            color: white !important;
+            border: 1px solid rgba(255,255,255,0.2) !important;
         }
 
-        p, div, span, label {
-            font-family: 'Inter', sans-serif;
-            color: var(--text-body);
-        }
-
-        /* --- GLASSMORPHISM CARDS --- */
-        div[data-testid="stExpander"], .glass-card, .pricing-card, .pro-module-header {
+        /* Ocultar elementos por defecto */
+        #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
+        
+        /* Tarjetas de Vidrio */
+        div[data-testid="stExpander"], .glass-card, .pricing-card {
             background: var(--glass-bg) !important;
             backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255,255,255,0.08) !important;
-            border-top: 1px solid rgba(255,255,255,0.15) !important;
             border-radius: 12px !important;
-            box-shadow: var(--shadow-soft);
-        }
-
-        /* Radio Buttons as Nav Tabs */
-        .stRadio > div[role="radiogroup"] > label {
-            background: transparent !important;
-            border: none;
-            padding: 12px 16px !important;
-            color: var(--text-body) !important;
-            border-left: 3px solid transparent;
-            transition: all 0.2s ease;
-            font-weight: 500;
-        }
-
-        .stRadio > div[role="radiogroup"] > label:hover {
-            color: var(--text-primary) !important;
-            background: rgba(255,255,255,0.03) !important;
-        }
-
-        .stRadio > div[role="radiogroup"] > label[data-checked="true"] {
-            background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), transparent) !important;
-            border-left: 3px solid var(--primary) !important;
-            color: var(--text-primary) !important;
-            font-weight: 600;
-        }
-
-        /* --- WIDGETS --- */
-        .stTextInput > div > div > input,
-        .stNumberInput > div > div > input,
-        .stSelectbox > div > div > div {
-            background-color: rgba(15, 23, 42, 0.6) !important;
-            color: white !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            border-radius: 8px;
-        }
-
-        /* --- BUTTONS --- */
-        .stButton > button {
-            background: var(--primary) !important;
-            color: white !important;
-            border-radius: 8px !important;
-            border: none !important;
-            font-weight: 600 !important;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-            transition: all 0.2s;
-        }
-        .stButton > button:hover {
-            background: #4f46e5 !important;
-            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.5);
-            transform: translateY(-1px);
-        }
-
-        /* --- DATAFRAMES --- */
-        [data-testid="stDataFrame"] {
-            background: rgba(15, 23, 42, 0.5);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 8px;
-        }
-
-        /* --- METRICS --- */
-        [data-testid="stMetricValue"] {
-            font-family: 'Inter', sans-serif;
-            font-weight: 700;
-            color: var(--text-primary) !important;
-            text-shadow: 0 0 20px rgba(255,255,255,0.1);
-        }
-        [data-testid="stMetricLabel"] {
-            color: var(--text-body) !important;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-
-        /* Hide Defaults */
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        header {visibility: hidden;}
-
-        /* Helpers */
-        .pro-module-icon { width: 32px; height: 32px; margin-right: 12px; opacity: 0.9; }
-        .detail-box {
-            background: rgba(59, 130, 246, 0.05);
-            border-left: 3px solid var(--secondary);
-            padding: 16px;
-            border-radius: 0 8px 8px 0;
-            margin-bottom: 24px;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -1080,99 +948,107 @@ def parsear_xml_dian(archivo_xml):
         return {"Archivo": archivo_xml.name, "Error": "Error XML"}
 
 # ==============================================================================
-# ==============================================================================
-# 5. BARRA LATERAL (SIDEBAR) - NAVEGACIÓN Y LOGIN
-# ==============================================================================
+# 5. BARRA DE NAVEGACIÓN SUPERIOR (TOP NAVBAR) - DISEÑO PROFESIONAL
 # ==============================================================================
 
-with st.sidebar:
-    # Logo
-    st.image("https://cdn-icons-png.flaticon.com/512/2830/2830303.png", width=80)
-    st.markdown("### 💼 Suite Financiera", unsafe_allow_html=True)
+# 1. CSS PARA OCULTAR LA BARRA LATERAL VIEJA Y ESTILAR LA NUEVA SUPERIOR
+st.markdown("""
+    <style>
+        /* Ocultar la barra lateral nativa y su botón conflictivo */
+        [data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] {
+            display: none !important;
+        }
+        
+        /* Estilo de la Barra Superior */
+        .top-navbar-container {
+            background: linear-gradient(90deg, #0f172a 0%, #1e1b4b 100%);
+            padding: 15px 25px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# Inicializar variable de menú por seguridad
+menu = "Inicio / Dashboard" 
+
+if st.session_state.get('logged_in', False):
     
-    # --- PANEL DE USUARIO LOGUEADO (SIDEBAR) ---
-    current_plan = st.session_state.get('user_plan', 'FREE')
-    plan_data = PLAN_CONFIG.get(current_plan, PLAN_CONFIG['FREE'])
-    plan_bg = "#FFD700" if current_plan == 'PRO' else "#A9A9A9"
-    if current_plan == 'PREMIUM': plan_bg = "#cf1b1b" # Red for Premium
+    # --- CONTENEDOR DE LA BARRA SUPERIOR ---
+    with st.container():
+        st.markdown('<div class="top-navbar-container">', unsafe_allow_html=True)
+        
+        # Diseño en 3 Columnas: [Logo/Info] -- [Selector Menú] -- [Usuario/Salir]
+        col_nav_1, col_nav_2, col_nav_3 = st.columns([1.5, 2, 1], gap="medium")
+        
+        # --- COLUMNA 1: INFO DEL SISTEMA ---
+        with col_nav_1:
+            status_color = "#10b981" if db_conectada else "#ef4444"
+            st.markdown(f"""
+            <div style="display: flex; align-items: center; line-height: 1.2;">
+                <img src="https://cdn-icons-png.flaticon.com/512/2830/2830303.png" style="width: 40px; margin-right: 15px;">
+                <div>
+                    <strong style="color: white; font-size: 1.1rem;">Suite Financiera</strong><br>
+                    <small style="color: #94a3b8; font-size: 0.8rem;">v15.0 Enterprise • <span style="color:{status_color}">● DB</span></small>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
-    status_db = "🟢 DB Online" if db_conectada else "🔴 DB Offline"
-    
-    # Security: Escape variables injected into HTML
-    user_plan_safe = html.escape(str(current_plan))
-    estado_ia_safe = html.escape(str(estado_ia))
-    status_db_safe = html.escape(str(status_db))
+        # --- COLUMNA 2: SELECTOR DE MÓDULOS (EL CORAZÓN DE LA NAVEGACIÓN) ---
+        with col_nav_2:
+            # Diccionario de Mapeo (Igual que antes)
+            MENU_KEYS = {
+                get_text('menu_dash'): "Inicio / Dashboard",
+                get_text('menu_dian'): "Auditoría Cruce DIAN",
+                get_text('menu_xml'): "Minería de XML (Facturación)",
+                get_text('menu_bank'): "Conciliación Bancaria IA",
+                get_text('menu_fiscal'): "Auditoría Fiscal de Gastos",
+                get_text('menu_ugpp'): "Escáner de Nómina (UGPP)",
+                get_text('menu_treasury'): "Proyección de Tesorería",
+                get_text('menu_payroll'): "Costeo de Nómina Real",
+                get_text('menu_fin_ai'): "Analítica Financiera Inteligente",
+                get_text('menu_narrator'): "Narrador Financiero & NIIF",
+                get_text('menu_rut'): "Validador de RUT Oficial",
+                get_text('menu_ocr'): "Digitalización OCR"
+            }
+            opciones_menu = list(MENU_KEYS.keys())
+            
+            # Selector centrado
+            menu_selection = st.selectbox(
+                get_text('lbl_modules'), 
+                opciones_menu, 
+                label_visibility="collapsed"
+            )
+            
+            # Mapeo inverso para la lógica
+            menu = MENU_KEYS.get(menu_selection, "Inicio / Dashboard")
 
-    # User Info from Google
-    user_name = html.escape(str(st.session_state.get('username', 'Commander')))
-    user_pic = html.escape(str(st.session_state.get('user_picture', '')))
-
-    # Show User Profile
-    if user_pic:
-        st.markdown(f"<img src='{user_pic}' style='width: 50px; height: 50px; border-radius: 50%; margin-bottom: 10px; border: 2px solid var(--primary);'>", unsafe_allow_html=True)
-
-    st.markdown(f"""
-    <div style='background: rgba(255,255,255,0.05); padding: 15px; border-radius: 4px; border-left: 3px solid {plan_bg}; margin-bottom: 20px;'>
-        <small style='color: #94a3b8; text-transform:uppercase;'>{get_text('lbl_operator')}</small><br>
-        <strong style='font-size: 1.1rem; color:white; font-family: "Inter", sans-serif;'>{user_name}</strong><br>
-        <span style="font-size: 0.8rem; color: var(--primary);">{user_plan_safe} {get_text('lbl_access')}</span><br>
-        <small style='color: #64748b;'>{estado_ia_safe}</small><br>
-        <small style='color: {'#06b6d4' if db_conectada else '#ef4444'}; font-weight:bold;'>{status_db_safe}</small>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # --- CREDIT USAGE ---
-    credits_used = st.session_state.get('credits_used', 0)
-    limit = plan_data['limit']
-    progress = min(credits_used / limit, 1.0) if limit > 0 else 1.0
-
-    st.markdown(f"<small style='color:#94a3b8'>{get_text('lbl_credits')} {credits_used} / {limit}</small>", unsafe_allow_html=True)
-    st.progress(progress)
-
-    if current_plan == 'FREE':
-        st.markdown("---")
-        st.write(f"🔓 {get_text('lbl_unlock')}")
-        st.link_button(
-            get_text('lbl_go_pro'),
-            "https://checkout.wompi.co/l/TU_LINK_PRO",
-            type="primary"
-        )
-        st.link_button(
-            get_text('lbl_go_prem'),
-            "https://checkout.wompi.co/l/TU_LINK_PREMIUM"
-        )
-
-    if st.button(get_text('lbl_logout')):
-        registrar_log(st.session_state.get('username', 'Unknown'), "Logout", "Salida del sistema")
-        st.session_state.clear()
-        st.rerun()
-
-    st.markdown("---")
-    
-    # MENU MAPPING FOR NAVIGATION LOGIC
-    MENU_KEYS = {
-        get_text('menu_dash'): "Inicio / Dashboard",
-        get_text('menu_dian'): "Auditoría Cruce DIAN",
-        get_text('menu_xml'): "Minería de XML (Facturación)",
-        get_text('menu_bank'): "Conciliación Bancaria IA",
-        get_text('menu_fiscal'): "Auditoría Fiscal de Gastos",
-        get_text('menu_ugpp'): "Escáner de Nómina (UGPP)",
-        get_text('menu_treasury'): "Proyección de Tesorería",
-        get_text('menu_payroll'): "Costeo de Nómina Real",
-        get_text('menu_fin_ai'): "Analítica Financiera Inteligente",
-        get_text('menu_narrator'): "Narrador Financiero & NIIF",
-        get_text('menu_rut'): "Validador de RUT Oficial",
-        get_text('menu_ocr'): "Digitalización OCR"
-    }
-
-    opciones_menu = list(MENU_KEYS.keys())
-
-    menu_selection = st.radio(get_text('lbl_modules'), opciones_menu)
-    # Reverse lookup to get canonical key for logic
-    menu = MENU_KEYS.get(menu_selection, "Inicio / Dashboard")
-    
-    st.markdown("<br><center><small style='color: #64748b;'>v14.5 ENTERPRISE</small></center>", unsafe_allow_html=True)
-
+        # --- COLUMNA 3: PERFIL Y CRÉDITOS ---
+        with col_nav_3:
+            current_plan = st.session_state.get('user_plan', 'FREE')
+            credits_used = st.session_state.get('credits_used', 0)
+            limit = PLAN_CONFIG.get(current_plan, PLAN_CONFIG['FREE'])['limit']
+            user_name_short = st.session_state.get('username', 'User').split()[0]
+            
+            c_perfil, c_btn = st.columns([2, 1])
+            
+            with c_perfil:
+                st.markdown(f"""
+                <div style="text-align: right; color: #cbd5e1; font-size: 0.85rem; padding-right: 10px;">
+                    <strong>{user_name_short}</strong> <span style="color: #6366f1;">[{current_plan}]</span><br>
+                    <small>Créditos: {credits_used}/{limit}</small>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with c_btn:
+                if st.button("🚪", help=get_text('lbl_logout')):
+                    registrar_log(st.session_state.get('username'), "Logout", "Salida TopBar")
+                    st.session_state.clear()
+                    st.rerun()
+        
+        st.markdown('</div>', unsafe_allow_html=True) # Cierre del div top-navbar-container
 # ==============================================================================
 # ==============================================================================
 # 6. CONTENIDO PRINCIPAL (DASHBOARD Y MÓDULOS)
