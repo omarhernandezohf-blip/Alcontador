@@ -394,8 +394,8 @@ TRANSLATIONS = {
         'lbl_go_prem': "🧠 PASAR A PREMIUM ($120k)",
         'lbl_credits': "Créditos:",
 
-        'login_title': "Acceso al Sistema",
-        'login_subtitle': "Autenticación requerida para Enterprise Suite",
+        'login_title': "Asistente Contable <span style='color: var(--primary)'>PRO</span>",
+        'login_subtitle': "v14.5 Suite Empresarial • Sistema En Línea",
         'login_btn_google': "🔐 Iniciar sesión con Google",
         'login_error_config': "Error de configuración de Google Auth.",
         'login_no_auth': "⚠️ AUTENTICACIÓN GOOGLE NO DISPONIBLE",
@@ -473,8 +473,8 @@ TRANSLATIONS = {
         'lbl_go_prem': "🧠 GO PREMIUM ($120k)",
         'lbl_credits': "Credits:",
 
-        'login_title': "System Access",
-        'login_subtitle': "Authentication required for Enterprise Suite",
+        'login_title': "Accounting Assistant <span style='color: var(--primary)'>PRO</span>",
+        'login_subtitle': "v14.5 Enterprise Suite • Online System",
         'login_btn_google': "🔐 Sign in with Google",
         'login_error_config': "Google Auth configuration error.",
         'login_no_auth': "⚠️ GOOGLE AUTH UNAVAILABLE",
@@ -762,6 +762,11 @@ def registrar_log(usuario, accion, detalle):
             # Si falla el registro del log, no detenemos la aplicación
             pass 
 
+# --- SIDEBAR: LANGUAGE SELECTOR (Global Access) ---
+with st.sidebar:
+    # Language selector accessible even on Login Page
+    lang = st.selectbox("Language / Idioma", ["Español", "English"], key="lang")
+
 # --- CHECK LOGIN STATUS (Moved after registrar_log definition) ---
 if not st.session_state.get('logged_in', False):
     login_section()
@@ -1045,9 +1050,7 @@ def parsear_xml_dian(archivo_xml):
 # ==============================================================================
 
 with st.sidebar:
-    # --- LANGUAGE SELECTOR (NEW) ---
-    lang = st.selectbox("Language / Idioma", ["Español", "English"], key="lang")
-
+    # Logo
     st.image("https://cdn-icons-png.flaticon.com/512/2830/2830303.png", width=80)
     st.markdown("### 💼 Suite Financiera", unsafe_allow_html=True)
     

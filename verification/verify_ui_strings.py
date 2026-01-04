@@ -1,63 +1,55 @@
+
 import os
-import time
-from playwright.sync_api import sync_playwright
 
-def verify_ui_strings():
-    print("Starting Streamlit app for UI verification...")
-    # Assume the app is already running on port 8501 or we start it.
-    # In this environment, I usually need to start it.
-    # But usually the agent runs a separate command.
-    # For now, I will assume I need to launch the browser against the standard port.
+# Read the file
+with open("app.py", "r") as f:
+    content = f.read()
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+# Verification Steps
+errors = []
 
-        try:
-            page.goto("http://localhost:8501")
-            page.wait_for_timeout(5000) # Wait for load
+# 1. Check Translations
+spanish_title = "Asistente Contable <span style='color: var(--primary)'>PRO</span>"
+spanish_subtitle = "v14.5 Suite Empresarial • Sistema En Línea"
 
-            content = page.content()
+if spanish_title not in content:
+    errors.append("MISSING: Spanish Login Title")
+if spanish_subtitle not in content:
+    errors.append("MISSING: Spanish Login Subtitle")
 
-            # Check for Spanish Strings
-            has_login_title = "Acceso al Sistema" in content
-            has_sidebar_op = "OPERADOR:" in content
-            has_logout = "CERRAR SESIÓN" in content
+# 2. Check English Translations (consistency)
+english_title = "Accounting Assistant <span style='color: var(--primary)'>PRO</span>"
+if english_title not in content:
+    errors.append("MISSING: English Login Title")
 
-            # Check for English artifacts (Should NOT be present)
-            has_terminate = "TERMINATE SESSION" in content
-            has_system_access = "System Access" in content
+# 3. Check Sidebar Order
+# "lang = st.selectbox" should appear BEFORE "if not st.session_state.get('logged_in', False):"
+# and specifically inside the global sidebar block we added.
 
-            print(f"Has Login Title ('Acceso al Sistema'): {has_login_title}")
-            print(f"Has Sidebar Operator ('OPERADOR:'): {has_sidebar_op}")
-            print(f"Has Logout ('CERRAR SESIÓN'): {has_logout}")
-            print(f"Has 'TERMINATE SESSION' (Should be False): {has_terminate}")
-            print(f"Has 'System Access' (Should be False): {has_system_access}")
+login_check_snippet = "if not st.session_state.get('logged_in', False):"
+login_check_idx = content.find(login_check_snippet)
 
-            # Verify Logic
-            success = False
-            if has_login_title:
-                print("✅ Login Page detected in Spanish.")
-                success = True
-            elif has_sidebar_op and has_logout:
-                print("✅ Dashboard detected in Spanish.")
-                success = True
+# Search for the specific added block
+# "with st.sidebar:\n    # Language selector accessible even on Login Page\n    lang = st.selectbox"
+# We'll just look for the selectbox call before the login check.
 
-            if has_terminate or has_system_access:
-                print("❌ FAILED: English strings detected.")
-                success = False
+first_selectbox_idx = content.find('lang = st.selectbox("Language / Idioma"')
 
-            if success:
-                print("✅ VERIFICATION PASSED: UI is in Spanish.")
-            else:
-                print("❌ VERIFICATION FAILED: Could not confirm Spanish UI or found English.")
+if first_selectbox_idx == -1:
+    errors.append("MISSING: Language Selector code")
+elif login_check_idx != -1 and first_selectbox_idx > login_check_idx:
+    errors.append(f"ORDER ERROR: Language selector (idx {first_selectbox_idx}) appears AFTER login check (idx {login_check_idx})")
 
-            page.screenshot(path="verification/ui_spanish_check.png")
+# 4. Check for Duplicates
+count_selectbox = content.count('lang = st.selectbox("Language / Idioma"')
+if count_selectbox > 1:
+    errors.append(f"DUPLICATE ERROR: Found {count_selectbox} instances of language selector.")
 
-        except Exception as e:
-            print(f"Error during verification: {e}")
-        finally:
-            browser.close()
-
-if __name__ == "__main__":
-    verify_ui_strings()
+# Report
+if errors:
+    print("VERIFICATION FAILED:")
+    for e in errors:
+        print(f"- {e}")
+    exit(1)
+else:
+    print("VERIFICATION SUCCESS: All checks passed.")
