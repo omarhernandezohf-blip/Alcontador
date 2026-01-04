@@ -21,9 +21,31 @@ import uuid
 import firebase_admin
 from firebase_admin import credentials, firestore
 
+# --- CONFIGURACIÓN DE PÁGINA ---
+st.set_page_config(
+    page_title="Alcontador Empresarial",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 # --- CONFIGURACIÓN DE ESTILO GLOBAL (ENTERPRISE TRUST THEME) ---
 st.markdown("""
     <style>
+        /* --- SIDEBAR TOGGLE VISIBILITY FIX --- */
+        [data-testid="stSidebarCollapsedControl"] {
+            z-index: 999999 !important;
+            color: #FFFFFF !important;
+            background-color: rgba(99, 102, 241, 0.4) !important;
+            border-radius: 50%;
+            padding: 4px;
+            display: block !important;
+        }
+
+        [data-testid="stSidebarNav"] {
+            z-index: 999999 !important;
+        }
+
         /* --- FONTS --- */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Manrope:wght@400;600;800&display=swap');
 
@@ -362,6 +384,30 @@ TRANSLATIONS = {
         'menu_rut': "Validador de RUT Oficial",
         'menu_ocr': "Digitalización OCR",
 
+        # --- UI LABELS (Sidebar & Login) ---
+        'lbl_operator': "OPERADOR:",
+        'lbl_access': "ACCESO",
+        'lbl_modules': "MÓDULOS DEL SISTEMA:",
+        'lbl_logout': "CERRAR SESIÓN",
+        'lbl_unlock': "DESBLOQUEAR SISTEMA",
+        'lbl_go_pro': "💎 PASAR A PRO ($70k)",
+        'lbl_go_prem': "🧠 PASAR A PREMIUM ($120k)",
+        'lbl_credits': "Créditos:",
+
+        'login_title': "Acceso al Sistema",
+        'login_subtitle': "Autenticación requerida para Enterprise Suite",
+        'login_btn_google': "🔐 Iniciar sesión con Google",
+        'login_error_config': "Error de configuración de Google Auth.",
+        'login_no_auth': "⚠️ AUTENTICACIÓN GOOGLE NO DISPONIBLE",
+        'login_privacy_title': "Privacidad y Seguridad:",
+        'login_privacy_desc': "Tus datos son procesados en tiempo real y no se almacenan permanentemente en nuestros servidores.",
+        'login_manual_header': "⚠️ ACCESO DE EMERGENCIA",
+        'login_manual_help': "Use este canal si Google Auth falla (Error 403/500).",
+        'login_input_id': "ID Operador",
+        'login_input_pass': "Clave de Acceso",
+        'login_btn_manual': "INICIAR ACCESO MANUAL",
+        'login_error_creds': "❌ CREDENCIALES INVÁLIDAS",
+
         # Guide Content
         'title_treasury': "Radar de Liquidez & Flujo de Caja",
         'desc_treasury': "Gestión estratégica de tesorería que permite visualizar la salud financiera futura cruzando en tiempo real las Cuentas por Cobrar (Ingresos proyectados) contra las Cuentas por Pagar (Compromisos). Fundamental para evitar brechas de liquidez.",
@@ -416,6 +462,30 @@ TRANSLATIONS = {
         'menu_narrator': "Financial Narrator & IFRS",
         'menu_rut': "Official RUT Validator",
         'menu_ocr': "OCR Digitization",
+
+        # --- UI LABELS (Sidebar & Login) ---
+        'lbl_operator': "OPERATOR:",
+        'lbl_access': "ACCESS",
+        'lbl_modules': "SYSTEM MODULES:",
+        'lbl_logout': "TERMINATE SESSION",
+        'lbl_unlock': "UNLOCK SYSTEM",
+        'lbl_go_pro': "💎 GO PRO ($70k)",
+        'lbl_go_prem': "🧠 GO PREMIUM ($120k)",
+        'lbl_credits': "Credits:",
+
+        'login_title': "System Access",
+        'login_subtitle': "Authentication required for Enterprise Suite",
+        'login_btn_google': "🔐 Sign in with Google",
+        'login_error_config': "Google Auth configuration error.",
+        'login_no_auth': "⚠️ GOOGLE AUTH UNAVAILABLE",
+        'login_privacy_title': "Privacy & Security:",
+        'login_privacy_desc': "Your data is processed in real-time and not stored permanently on our servers.",
+        'login_manual_header': "⚠️ EMERGENCY ACCESS",
+        'login_manual_help': "Use this channel if Google Auth fails (Error 403/500).",
+        'login_input_id': "Operator ID",
+        'login_input_pass': "Access Key",
+        'login_btn_manual': "MANUAL LOGIN",
+        'login_error_creds': "❌ INVALID CREDENTIALS",
 
         # Guide Content
         'title_treasury': "Liquidity Radar & Cash Flow",
@@ -534,8 +604,8 @@ def login_section():
     # --- UI RENDER (Header + Background) ---
     st.markdown(f"""
 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 20vh; position: relative; z-index: 10; padding-top: 10vh;">
-    <h1 style="font-family: 'Inter', sans-serif; font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; text-align: center; letter-spacing: -1px;">Acceso al Sistema</h1>
-    <p style="color: var(--text-body); margin-bottom: 2rem; font-family: 'Inter', sans-serif; font-size: 1.1rem;">Autenticación requerida para Enterprise Suite</p>
+    <h1 style="font-family: 'Inter', sans-serif; font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; text-align: center; letter-spacing: -1px;">{get_text('login_title')}</h1>
+    <p style="color: var(--text-body); margin-bottom: 2rem; font-family: 'Inter', sans-serif; font-size: 1.1rem;">{get_text('login_subtitle')}</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -555,7 +625,7 @@ def login_section():
             c_left, c_center, c_right = st.columns([1, 2, 1])
             with c_center:
                 result = oauth2.authorize_button(
-                    name="🔐 Iniciar sesión con Google",
+                    name=get_text('login_btn_google'),
                     icon="https://www.google.com.tw/favicon.ico",
                     redirect_uri=st.secrets["google"]["redirect_uri"],
                     scope="openid email profile",
@@ -597,16 +667,16 @@ def login_section():
                     st.error(f"Error procesando login: {e}")
 
         except Exception as e:
-            st.warning("Google Auth configuration error.")
+            st.warning(get_text('login_error_config'))
     else:
-         st.markdown('<div style="text-align:center; color:#ef4444; border:1px solid #ef4444; padding:10px; border-radius: 8px; margin: 20px auto; max-width: 400px;">⚠️ AUTENTICACIÓN GOOGLE NO DISPONIBLE</div>', unsafe_allow_html=True)
+         st.markdown(f'<div style="text-align:center; color:#ef4444; border:1px solid #ef4444; padding:10px; border-radius: 8px; margin: 20px auto; max-width: 400px;">{get_text("login_no_auth")}</div>', unsafe_allow_html=True)
 
-    st.markdown("""
+    st.markdown(f"""
 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 10;">
     <br>
     <div style="max-width: 400px; text-align: center; color: #64748b; font-size: 0.8rem; margin-top: 2rem; padding: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
-        🔒 <strong>Privacidad y Seguridad:</strong><br>
-        Tus datos son procesados en tiempo real y no se almacenan permanentemente en nuestros servidores.
+        🔒 <strong>{get_text('login_privacy_title')}</strong><br>
+        {get_text('login_privacy_desc')}
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -614,12 +684,12 @@ def login_section():
     # --- FALLBACK LOGIN (Manual Override) ---
     c1, c2, c3 = st.columns([1,1,1])
     with c2:
-        with st.expander("⚠️ ACCESO DE EMERGENCIA"):
-            st.markdown("<small style='color: #94a3b8;'>Use este canal si Google Auth falla (Error 403/500).</small>", unsafe_allow_html=True)
-            u = st.text_input("ID Operador", key="login_u")
-            p = st.text_input("Clave de Acceso", type="password", key="login_p")
+        with st.expander(get_text('login_manual_header')):
+            st.markdown(f"<small style='color: #94a3b8;'>{get_text('login_manual_help')}</small>", unsafe_allow_html=True)
+            u = st.text_input(get_text('login_input_id'), key="login_u")
+            p = st.text_input(get_text('login_input_pass'), type="password", key="login_p")
 
-            if st.button("INICIAR ACCESO MANUAL", type="primary"):
+            if st.button(get_text('login_btn_manual'), type="primary"):
                 if u == "admin" and p == "admin":
                     st.session_state['user_plan'] = 'PREMIUM'
                     st.session_state['logged_in'] = True
@@ -647,7 +717,7 @@ def login_section():
                     registrar_log("Cliente", "Login Manual", "Acceso cliente manual")
                     st.rerun()
                 else:
-                    st.error("❌ CREDENCIALES INVÁLIDAS")
+                    st.error(get_text('login_error_creds'))
                     registrar_log(u, "Login Fallido", "Manual override fallido")
 
     st.stop()
@@ -1004,9 +1074,9 @@ with st.sidebar:
 
     st.markdown(f"""
     <div style='background: rgba(255,255,255,0.05); padding: 15px; border-radius: 4px; border-left: 3px solid {plan_bg}; margin-bottom: 20px;'>
-        <small style='color: #94a3b8; text-transform:uppercase;'>OPERATOR:</small><br>
+        <small style='color: #94a3b8; text-transform:uppercase;'>{get_text('lbl_operator')}</small><br>
         <strong style='font-size: 1.1rem; color:white; font-family: "Inter", sans-serif;'>{user_name}</strong><br>
-        <span style="font-size: 0.8rem; color: var(--primary);">{user_plan_safe} ACCESS</span><br>
+        <span style="font-size: 0.8rem; color: var(--primary);">{user_plan_safe} {get_text('lbl_access')}</span><br>
         <small style='color: #64748b;'>{estado_ia_safe}</small><br>
         <small style='color: {'#06b6d4' if db_conectada else '#ef4444'}; font-weight:bold;'>{status_db_safe}</small>
     </div>
@@ -1017,23 +1087,23 @@ with st.sidebar:
     limit = plan_data['limit']
     progress = min(credits_used / limit, 1.0) if limit > 0 else 1.0
 
-    st.markdown(f"<small style='color:#94a3b8'>Créditos: {credits_used} / {limit}</small>", unsafe_allow_html=True)
+    st.markdown(f"<small style='color:#94a3b8'>{get_text('lbl_credits')} {credits_used} / {limit}</small>", unsafe_allow_html=True)
     st.progress(progress)
 
     if current_plan == 'FREE':
         st.markdown("---")
-        st.write("🔓 DESBLOQUEAR SISTEMA")
+        st.write(f"🔓 {get_text('lbl_unlock')}")
         st.link_button(
-            "💎 PASAR A PRO ($70k)",
+            get_text('lbl_go_pro'),
             "https://checkout.wompi.co/l/TU_LINK_PRO",
             type="primary"
         )
         st.link_button(
-            "🧠 PASAR A PREMIUM ($120k)",
+            get_text('lbl_go_prem'),
             "https://checkout.wompi.co/l/TU_LINK_PREMIUM"
         )
 
-    if st.button("TERMINATE SESSION"):
+    if st.button(get_text('lbl_logout')):
         registrar_log(st.session_state.get('username', 'Unknown'), "Logout", "Salida del sistema")
         st.session_state.clear()
         st.rerun()
@@ -1058,7 +1128,7 @@ with st.sidebar:
 
     opciones_menu = list(MENU_KEYS.keys())
 
-    menu_selection = st.radio("SYSTEM MODULES:", opciones_menu)
+    menu_selection = st.radio(get_text('lbl_modules'), opciones_menu)
     # Reverse lookup to get canonical key for logic
     menu = MENU_KEYS.get(menu_selection, "Inicio / Dashboard")
     
