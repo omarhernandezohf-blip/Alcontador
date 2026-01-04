@@ -350,6 +350,59 @@ def login_section():
 
     auth_url = None
 
+    # --- BACKGROUND ANIMATION (MOVING UNIVERSE) ---
+    import random
+    def get_star_shadows(n):
+        return ", ".join([f"{random.randint(0, 4000)}px {random.randint(0, 4000)}px #FFF" for _ in range(n)])
+
+    shadows_small = get_star_shadows(700)
+    shadows_medium = get_star_shadows(200)
+    shadows_big = get_star_shadows(100)
+
+    st.markdown(f"""
+    <style>
+        /* Universe Animation Keyframes */
+        @keyframes animStar {{
+            from {{ transform: translateY(0px); }}
+            to {{ transform: translateY(-4000px); }}
+        }}
+
+        /* Background Container */
+        .universe-bg {{
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none; /* Allows clicking through to form */
+        }}
+
+        .star-layer {{
+            background: transparent;
+            position: absolute;
+            top: 0; left: 0;
+        }}
+
+        /* Layer 1: Small Stars */
+        .layer-1 {{ width: 1px; height: 1px; box-shadow: {shadows_small}; animation: animStar 150s linear infinite; }}
+        .layer-1:after {{ content: " "; position: absolute; top: 4000px; width: 1px; height: 1px; box-shadow: {shadows_small}; }}
+
+        /* Layer 2: Medium Stars */
+        .layer-2 {{ width: 2px; height: 2px; box-shadow: {shadows_medium}; animation: animStar 100s linear infinite; }}
+        .layer-2:after {{ content: " "; position: absolute; top: 4000px; width: 2px; height: 2px; box-shadow: {shadows_medium}; }}
+
+        /* Layer 3: Large Stars */
+        .layer-3 {{ width: 3px; height: 3px; box-shadow: {shadows_big}; animation: animStar 150s linear infinite; }}
+        .layer-3:after {{ content: " "; position: absolute; top: 4000px; width: 3px; height: 3px; box-shadow: {shadows_big}; }}
+    </style>
+
+    <div class="universe-bg">
+        <div class="star-layer layer-1"></div>
+        <div class="star-layer layer-2"></div>
+        <div class="star-layer layer-3"></div>
+    </div>
+    """, unsafe_allow_html=True)
+
     if google_secrets_ok:
         try:
             client_config = {
@@ -410,7 +463,7 @@ def login_section():
 
     # Note: Indentation is stripped to prevent Markdown Code Block rendering
     st.markdown(f"""
-<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 70vh;">
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 70vh; position: relative; z-index: 10;">
     <h1 style="font-family: 'Inter', sans-serif; font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; text-align: center; letter-spacing: -1px;">Acceso al Sistema</h1>
     <p style="color: var(--text-body); margin-bottom: 2rem; font-family: 'Inter', sans-serif; font-size: 1.1rem;">Autenticación requerida para Enterprise Suite</p>
     {login_btn}
