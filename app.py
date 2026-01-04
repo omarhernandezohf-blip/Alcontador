@@ -12,6 +12,8 @@ from datetime import datetime, timedelta
 import xml.etree.ElementTree as ET
 import os
 import html
+import requests
+from streamlit_oauth import OAuth2Component
 import google_auth_oauthlib.flow
 from googleapiclient.discovery import build
 
@@ -403,70 +405,67 @@ def login_section():
     </div>
     """, unsafe_allow_html=True)
 
-    if google_secrets_ok:
-        try:
-            client_config = {
-                "web": {
-                    "client_id": st.secrets["google"]["client_id"],
-                    "client_secret": st.secrets["google"]["client_secret"],
-                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                    "token_uri": "https://oauth2.googleapis.com/token",
-                    "redirect_uris": [st.secrets["google"]["redirect_uri"]],
-                }
-            }
-
-            # Initialize Flow
-            flow = google_auth_oauthlib.flow.Flow.from_client_config(
-                client_config,
-                scopes=['openid', 'https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile'],
-                redirect_uri=st.secrets["google"]["redirect_uri"] # STRICT
-            )
-
-            # Check for authorization code in URL
-            if "code" in st.query_params:
-                try:
-                    code = st.query_params["code"]
-                    flow.fetch_token(code=code)
-                    credentials = flow.credentials
-
-                    # Fetch User Info
-                    user_info_service = build('oauth2', 'v2', credentials=credentials)
-                    user_info = user_info_service.userinfo().get().execute()
-
-                    # Store in Session State
-                    st.session_state['logged_in'] = True
-                    st.session_state['user_info'] = user_info
-                    st.session_state['username'] = user_info.get('name')
-                    st.session_state['user_email'] = user_info.get('email')
-                    st.session_state['user_picture'] = user_info.get('picture')
-                    st.session_state['user_plan'] = 'PRO' # Default to PRO for authorized users for now
-
-                    # Clear query params to prevent re-execution
-                    st.query_params.clear()
-                    st.rerun()
-
-                except Exception as e:
-                    st.error(f"Authentication Failed: {e}")
-            else:
-                auth_url, _ = flow.authorization_url(prompt='consent')
-        except Exception as e:
-            # Silently fail Google Auth setup if configured incorrectly, allow Manual Fallback
-            pass
-
-    # --- UI RENDER (Combined Google + Manual) ---
-
-    # Prepare button HTML to avoid f-string complexity and indentation issues
-    if auth_url:
-        login_btn = f'<a href="{auth_url}" target="_self"><button style="background: var(--primary); border: none; color: white; padding: 1rem 2rem; font-size: 1.1rem; font-family: \'Inter\', sans-serif; font-weight: 600; cursor: pointer; border-radius: 8px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); transition: all 0.2s ease;">🔐 Iniciar sesión con Google</button></a>'
-    else:
-        login_btn = '<div style="color:#ef4444; border:1px solid #ef4444; padding:10px; border-radius: 8px; font-family:\'Inter\', sans-serif;">⚠️ AUTENTICACIÓN GOOGLE NO DISPONIBLE</div>'
-
-    # Note: Indentation is stripped to prevent Markdown Code Block rendering
+    # --- UI RENDER (Header + Background) ---
     st.markdown(f"""
-<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 70vh; position: relative; z-index: 10;">
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 20vh; position: relative; z-index: 10; padding-top: 10vh;">
     <h1 style="font-family: 'Inter', sans-serif; font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; text-align: center; letter-spacing: -1px;">Acceso al Sistema</h1>
     <p style="color: var(--text-body); margin-bottom: 2rem; font-family: 'Inter', sans-serif; font-size: 1.1rem;">Autenticación requerida para Enterprise Suite</p>
-    {login_btn}
+</div>
+""", unsafe_allow_html=True)
+
+    # --- GOOGLE AUTH LOGIC (STREAMLIT-OAUTH) ---
+    if google_secrets_ok:
+        try:
+            oauth2 = OAuth2Component(
+                client_id=st.secrets["google"]["client_id"],
+                client_secret=st.secrets["google"]["client_secret"],
+                authorize_endpoint="https://accounts.google.com/o/oauth2/v2/auth",
+                token_endpoint="https://oauth2.googleapis.com/token",
+                refresh_token_endpoint="https://oauth2.googleapis.com/token",
+                revoke_token_endpoint="https://oauth2.googleapis.com/revoke",
+            )
+
+            # Center the button using columns
+            c_left, c_center, c_right = st.columns([1, 2, 1])
+            with c_center:
+                result = oauth2.authorize_button(
+                    name="🔐 Iniciar sesión con Google",
+                    icon="https://www.google.com.tw/favicon.ico",
+                    redirect_uri=st.secrets["google"]["redirect_uri"],
+                    scope="openid email profile",
+                    key="google_auth",
+                    extras_params={"prompt": "consent", "access_type": "offline"}
+                )
+
+            if result:
+                # Decode access token or fetch user info
+                try:
+                    access_token = result.get("access_token") or result.get("token", {}).get("access_token")
+                    if access_token:
+                        # Fetch User Info manually to be safe
+                        user_info = requests.get(
+                            "https://www.googleapis.com/oauth2/v1/userinfo",
+                            headers={"Authorization": f"Bearer {access_token}"}
+                        ).json()
+
+                        st.session_state['logged_in'] = True
+                        st.session_state['user_info'] = user_info
+                        st.session_state['username'] = user_info.get('name')
+                        st.session_state['user_email'] = user_info.get('email')
+                        st.session_state['user_picture'] = user_info.get('picture')
+                        st.session_state['user_plan'] = 'PRO'
+
+                        st.rerun()
+                except Exception as e:
+                    st.error(f"Error procesando login: {e}")
+
+        except Exception as e:
+            st.warning("Google Auth configuration error.")
+    else:
+         st.markdown('<div style="text-align:center; color:#ef4444; border:1px solid #ef4444; padding:10px; border-radius: 8px; margin: 20px auto; max-width: 400px;">⚠️ AUTENTICACIÓN GOOGLE NO DISPONIBLE</div>', unsafe_allow_html=True)
+
+    st.markdown("""
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 10;">
     <br>
     <div style="max-width: 400px; text-align: center; color: #64748b; font-size: 0.8rem; margin-top: 2rem; padding: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
         🔒 <strong>Privacidad y Seguridad:</strong><br>
