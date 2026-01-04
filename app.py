@@ -643,7 +643,9 @@ def login_section():
                 revoke_token_endpoint="https://oauth2.googleapis.com/revoke",
             )
 
+            # --- CENTER THE BUTTON USING COLUMNS AS REQUESTED ---
             left_col, center_col, right_col = st.columns([1, 2, 1])
+
             with center_col:
                 result = oauth2.authorize_button(
                     name=get_text('login_btn_google'),

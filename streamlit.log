@@ -1,17 +1,4 @@
 
 Collecting usage statistics. To deactivate, set browser.gatherUsageStats to false.
 
-
-  You can now view your Streamlit app in your browser.
-
-  URL: http://localhost:8501
-
-/app/app.py:6: FutureWarning:
-
-All support for the `google.generativeai` package has ended. It will no longer be receiving
-updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
-See README for more details:
-
-https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
-
-  import google.generativeai as genai
+2026-01-04 05:43:38.856 Port 8501 is already in use

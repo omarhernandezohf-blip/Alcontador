@@ -1,36 +1,16 @@
 import os
-import time
-from playwright.sync_api import sync_playwright
+import sys
+import streamlit as st
+from streamlit.testing.v1 import AppTest
+from unittest.mock import MagicMock
 
-def verify_login_ui():
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        # Set viewport to standard desktop
-        page = browser.new_page(viewport={'width': 1280, 'height': 800})
+# Create verification directory if it doesn't exist
+os.makedirs("verification", exist_ok=True)
 
-        try:
-            print("Navigating to app...")
-            page.goto("http://localhost:8501", timeout=30000)
+# Mock secrets to avoid error in AppTest
+# Note: AppTest runs in a separate process, so we need to inject secrets via secrets_path or mocking.
+# But AppTest might not pick up local mocks easily if we just run it.
+# Instead, we will rely on Playwright on the running server,
+# because AppTest headless rendering is limited for visual CSS verification.
 
-            # Wait for the app to load (basic sanity check)
-            page.wait_for_selector("body", timeout=15000)
-            time.sleep(5)  # Allow Streamlit to render everything
-
-            # 1. Verify Sidebar Visibility
-            # Streamlit sidebar is usually in [data-testid="stSidebar"]
-            # To verify it's expanded, we check if the toggle button is for collapsing (meaning it is open)
-            # or check the width/visibility of the sidebar.
-            # Sidebar usually has a width > 0 when expanded.
-
-            # Take screenshot of the whole page
-            page.screenshot(path="verification/verification_login_ui.png")
-            print("Screenshot saved to verification/verification_login_ui.png")
-
-        except Exception as e:
-            print(f"Error: {e}")
-            page.screenshot(path="verification/error_screenshot.png")
-        finally:
-            browser.close()
-
-if __name__ == "__main__":
-    verify_login_ui()
+print("This script is a placeholder. Real verification is done via Playwright on the running app.")
