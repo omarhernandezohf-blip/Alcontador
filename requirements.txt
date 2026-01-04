@@ -10,3 +10,4 @@ numpy
 google-auth-oauthlib
 google-api-python-client
 streamlit-oauth
+firebase-admin

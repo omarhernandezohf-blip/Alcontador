@@ -16,6 +16,9 @@ import requests
 from streamlit_oauth import OAuth2Component
 import google_auth_oauthlib.flow
 from googleapiclient.discovery import build
+import uuid
+import firebase_admin
+from firebase_admin import credentials, firestore
 
 # --- CONFIGURACIÓN DE ESTILO GLOBAL (ENTERPRISE TRUST THEME) ---
 st.markdown("""
@@ -165,7 +168,121 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 0. INTERNATIONALIZATION & HELPERS (NEW & RESTORED)
+# 0. CONFIGURACIÓN DE PLANES Y FIRESTORE
+# ==============================================================================
+
+PLAN_CONFIG = {
+    'FREE': {
+        'limit': 5,
+        'model': 'gemini-1.5-flash',
+        'price_display': 'GRATIS',
+        'badge': 'Prueba',
+        'name': 'Free'
+    },
+    'PRO': {
+        'limit': 500,
+        'model': 'gemini-1.5-flash',
+        'price_display': '$70.000 COP',
+        'badge': '⭐ Más Popular',
+        'name': 'Pro'
+    },
+    'PREMIUM': {
+        'limit': 2000,
+        'model': 'gemini-1.5-pro',
+        'price_display': '$120.000 COP',
+        'badge': '🧠 Inteligencia Superior',
+        'name': 'Premium'
+    }
+}
+
+@st.cache_resource
+def init_firestore():
+    """Inicializa la app de Firebase Admin una sola vez."""
+    try:
+        if not firebase_admin._apps:
+            # Usamos las credenciales de GCP Service Account que ya existen
+            cred = credentials.Certificate(dict(st.secrets["gcp_service_account"]))
+            firebase_admin.initialize_app(cred)
+        return firestore.client()
+    except Exception as e:
+        # En caso de error (ej. falta de secretos), retornamos None para manejarlo gracefully
+        return None
+
+def get_firestore_db():
+    return init_firestore()
+
+def update_session_token(email):
+    """Genera un nuevo token de sesión y lo guarda en Firestore."""
+    db = get_firestore_db()
+    if not db: return str(uuid.uuid4()) # Fallback sin persistencia
+
+    new_token = str(uuid.uuid4())
+    try:
+        user_ref = db.collection('users').document(email)
+        user_ref.set({
+            'session_token': new_token,
+            'last_login': firestore.SERVER_TIMESTAMP
+        }, merge=True)
+    except Exception:
+        pass
+    return new_token
+
+def verify_session(email, token):
+    """Verifica si el token local coincide con el de Firestore."""
+    db = get_firestore_db()
+    if not db: return True # Si no hay DB, asumimos válido (modo offline/dev)
+
+    try:
+        doc = db.collection('users').document(email).get()
+        if doc.exists:
+            remote_token = doc.to_dict().get('session_token')
+            return remote_token == token
+    except Exception:
+        pass
+    return True
+
+def get_user_credits(email):
+    """Obtiene los créditos usados del usuario."""
+    db = get_firestore_db()
+    if not db: return 0
+
+    try:
+        doc = db.collection('users').document(email).get()
+        if doc.exists:
+            return doc.to_dict().get('credits_used', 0)
+    except Exception:
+        pass
+    return 0
+
+def consume_credit(email):
+    """Incrementa el contador de créditos usados."""
+    db = get_firestore_db()
+    if not db: return
+
+    try:
+        user_ref = db.collection('users').document(email)
+        # Incremento atómico
+        user_ref.update({'credits_used': firestore.Increment(1)})
+    except Exception:
+        pass
+
+def check_single_session():
+    """Verifica la sesión al inicio de cada ejecución."""
+    if st.session_state.get('logged_in'):
+        email = st.session_state.get('user_email')
+        token = st.session_state.get('session_token')
+
+        if email and token:
+            if not verify_session(email, token):
+                st.session_state.clear()
+                st.error("⚠️ Tu sesión se ha abierto en otro dispositivo. Por seguridad, se ha cerrado aquí.")
+                st.stop()
+
+# Ejecutar verificación de sesión inmediatamente
+check_single_session()
+
+# ==============================================================================
+# 0.1 INTERNATIONALIZATION & HELPERS (NEW & RESTORED)
 # ==============================================================================
 
 TRANSLATIONS = {
@@ -357,9 +474,10 @@ def login_section():
     def get_star_shadows(n):
         return ", ".join([f"{random.randint(0, 4000)}px {random.randint(0, 4000)}px #FFF" for _ in range(n)])
 
-    shadows_small = get_star_shadows(700)
-    shadows_medium = get_star_shadows(200)
-    shadows_big = get_star_shadows(100)
+    # Reduce star count slightly for performance on mobile
+    shadows_small = get_star_shadows(400)
+    shadows_medium = get_star_shadows(100)
+    shadows_big = get_star_shadows(50)
 
     st.markdown(f"""
     <style>
@@ -448,12 +566,23 @@ def login_section():
                             headers={"Authorization": f"Bearer {access_token}"}
                         ).json()
 
+                        email = user_info.get('email')
+
                         st.session_state['logged_in'] = True
                         st.session_state['user_info'] = user_info
                         st.session_state['username'] = user_info.get('name')
-                        st.session_state['user_email'] = user_info.get('email')
+                        st.session_state['user_email'] = email
                         st.session_state['user_picture'] = user_info.get('picture')
-                        st.session_state['user_plan'] = 'PRO'
+
+                        # --- SESSION ENFORCEMENT & CREDIT INIT ---
+                        new_token = update_session_token(email)
+                        st.session_state['session_token'] = new_token
+                        st.session_state['credits_used'] = get_user_credits(email)
+
+                        # Default Plan (Can be upgraded in DB later, defaulting to FREE/PRO for logic)
+                        # For now, we default to FREE unless admin
+                        st.session_state['user_plan'] = 'FREE'
+                        if email == 'admin@internal.system': st.session_state['user_plan'] = 'PREMIUM'
 
                         st.rerun()
                 except Exception as e:
@@ -484,11 +613,16 @@ def login_section():
 
             if st.button("INICIAR ACCESO MANUAL", type="primary"):
                 if u == "admin" and p == "admin":
-                    st.session_state['user_plan'] = 'PRO'
+                    st.session_state['user_plan'] = 'PREMIUM'
                     st.session_state['logged_in'] = True
                     st.session_state['username'] = 'Admin (Manual)'
                     st.session_state['user_email'] = 'admin@internal.system'
                     st.session_state['user_picture'] = ''
+
+                    # Session Token & Credits
+                    st.session_state['session_token'] = update_session_token('admin@internal.system')
+                    st.session_state['credits_used'] = 0
+
                     registrar_log("Admin", "Login Manual", "Acceso de emergencia usado")
                     st.rerun()
                 elif u == "cliente" and p == "cliente":
@@ -497,6 +631,11 @@ def login_section():
                     st.session_state['username'] = 'Cliente (Manual)'
                     st.session_state['user_email'] = 'client@internal.system'
                     st.session_state['user_picture'] = ''
+
+                    # Session Token & Credits
+                    st.session_state['session_token'] = update_session_token('client@internal.system')
+                    st.session_state['credits_used'] = get_user_credits('client@internal.system')
+
                     registrar_log("Cliente", "Login Manual", "Acceso cliente manual")
                     st.rerun()
                 else:
@@ -720,22 +859,35 @@ def calcular_costo_empresa_fila(row, col_salario, col_aux, col_arl, col_exo):
 # ------------------------------------------------------------------------------
 def consultar_ia_gemini(prompt):
     """
-    Usa el modelo PRO (Más inteligente y razonador)
-    Ideal para: Narrador Financiero, Análisis de Tesorería y Auditoría NIIF.
+    Usa el modelo definido por el plan del usuario.
+    Incluye lógica de consumo de créditos.
     """
+    plan = st.session_state.get('user_plan', 'FREE')
+    config = PLAN_CONFIG.get(plan, PLAN_CONFIG['FREE'])
+    credits = st.session_state.get('credits_used', 0)
+    email = st.session_state.get('user_email')
+
+    if credits >= config['limit']:
+        return "⚠️ HAS ALCANZADO EL LÍMITE DE CRÉDITOS DE TU PLAN. Por favor, actualiza a PRO o PREMIUM para continuar."
+
     try:
-        # Intentamos usar la versión '2.5-flash' disponible
+        # Selección Dinámica de Modelo
+        model_name = config['model']
+        # Fallback manual si el nombre del plan no coincide con la API (ej. 'gemini-1.5-flash' vs 'models/gemini-1.5-flash')
+        # Ajustamos a las versiones estables conocidas si es necesario, o confiamos en el config.
+        # Para seguridad, usamos try/catch con fallbacks
+
         try:
-            model = genai.GenerativeModel('gemini-2.5-flash')
+            model = genai.GenerativeModel(model_name)
             response = model.generate_content(prompt)
+
+            # Consumir crédito solo si éxito
+            consume_credit(email)
+            st.session_state['credits_used'] = credits + 1
+
             return response.text
         except Exception as e:
-            # Fallback o diagnóstico
-            try:
-                available_models = [m.name for m in genai.list_models()]
-                return f"Error IA: {str(e)}. Modelos disponibles: {available_models}"
-            except:
-                return f"Error de conexión IA: {str(e)}"
+            return f"Error IA ({model_name}): {str(e)}"
     except Exception as e:
         return f"Error crítico IA: {str(e)}"
 
@@ -744,19 +896,30 @@ def consultar_ia_gemini(prompt):
 # ------------------------------------------------------------------------------
 def ocr_factura(imagen):
     """
-    Usa el modelo FLASH (Más rápido y ligero)
-    Ideal para: Procesar imágenes masivas sin hacer esperar al usuario.
+    OCR consume 1 crédito. Usa Flash para velocidad en todos los planes (o según config).
     """
+    plan = st.session_state.get('user_plan', 'FREE')
+    config = PLAN_CONFIG.get(plan, PLAN_CONFIG['FREE'])
+    credits = st.session_state.get('credits_used', 0)
+    email = st.session_state.get('user_email')
+
+    if credits >= config['limit']:
+        st.error("⚠️ Límite de créditos alcanzado.")
+        return None
+
     try:
-        # Usamos versión estable
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        # OCR siempre usa Flash por velocidad, a menos que se especifique otra cosa.
+        # Usamos 'gemini-1.5-flash' explicitamente o el del plan si es compatible.
+        model = genai.GenerativeModel('gemini-1.5-flash')
         prompt = """Extrae datos JSON estricto: {"fecha": "YYYY-MM-DD", "nit": "num", "proveedor": "txt", "concepto": "txt", "base": num, "iva": num, "total": num}"""
         response = model.generate_content([prompt, imagen])
+
+        # Consumir crédito
+        consume_credit(email)
+        st.session_state['credits_used'] = credits + 1
+
         return json.loads(response.text.replace("```json", "").replace("```", "").strip())
     except Exception as e:
-        # En OCR fallamos silenciosamente o retornamos None como antes,
-        # pero podríamos loguear el error si tuviéramos un sistema de logs.
-        # print(f"Error OCR: {e}") # REMOVED FOR SECURITY (NO LOGS)
         return None
 
 # ------------------------------------------------------------------------------
@@ -811,11 +974,15 @@ with st.sidebar:
     st.markdown("### 💼 Suite Financiera", unsafe_allow_html=True)
     
     # --- PANEL DE USUARIO LOGUEADO (SIDEBAR) ---
-    plan_bg = "#FFD700" if st.session_state['user_plan'] == 'PRO' else "#A9A9A9"
+    current_plan = st.session_state.get('user_plan', 'FREE')
+    plan_data = PLAN_CONFIG.get(current_plan, PLAN_CONFIG['FREE'])
+    plan_bg = "#FFD700" if current_plan == 'PRO' else "#A9A9A9"
+    if current_plan == 'PREMIUM': plan_bg = "#cf1b1b" # Red for Premium
+
     status_db = "🟢 DB Online" if db_conectada else "🔴 DB Offline"
     
     # Security: Escape variables injected into HTML
-    user_plan_safe = html.escape(str(st.session_state.get('user_plan', 'FREE')))
+    user_plan_safe = html.escape(str(current_plan))
     estado_ia_safe = html.escape(str(estado_ia))
     status_db_safe = html.escape(str(status_db))
 
@@ -837,15 +1004,26 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    if st.session_state['user_plan'] == 'FREE':
+    # --- CREDIT USAGE ---
+    credits_used = st.session_state.get('credits_used', 0)
+    limit = plan_data['limit']
+    progress = min(credits_used / limit, 1.0) if limit > 0 else 1.0
+
+    st.markdown(f"<small style='color:#94a3b8'>Créditos: {credits_used} / {limit}</small>", unsafe_allow_html=True)
+    st.progress(progress)
+
+    if current_plan == 'FREE':
         st.markdown("---")
-        st.write("🔓 UNLOCK FULL SYSTEM")
-        # Enlace de pago WOMPI
+        st.write("🔓 DESBLOQUEAR SISTEMA")
         st.link_button(
-            "💎 UPGRADE TO PRO",
-            "https://checkout.wompi.co/l/TU_LINK_AQUI"
+            "💎 PASAR A PRO ($70k)",
+            "https://checkout.wompi.co/l/TU_LINK_PRO",
+            type="primary"
         )
-        st.caption("Access all enterprise modules.")
+        st.link_button(
+            "🧠 PASAR A PREMIUM ($120k)",
+            "https://checkout.wompi.co/l/TU_LINK_PREMIUM"
+        )
 
     if st.button("TERMINATE SESSION"):
         registrar_log(st.session_state.get('username', 'Unknown'), "Logout", "Salida del sistema")
@@ -1027,17 +1205,31 @@ if menu == "Inicio / Dashboard":
     with col_p2:
         st.markdown("""
         <div class="pricing-card pro">
-            <div class="pro-badge">RECOMMENDED</div>
-            <h3 style="color:white; margin:0; font-size: 1.4rem;">PRO AGENT</h3>
-            <div class="price-old">$120.000</div> <div class="price-tag">$49.900 <span>COP/mo</span></div>
+            <div class="pro-badge">⭐ MÁS POPULAR</div>
+            <h3 style="color:white; margin:0; font-size: 1.4rem;">PLAN PRO</h3>
+            <div class="price-old">$100.000</div> <div class="price-tag">$70.000 <span>COP/mo</span></div>
             <ul class="features-ul">
-                <li><span class="check">✓</span> <strong>Everything in Starter</strong></li>
-                <li><span class="check">✓</span> Unlimited AI Queries</li>
-                <li><span class="check">✓</span> Tax Prediction Model</li>
-                <li><span class="check">✓</span> 24/7 Priority Uplink</li>
+                <li><span class="check">✓</span> <strong>500 Créditos Mensuales</strong></li>
+                <li><span class="check">✓</span> Modelo Gemini 1.5 Flash (Rápido)</li>
+                <li><span class="check">✓</span> Todos los Módulos Contables</li>
+                <li><span class="check">✓</span> Soporte Prioritario</li>
             </ul>
         </div>""", unsafe_allow_html=True)
-        st.button("⚡ UPGRADE TO PRO", key="btn_pro", type="primary", use_container_width=True)
+        st.link_button("⚡ MEJORAR A PRO", "https://checkout.wompi.co/l/TU_LINK_PRO", type="primary", use_container_width=True)
+
+    with st.expander("🧠 Ver Plan Premium (Inteligencia Superior)"):
+        st.markdown("""
+        <div class="pricing-card" style="border: 1px solid #10b981;">
+            <h3 style="color:white; margin:0; font-size: 1.4rem;">PLAN PREMIUM</h3>
+            <div class="price-old">$180.000</div> <div class="price-tag">$120.000 <span>COP/mo</span></div>
+            <ul class="features-ul">
+                <li><span class="check">✓</span> <strong>2.000 Créditos Mensuales</strong></li>
+                <li><span class="check">✓</span> <strong>Modelo Gemini 1.5 PRO (Razonamiento Complejo)</strong></li>
+                <li><span class="check">✓</span> Análisis Financiero Profundo</li>
+                <li><span class="check">✓</span> Auditoría NIIF Avanzada</li>
+            </ul>
+        </div>""", unsafe_allow_html=True)
+        st.link_button("🚀 OBTENER PREMIUM", "https://checkout.wompi.co/l/TU_LINK_PREMIUM", use_container_width=True)
 
     if not db_conectada:
         st.warning("⚠️ DATABASE OFFLINE. Check 'DB_Alcontador' connection.")
@@ -1582,4 +1774,4 @@ else:
 # PIE DE PÁGINA
 # ==============================================================================
 st.markdown("---")
-st.markdown("<center><strong>Asistente Contable Pro</strong> | v14.5 Enterprise</center>", unsafe_allow_html=True)
+st.markdown("<center><strong>Asistente Contable Pro</strong> | Versión 1.0</center>", unsafe_allow_html=True)
