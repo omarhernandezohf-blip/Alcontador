@@ -36,14 +36,22 @@ st.markdown("""
         [data-testid="stSidebarCollapsedControl"] {
             z-index: 999999 !important;
             color: #FFFFFF !important;
-            background-color: rgba(99, 102, 241, 0.4) !important;
+            background-color: rgba(99, 102, 241, 0.6) !important;
             border-radius: 50%;
-            padding: 4px;
+            padding: 6px;
             display: block !important;
+            position: fixed !important;
+            left: 20px !important;
+            top: 20px !important;
         }
 
         [data-testid="stSidebarNav"] {
             z-index: 999999 !important;
+        }
+
+        [data-testid="stSidebar"] {
+            z-index: 999998 !important;
+            background-color: #020617 !important;
         }
 
         /* --- FONTS --- */
@@ -602,10 +610,23 @@ def login_section():
     auth_url = None
 
     # --- UI RENDER (Header + Background) ---
+    # Centering container with flexbox for vertical and horizontal alignment
     st.markdown(f"""
-<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 20vh; position: relative; z-index: 10; padding-top: 10vh;">
-    <h1 style="font-family: 'Inter', sans-serif; font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; text-align: center; letter-spacing: -1px;">{get_text('login_title')}</h1>
-    <p style="color: var(--text-body); margin-bottom: 2rem; font-family: 'Inter', sans-serif; font-size: 1.1rem;">{get_text('login_subtitle')}</p>
+<div style="
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 40vh;
+    width: 100%;
+    margin-top: 5vh;
+    position: relative;
+    z-index: 10;
+">
+    <div style="text-align: center;">
+        <h1 style="font-family: 'Inter', sans-serif; font-size: 3rem; font-weight: 800; margin-bottom: 0.5rem; letter-spacing: -1px;">{get_text('login_title')}</h1>
+        <p style="color: var(--text-body); font-family: 'Inter', sans-serif; font-size: 1.2rem; font-weight: 500;">{get_text('login_subtitle')}</p>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -621,8 +642,8 @@ def login_section():
                 revoke_token_endpoint="https://oauth2.googleapis.com/revoke",
             )
 
-            # Center the button using columns
-            c_left, c_center, c_right = st.columns([1, 2, 1])
+            # Use strict columns for centering the button
+            c_left, c_center, c_right = st.columns([3, 2, 3])
             with c_center:
                 result = oauth2.authorize_button(
                     name=get_text('login_btn_google'),
