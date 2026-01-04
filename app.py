@@ -33,7 +33,9 @@ st.set_page_config(
 st.markdown("""
     <style>
         /* --- SIDEBAR TOGGLE VISIBILITY FIX --- */
-        [data-testid="stSidebarCollapsedControl"] {
+        [data-testid="stSidebarCollapsedControl"],
+        [data-testid="stSidebarNav"] > button,
+        button[kind="header"] {
             z-index: 999999 !important;
             color: white !important;
             background-color: rgba(255, 255, 255, 0.2) !important;
@@ -644,7 +646,7 @@ def login_section():
             )
 
             # --- CENTER THE BUTTON USING COLUMNS AS REQUESTED ---
-            left_col, center_col, right_col = st.columns([1, 2, 1])
+            left_col, center_col, right_col = st.columns([1, 0.6, 1])
 
             with center_col:
                 result = oauth2.authorize_button(
