@@ -7,6 +7,7 @@ import google.generativeai as genai
 from PIL import Image
 import json
 import time
+import random
 import io
 from datetime import datetime, timedelta
 import xml.etree.ElementTree as ET
@@ -170,6 +171,67 @@ st.markdown("""
 # ==============================================================================
 # 0. CONFIGURACIÓN DE PLANES Y FIRESTORE
 # ==============================================================================
+
+@st.cache_resource
+def get_star_css():
+    """Generates the CSS for the moving universe background (cached)."""
+    def get_star_shadows(n):
+        return ", ".join([f"{random.randint(0, 4000)}px {random.randint(0, 4000)}px #FFF" for _ in range(n)])
+
+    shadows_small = get_star_shadows(400)
+    shadows_medium = get_star_shadows(100)
+    shadows_big = get_star_shadows(50)
+
+    return f"""
+    <style>
+        /* Universe Animation Keyframes */
+        @keyframes animStar {{
+            from {{ transform: translateY(0px); }}
+            to {{ transform: translateY(-4000px); }}
+        }}
+
+        /* Background Container */
+        .universe-bg {{
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none; /* Allows clicking through to form */
+        }}
+
+        .star-layer {{
+            background: transparent;
+            position: absolute;
+            top: 0; left: 0;
+        }}
+
+        /* Layer 1: Small Stars */
+        .layer-1 {{ width: 1px; height: 1px; box-shadow: {shadows_small}; animation: animStar 150s linear infinite; }}
+        .layer-1:after {{ content: " "; position: absolute; top: 4000px; width: 1px; height: 1px; box-shadow: {shadows_small}; }}
+
+        /* Layer 2: Medium Stars */
+        .layer-2 {{ width: 2px; height: 2px; box-shadow: {shadows_medium}; animation: animStar 100s linear infinite; }}
+        .layer-2:after {{ content: " "; position: absolute; top: 4000px; width: 2px; height: 2px; box-shadow: {shadows_medium}; }}
+
+        /* Layer 3: Large Stars */
+        .layer-3 {{ width: 3px; height: 3px; box-shadow: {shadows_big}; animation: animStar 150s linear infinite; }}
+        .layer-3:after {{ content: " "; position: absolute; top: 4000px; width: 3px; height: 3px; box-shadow: {shadows_big}; }}
+    </style>
+
+    <div class="universe-bg">
+        <div class="star-layer layer-1"></div>
+        <div class="star-layer layer-2"></div>
+        <div class="star-layer layer-3"></div>
+    </div>
+    """
+
+def render_universe_background():
+    """Injects the universe background CSS/HTML."""
+    st.markdown(get_star_css(), unsafe_allow_html=True)
+
+# Render background immediately
+render_universe_background()
 
 PLAN_CONFIG = {
     'FREE': {
@@ -468,60 +530,6 @@ def login_section():
         google_secrets_ok = False
 
     auth_url = None
-
-    # --- BACKGROUND ANIMATION (MOVING UNIVERSE) ---
-    import random
-    def get_star_shadows(n):
-        return ", ".join([f"{random.randint(0, 4000)}px {random.randint(0, 4000)}px #FFF" for _ in range(n)])
-
-    # Reduce star count slightly for performance on mobile
-    shadows_small = get_star_shadows(400)
-    shadows_medium = get_star_shadows(100)
-    shadows_big = get_star_shadows(50)
-
-    st.markdown(f"""
-    <style>
-        /* Universe Animation Keyframes */
-        @keyframes animStar {{
-            from {{ transform: translateY(0px); }}
-            to {{ transform: translateY(-4000px); }}
-        }}
-
-        /* Background Container */
-        .universe-bg {{
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
-            z-index: 0;
-            overflow: hidden;
-            pointer-events: none; /* Allows clicking through to form */
-        }}
-
-        .star-layer {{
-            background: transparent;
-            position: absolute;
-            top: 0; left: 0;
-        }}
-
-        /* Layer 1: Small Stars */
-        .layer-1 {{ width: 1px; height: 1px; box-shadow: {shadows_small}; animation: animStar 150s linear infinite; }}
-        .layer-1:after {{ content: " "; position: absolute; top: 4000px; width: 1px; height: 1px; box-shadow: {shadows_small}; }}
-
-        /* Layer 2: Medium Stars */
-        .layer-2 {{ width: 2px; height: 2px; box-shadow: {shadows_medium}; animation: animStar 100s linear infinite; }}
-        .layer-2:after {{ content: " "; position: absolute; top: 4000px; width: 2px; height: 2px; box-shadow: {shadows_medium}; }}
-
-        /* Layer 3: Large Stars */
-        .layer-3 {{ width: 3px; height: 3px; box-shadow: {shadows_big}; animation: animStar 150s linear infinite; }}
-        .layer-3:after {{ content: " "; position: absolute; top: 4000px; width: 3px; height: 3px; box-shadow: {shadows_big}; }}
-    </style>
-
-    <div class="universe-bg">
-        <div class="star-layer layer-1"></div>
-        <div class="star-layer layer-2"></div>
-        <div class="star-layer layer-3"></div>
-    </div>
-    """, unsafe_allow_html=True)
 
     # --- UI RENDER (Header + Background) ---
     st.markdown(f"""
@@ -1068,7 +1076,7 @@ if menu == "Inicio / Dashboard":
     <div class="hero-container">
         <div class="hero-content">
             <h1 class="hero-title">Asistente Contable <span style="color: var(--primary)">PRO</span></h1>
-            <div class="hero-subtitle">v14.5 Enterprise Suite • <span style="color: var(--success)">System Online</span></div>
+            <div class="hero-subtitle">v14.5 Suite Empresarial • <span style="color: var(--success)">Sistema En Línea</span></div>
         </div>
     </div>
     <style>
@@ -1112,43 +1120,43 @@ if menu == "Inicio / Dashboard":
             <div style="color: var(--text-body); font-family: 'Inter'; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">{label}</div>
             <div style="font-family: 'Inter'; font-size: 2rem; font-weight: 800; color: white; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -1px;">{value}</div>
             <div style="color: {color}; font-size: 0.95rem; font-weight: 600; font-family: 'Inter';">
-                {arrow} {delta} <span style="color: var(--text-body); font-weight: 400;">vs last cycle</span>
+                {arrow} {delta} <span style="color: var(--text-body); font-weight: 400;">vs periodo anterior</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-    st.markdown("### 📊 LIVE METRICS STREAM")
+    st.markdown("### 📊 MÉTRICAS EN VIVO")
     col1, col2, col3, col4 = st.columns(4)
-    with col1: metric_card("TOTAL INCOME", "$124,500", "12%", True)
-    with col2: metric_card("OP. EXPENSES", "$42,300", "5%", False)
-    with col3: metric_card("NET PROFIT", "$82,200", "18%", True)
-    with col4: metric_card("EBITDA MARGIN", "34%", "2%", True)
+    with col1: metric_card("INGRESOS TOTALES", "$124,500", "12%", True)
+    with col2: metric_card("GASTOS OP.", "$42,300", "5%", False)
+    with col3: metric_card("UTILIDAD NETA", "$82,200", "18%", True)
+    with col4: metric_card("MARGEN EBITDA", "34%", "2%", True)
 
     st.markdown("---")
 
     c_chart_1, c_chart_2 = st.columns([2, 1])
     with c_chart_1:
-        st.markdown("#### 📈 CASH FLOW TREND")
-        chart_data = pd.DataFrame(np.random.randn(20, 3) + [10, 10, 10], columns=['Income', 'Expenses', 'Profit'])
+        st.markdown("#### 📈 TENDENCIA DE FLUJO DE CAJA")
+        chart_data = pd.DataFrame(np.random.randn(20, 3) + [10, 10, 10], columns=['Ingresos', 'Gastos', 'Utilidad'])
         st.area_chart(chart_data, color=["#06b6d4", "#ef4444", "#10b981"])
     with c_chart_2:
-        st.markdown("#### 📉 EXPENSE BREAKDOWN")
-        gastos_data = pd.DataFrame({'Category': ['Payroll', 'Software', 'Office', 'Ads'], 'Amount': [5000, 2000, 1500, 3000]})
-        st.bar_chart(gastos_data.set_index('Category'), color="#8b5cf6")
+        st.markdown("#### 📉 DESGLOSE DE GASTOS")
+        gastos_data = pd.DataFrame({'Categoría': ['Nómina', 'Software', 'Oficina', 'Publicidad'], 'Monto': [5000, 2000, 1500, 3000]})
+        st.bar_chart(gastos_data.set_index('Categoría'), color="#8b5cf6")
 
-    st.markdown("### 📝 LATEST TRANSACTIONS LOG")
+    st.markdown("### 📝 REGISTRO DE TRANSACCIONES")
     df_transacciones = pd.DataFrame({
         "ID": ["TRX-001", "TRX-002", "TRX-003", "TRX-004", "TRX-005"],
-        "DATE": ["2024-05-01", "2024-05-02", "2024-05-02", "2024-05-03", "2024-05-03"],
-        "CONCEPT": ["Payment Client A", "AWS Subscription", "Payment Client B", "Office Licenses", "Consulting"],
-        "STATUS": ["COMPLETED", "PENDING", "COMPLETED", "COMPLETED", "REVIEW"],
-        "AMOUNT": ["+$1,200", "-$300", "+$4,500", "-$150", "+$2,000"]
+        "FECHA": ["2024-05-01", "2024-05-02", "2024-05-02", "2024-05-03", "2024-05-03"],
+        "CONCEPTO": ["Pago Cliente A", "Suscripción AWS", "Pago Cliente B", "Licencias Oficina", "Consultoría"],
+        "ESTADO": ["COMPLETADO", "PENDIENTE", "COMPLETADO", "COMPLETADO", "REVISIÓN"],
+        "MONTO": ["+$1,200", "-$300", "+$4,500", "-$150", "+$2,000"]
     })
     st.dataframe(df_transacciones, use_container_width=True, hide_index=True)
 
     # 3. SECCIÓN PLANES Y PRECIOS
     st.markdown("---")
-    st.markdown("### 💎 UPGRADE ACCESS LEVEL")
+    st.markdown("### 💎 MEJORAR NIVEL DE ACCESO")
     
     st.markdown("""
     <style>
@@ -1191,23 +1199,23 @@ if menu == "Inicio / Dashboard":
     with col_p1:
         st.markdown("""
         <div class="pricing-card">
-            <h3 style="color:white; margin:0; font-size: 1.4rem;">STARTER LEVEL</h3>
-            <div class="price-tag">$0 <span>COP/mo</span></div>
+            <h3 style="color:white; margin:0; font-size: 1.4rem;">NIVEL INICIAL</h3>
+            <div class="price-tag">$0 <span>COP/mes</span></div>
             <ul class="features-ul">
-                <li><span class="check">✓</span> Dashboard Access</li>
-                <li><span class="check">✓</span> 5 AI Queries/day</li>
-                <li class="dimmed"><span class="cross">✕</span> Tax Agent</li>
-                <li class="dimmed"><span class="cross">✕</span> Bank Connection</li>
+                <li><span class="check">✓</span> Acceso al Dashboard</li>
+                <li><span class="check">✓</span> 5 Consultas IA/día</li>
+                <li class="dimmed"><span class="cross">✕</span> Agente Tributario</li>
+                <li class="dimmed"><span class="cross">✕</span> Conexión Bancaria</li>
             </ul>
         </div>""", unsafe_allow_html=True)
-        st.button("CONTINUE FREE", key="btn_free", use_container_width=True)
+        st.button("CONTINUAR GRATIS", key="btn_free", use_container_width=True)
 
     with col_p2:
         st.markdown("""
         <div class="pricing-card pro">
             <div class="pro-badge">⭐ MÁS POPULAR</div>
             <h3 style="color:white; margin:0; font-size: 1.4rem;">PLAN PRO</h3>
-            <div class="price-old">$100.000</div> <div class="price-tag">$70.000 <span>COP/mo</span></div>
+            <div class="price-old">$100.000</div> <div class="price-tag">$70.000 <span>COP/mes</span></div>
             <ul class="features-ul">
                 <li><span class="check">✓</span> <strong>500 Créditos Mensuales</strong></li>
                 <li><span class="check">✓</span> Modelo Gemini 1.5 Flash (Rápido)</li>
@@ -1221,7 +1229,7 @@ if menu == "Inicio / Dashboard":
         st.markdown("""
         <div class="pricing-card" style="border: 1px solid #10b981;">
             <h3 style="color:white; margin:0; font-size: 1.4rem;">PLAN PREMIUM</h3>
-            <div class="price-old">$180.000</div> <div class="price-tag">$120.000 <span>COP/mo</span></div>
+            <div class="price-old">$180.000</div> <div class="price-tag">$120.000 <span>COP/mes</span></div>
             <ul class="features-ul">
                 <li><span class="check">✓</span> <strong>2.000 Créditos Mensuales</strong></li>
                 <li><span class="check">✓</span> <strong>Modelo Gemini 1.5 PRO (Razonamiento Complejo)</strong></li>
@@ -1232,7 +1240,7 @@ if menu == "Inicio / Dashboard":
         st.link_button("🚀 OBTENER PREMIUM", "https://checkout.wompi.co/l/TU_LINK_PREMIUM", use_container_width=True)
 
     if not db_conectada:
-        st.warning("⚠️ DATABASE OFFLINE. Check 'DB_Alcontador' connection.")
+        st.warning("⚠️ BASE DE DATOS OFFLINE. Verifique conexión a 'DB_Alcontador'.")
 
 # ---------------------------------------------------------
 # ELSE: CAMBIO DE MENÚ (ESTE SÍ TOCA EL BORDE IZQUIERDO)
