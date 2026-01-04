@@ -643,7 +643,6 @@ def login_section():
                 revoke_token_endpoint="https://oauth2.googleapis.com/revoke",
             )
 
-            # Use 3-column layout for centering
             left_col, center_col, right_col = st.columns([1, 2, 1])
             with center_col:
                 result = oauth2.authorize_button(
