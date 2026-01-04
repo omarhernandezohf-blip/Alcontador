@@ -34,9 +34,10 @@ st.markdown("""
     <style>
         /* --- SIDEBAR TOGGLE VISIBILITY FIX --- */
         [data-testid="stSidebarCollapsedControl"] {
-            z-index: 999999 !important;
+            z-index: 9999999 !important;
             color: #FFFFFF !important;
-            background-color: rgba(99, 102, 241, 0.6) !important;
+            background-color: rgba(255, 255, 255, 0.2) !important;
+            border: 2px solid white !important;
             border-radius: 50%;
             padding: 6px;
             display: block !important;
@@ -450,7 +451,7 @@ TRANSLATIONS = {
         'ben_bank': ["Algoritmo de Fecha Flexible (+/- 3 días)", "Detecta partidas pendientes", "Ahorra 90% de tiempo manual"],
 
         'title_ugpp': "Escáner de Riesgo UGPP (Ley 1393)",
-        'desc_ugpp': "Auditar pagos laborales. Verifica si los pagos NO salariales exceden el 40% del total (Art. 30 Ley 1393).",
+        'desc_ugpp': "Audit labor payments. Verifies if NON-salary payments exceed 40% of the total (Art. 30 Law 1393).",
         'ben_ugpp': ["Cálculo automático de exceso", "Alerta de riesgo alto", "Soporte para fiscalización"],
 
         'title_payroll': "Calculadora de Costo Real de Nómina",
@@ -642,17 +643,28 @@ def login_section():
                 revoke_token_endpoint="https://oauth2.googleapis.com/revoke",
             )
 
-            # Use strict columns for centering the button
-            c_left, c_center, c_right = st.columns([3, 2, 3])
-            with c_center:
-                result = oauth2.authorize_button(
-                    name=get_text('login_btn_google'),
-                    icon="https://www.google.com.tw/favicon.ico",
-                    redirect_uri=st.secrets["google"]["redirect_uri"],
-                    scope="openid email profile",
-                    key="google_auth",
-                    extras_params={"prompt": "consent", "access_type": "offline"}
-                )
+            # Use CSS for absolute centering instead of columns
+            st.markdown("""
+            <style>
+            div[data-testid="stButton"] {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin: 0;
+                padding: 10px;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+
+            # Button without columns
+            result = oauth2.authorize_button(
+                name=get_text('login_btn_google'),
+                icon="https://www.google.com.tw/favicon.ico",
+                redirect_uri=st.secrets["google"]["redirect_uri"],
+                scope="openid email profile",
+                key="google_auth",
+                extras_params={"prompt": "consent", "access_type": "offline"}
+            )
 
             if result:
                 # Decode access token or fetch user info
@@ -694,7 +706,6 @@ def login_section():
 
     st.markdown(f"""
 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 10;">
-    <br>
     <div style="max-width: 400px; text-align: center; color: #64748b; font-size: 0.8rem; margin-top: 2rem; padding: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
         🔒 <strong>{get_text('login_privacy_title')}</strong><br>
         {get_text('login_privacy_desc')}
