@@ -34,8 +34,8 @@ st.markdown("""
     <style>
         /* --- SIDEBAR TOGGLE VISIBILITY FIX --- */
         [data-testid="stSidebarCollapsedControl"] {
-            z-index: 9999999 !important;
-            color: #FFFFFF !important;
+            z-index: 999999 !important;
+            color: white !important;
             background-color: rgba(255, 255, 255, 0.2) !important;
             border: 2px solid white !important;
             border-radius: 50%;
@@ -643,28 +643,17 @@ def login_section():
                 revoke_token_endpoint="https://oauth2.googleapis.com/revoke",
             )
 
-            # Use CSS for absolute centering instead of columns
-            st.markdown("""
-            <style>
-            div[data-testid="stButton"] {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                margin: 0;
-                padding: 10px;
-            }
-            </style>
-            """, unsafe_allow_html=True)
-
-            # Button without columns
-            result = oauth2.authorize_button(
-                name=get_text('login_btn_google'),
-                icon="https://www.google.com.tw/favicon.ico",
-                redirect_uri=st.secrets["google"]["redirect_uri"],
-                scope="openid email profile",
-                key="google_auth",
-                extras_params={"prompt": "consent", "access_type": "offline"}
-            )
+            # Use 3-column layout for centering
+            left_col, center_col, right_col = st.columns([1, 2, 1])
+            with center_col:
+                result = oauth2.authorize_button(
+                    name=get_text('login_btn_google'),
+                    icon="https://www.google.com.tw/favicon.ico",
+                    redirect_uri=st.secrets["google"]["redirect_uri"],
+                    scope="openid email profile",
+                    key="google_auth",
+                    extras_params={"prompt": "consent", "access_type": "offline"}
+                )
 
             if result:
                 # Decode access token or fetch user info
