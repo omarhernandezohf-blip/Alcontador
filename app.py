@@ -25,7 +25,13 @@ from googleapiclient.discovery import build
 import uuid
 import firebase_admin
 from firebase_admin import credentials, firestore
-
+# --- CONFIGURACIÓN DE LA PÁGINA (ESTO MANTIENE LA BARRA FIJA) ---
+st.set_page_config(
+    page_title="Alcontador IA",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 # --- CONFIGURACIÓN DE ESTILO GLOBAL (SIDEBAR CLÁSICO MEJORADO) ---
 st.markdown("""
     <style>
