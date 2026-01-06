@@ -93,8 +93,9 @@ with st.sidebar:
 st.markdown("""
     <style>
         /* 1. ASEGURAR QUE LA BARRA SE VEA */
+        /* 1. ASEGURAR QUE LA BARRA SE VEA */
         [data-testid="stSidebar"] {
-            display: block !important;
+            /* display: block !important;  <-- ELIMINADO: Rompe la lógica de colapso de Streamlit */
             z-index: 999998 !important;
             background-color: #020617 !important; /* Fondo oscuro sólido */
             border-right: 1px solid rgba(255, 255, 255, 0.1);
