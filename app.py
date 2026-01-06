@@ -25,13 +25,70 @@ from googleapiclient.discovery import build
 import uuid
 import firebase_admin
 from firebase_admin import credentials, firestore
-# --- CONFIGURACIÓN DE LA PÁGINA (ESTO MANTIENE LA BARRA FIJA) ---
+
+# --- CONFIGURACIÓN DE PÁGINA (PRIMERO QUE TODO) ---
 st.set_page_config(
-    page_title="Alcontador IA",
+    page_title="Asistente Contable Pro",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# --- MENÚ LATERAL (MOVIDO AL INICIO PARA GARANTIZAR VISIBILIDAD) ---
+with st.sidebar:
+    # Language selector accessible even on Login Page
+    lang = st.selectbox("Language / Idioma", ["Español", "English"], key="lang")
+    
+    st.markdown("---")
+    
+    # --- MENÚ PRINCIPAL ---
+    try:
+        from streamlit_option_menu import option_menu
+        # Usamos la lista COMPLETA de módulos para no romper la navegación
+        menu = option_menu(
+            menu_title="Navegación",
+            options=[
+                "Inicio / Dashboard", 
+                "Auditoría Cruce DIAN", 
+                "Minería de XML (Facturación)",
+                "Conciliación Bancaria IA", 
+                "Auditoría Fiscal de Gastos", 
+                "Escáner de Nómina (UGPP)",
+                "Proyección de Tesorería", 
+                "Costeo de Nómina Real", 
+                "Analítica Financiera Inteligente",
+                "Narrador Financiero & NIIF", 
+                "Validador de RUT Oficial", 
+                "Digitalización OCR"
+            ],
+            icons=[
+                "house", "shield-check", "file-earmark-code", "bank", "graph-up", 
+                "people", "cash-coin", "calculator", "cpu", "book", "check-circle", "camera"
+            ],
+            menu_icon="cast",
+            default_index=0,
+        )
+    except ImportError:
+        # Fallback seguro si la librería no está instalada
+        st.warning("Librería 'streamlit-option-menu' no detectada. Usando selector estándar.")
+        menu = st.radio(
+            "Navegación",
+            [
+                "Inicio / Dashboard",
+                "Auditoría Cruce DIAN",
+                "Minería de XML (Facturación)",
+                "Conciliación Bancaria IA",
+                "Auditoría Fiscal de Gastos",
+                "Escáner de Nómina (UGPP)",
+                "Proyección de Tesorería",
+                "Costeo de Nómina Real",
+                "Analítica Financiera Inteligente",
+                "Narrador Financiero & NIIF",
+                "Validador de RUT Oficial",
+                "Digitalización OCR"
+            ]
+        )
+
 # --- CONFIGURACIÓN DE ESTILO GLOBAL (SIDEBAR CLÁSICO MEJORADO) ---
 st.markdown("""
     <style>
@@ -683,60 +740,7 @@ def registrar_log(usuario, accion, detalle):
             pass 
 
 # --- SIDEBAR: LANGUAGE SELECTOR (Global Access) ---
-with st.sidebar:
-    # Language selector accessible even on Login Page
-    lang = st.selectbox("Language / Idioma", ["Español", "English"], key="lang")
-    
-    st.markdown("---")
-    
-    # --- MENÚ PRINCIPAL ---
-    # --- MENÚ PRINCIPAL ---
-    try:
-        from streamlit_option_menu import option_menu
-        # Usamos la lista COMPLETA de módulos para no romper la navegación
-        menu = option_menu(
-            menu_title="Navegación",
-            options=[
-                "Inicio / Dashboard", 
-                "Auditoría Cruce DIAN", 
-                "Minería de XML (Facturación)",
-                "Conciliación Bancaria IA", 
-                "Auditoría Fiscal de Gastos", 
-                "Escáner de Nómina (UGPP)",
-                "Proyección de Tesorería", 
-                "Costeo de Nómina Real", 
-                "Analítica Financiera Inteligente",
-                "Narrador Financiero & NIIF", 
-                "Validador de RUT Oficial", 
-                "Digitalización OCR"
-            ],
-            icons=[
-                "house", "shield-check", "file-earmark-code", "bank", "graph-up", 
-                "people", "cash-coin", "calculator", "cpu", "book", "check-circle", "camera"
-            ],
-            menu_icon="cast",
-            default_index=0,
-        )
-    except ImportError:
-        # Fallback seguro si la librería no está instalada
-        st.warning("Librería 'streamlit-option-menu' no detectada. Usando selector estándar.")
-        menu = st.radio(
-            "Navegación",
-            [
-                "Inicio / Dashboard",
-                "Auditoría Cruce DIAN",
-                "Minería de XML (Facturación)",
-                "Conciliación Bancaria IA",
-                "Auditoría Fiscal de Gastos",
-                "Escáner de Nómina (UGPP)",
-                "Proyección de Tesorería",
-                "Costeo de Nómina Real",
-                "Analítica Financiera Inteligente",
-                "Narrador Financiero & NIIF",
-                "Validador de RUT Oficial",
-                "Digitalización OCR"
-            ]
-        )
+# Sidebar logic moved to top of file
 
 # --- CHECK LOGIN STATUS (Moved after registrar_log definition) ---
 if not st.session_state.get('logged_in', False):
