@@ -14,7 +14,12 @@ import xml.etree.ElementTree as ET
 import os
 import html
 import requests
-from streamlit_oauth import OAuth2Component
+try:
+    from streamlit_oauth import OAuth2Component
+    OAUTH_OK = True
+except ImportError:
+    OAUTH_OK = False
+    OAuth2Component = None
 import google_auth_oauthlib.flow
 from googleapiclient.discovery import build
 import uuid
@@ -167,7 +172,7 @@ PLAN_CONFIG = {
     },
     'PREMIUM': {
         'limit': 2000,
-        'model': 'gemini-1.5-pro',
+        'model': 'gemini-1.5-flash',
         'price_display': '$120.000 COP',
         'badge': '🧠 Inteligencia Superior',
         'name': 'Premium'
@@ -518,7 +523,7 @@ def login_section():
 """, unsafe_allow_html=True)
 
     # --- GOOGLE AUTH LOGIC (STREAMLIT-OAUTH) ---
-    if google_secrets_ok:
+    if google_secrets_ok and OAUTH_OK:
         try:
             oauth2 = OAuth2Component(
                 client_id=st.secrets["google"]["client_id"],
@@ -675,6 +680,57 @@ def registrar_log(usuario, accion, detalle):
 with st.sidebar:
     # Language selector accessible even on Login Page
     lang = st.selectbox("Language / Idioma", ["Español", "English"], key="lang")
+    
+    st.markdown("---")
+    
+    # --- MENÚ PRINCIPAL ---
+    # --- MENÚ PRINCIPAL ---
+    try:
+        from streamlit_option_menu import option_menu
+        # Usamos la lista COMPLETA de módulos para no romper la navegación
+        menu = option_menu(
+            menu_title="Navegación",
+            options=[
+                "Inicio / Dashboard", 
+                "Auditoría Cruce DIAN", 
+                "Minería de XML (Facturación)",
+                "Conciliación Bancaria IA", 
+                "Auditoría Fiscal de Gastos", 
+                "Escáner de Nómina (UGPP)",
+                "Proyección de Tesorería", 
+                "Costeo de Nómina Real", 
+                "Analítica Financiera Inteligente",
+                "Narrador Financiero & NIIF", 
+                "Validador de RUT Oficial", 
+                "Digitalización OCR"
+            ],
+            icons=[
+                "house", "shield-check", "file-earmark-code", "bank", "graph-up", 
+                "people", "cash-coin", "calculator", "cpu", "book", "check-circle", "camera"
+            ],
+            menu_icon="cast",
+            default_index=0,
+        )
+    except ImportError:
+        # Fallback seguro si la librería no está instalada
+        st.warning("Librería 'streamlit-option-menu' no detectada. Usando selector estándar.")
+        menu = st.radio(
+            "Navegación",
+            [
+                "Inicio / Dashboard",
+                "Auditoría Cruce DIAN",
+                "Minería de XML (Facturación)",
+                "Conciliación Bancaria IA",
+                "Auditoría Fiscal de Gastos",
+                "Escáner de Nómina (UGPP)",
+                "Proyección de Tesorería",
+                "Costeo de Nómina Real",
+                "Analítica Financiera Inteligente",
+                "Narrador Financiero & NIIF",
+                "Validador de RUT Oficial",
+                "Digitalización OCR"
+            ]
+        )
 
 # --- CHECK LOGIN STATUS (Moved after registrar_log definition) ---
 if not st.session_state.get('logged_in', False):
@@ -763,7 +819,14 @@ def analizar_gasto_fila(row, col_valor, col_metodo, col_concepto):
     riesgo = "BAJO"
     
     # Extracción segura de valores
-    valor = float(row[col_valor]) if pd.notnull(row[col_valor]) else 0
+    # Extracción segura de valores con manejo de errores
+    try:
+        raw_val = str(row[col_valor]) if pd.notnull(row[col_valor]) else "0"
+        # Limpieza: eliminar símbolos de moneda, espacios y comas (asumiendo miles)
+        clean_val = raw_val.replace('$', '').replace(' ', '').replace(',', '')
+        valor = float(clean_val)
+    except (ValueError, TypeError):
+        valor = 0.0
     metodo = str(row[col_metodo]) if pd.notnull(row[col_metodo]) else ""
     
     # 1. Validación de Bancarización
@@ -1246,6 +1309,10 @@ else:
 
             if st.button("▶️ EJECUTAR AUDITORÍA AHORA", type="primary"):
                 try:
+                    # Sanitización de datos numéricos (Prevención de errores de tipo)
+                    df_dian[val_dian] = pd.to_numeric(df_dian[val_dian], errors='coerce').fillna(0)
+                    df_conta[val_conta] = pd.to_numeric(df_conta[val_conta], errors='coerce').fillna(0)
+
                     dian_grouped = df_dian.groupby(nit_dian)[val_dian].sum().reset_index(name='Valor_DIAN').rename(columns={nit_dian: 'NIT'})
                     conta_grouped = df_conta.groupby(nit_conta)[val_conta].sum().reset_index(name='Valor_Conta').rename(columns={nit_conta: 'NIT'})
                     
@@ -1694,6 +1761,10 @@ else:
             d1 = pd.read_excel(f1); d2 = pd.read_excel(f2)
             st.divider(); c1, c2, c3 = st.columns(3); cta = c1.selectbox("Cuenta Contable", d1.columns); v1 = c2.selectbox("Valor Año Actual", d1.columns); v2 = c3.selectbox("Valor Año Anterior", d2.columns)
             if st.button("✨ GENERAR INFORME ESTRATÉGICO"):
+                # Limpieza de datos (Evitar TypeError)
+                d1[v1] = pd.to_numeric(d1[v1], errors='coerce').fillna(0)
+                d2[v2] = pd.to_numeric(d2[v2], errors='coerce').fillna(0)
+
                 g1 = d1.groupby(cta)[v1].sum().reset_index(name='V_Act'); g2 = d2.groupby(cta)[v2].sum().reset_index(name='V_Ant')
                 merged = pd.merge(g1, g2, on=cta, how='inner').fillna(0); merged['Variacion'] = merged['V_Act'] - merged['V_Ant']
                 top = merged.reindex(merged.Variacion.abs().sort_values(ascending=False).index).head(10)
