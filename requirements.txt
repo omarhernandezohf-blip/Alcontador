@@ -12,3 +12,4 @@ google-api-python-client
 streamlit-oauth
 firebase-admin
 streamlit-option-menu
+requests
