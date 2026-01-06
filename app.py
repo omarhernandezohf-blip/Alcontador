@@ -48,22 +48,24 @@ with st.sidebar:
         menu = option_menu(
             menu_title="Navegación",
             options=[
-                "Inicio / Dashboard", 
-                "Auditoría Cruce DIAN", 
+                "Inicio / Dashboard",
+                "Auditoría Cruce DIAN",
                 "Minería de XML (Facturación)",
-                "Conciliación Bancaria IA", 
-                "Auditoría Fiscal de Gastos", 
+                "Conciliación Bancaria IA",
+                "Auditoría Fiscal de Gastos",
                 "Escáner de Nómina (UGPP)",
-                "Proyección de Tesorería", 
-                "Costeo de Nómina Real", 
+                "Proyección de Tesorería",
+                "Costeo de Nómina Real",
                 "Analítica Financiera Inteligente",
-                "Narrador Financiero & NIIF", 
-                "Validador de RUT Oficial", 
-                "Digitalización OCR"
+                "Narrador Financiero & NIIF",
+                "Validador de RUT Oficial",
+                "Digitalización OCR",
+                "Generador de Cotizaciones"  # <--- ¡ESTO ES LO NUEVO!
             ],
             icons=[
-                "house", "shield-check", "file-earmark-code", "bank", "graph-up", 
-                "people", "cash-coin", "calculator", "cpu", "book", "check-circle", "camera"
+                "house", "shield-check", "file-earmark-code", "bank", "graph-up",
+                "people", "cash-coin", "calculator", "cpu", "book", "check-circle", "camera",
+                "file-earmark-pdf"  # <--- ¡ICONO NUEVO!
             ],
             menu_icon="cast",
             default_index=0,
