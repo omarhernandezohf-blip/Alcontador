@@ -92,64 +92,259 @@ with st.sidebar:
 # --- CONFIGURACIÓN DE ESTILO GLOBAL (SIDEBAR CLÁSICO MEJORADO) ---
 st.markdown("""
     <style>
-        /* 1. ASEGURAR QUE LA BARRA SE VEA */
-        /* 1. ASEGURAR QUE LA BARRA SE VEA */
-        [data-testid="stSidebar"] {
-            /* display: block !important;  <-- ELIMINADO: Rompe la lógica de colapso de Streamlit */
-            z-index: 999998 !important;
-            background-color: #020617 !important; /* Fondo oscuro sólido */
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        /* 2. EL BOTÓN DE MENÚ (LA CLAVE DEL ÉXITO) */
-        [data-testid="stSidebarCollapsedControl"] {
-            display: block !important;
-            position: fixed !important; /* Fijo en la pantalla */
-            top: 20px !important;
-            left: 20px !important;
-            z-index: 99999999 !important; /* Encima de todo */
-            color: #FFFFFF !important;
-            background-color: rgba(255, 255, 255, 0.15) !important; /* Círculo semitransparente */
-            border: 2px solid rgba(255, 255, 255, 0.8) !important;
-            border-radius: 50%;
-            padding: 4px;
-            width: 45px !important;
-            height: 45px !important;
-            transition: all 0.3s;
-        }
-
-        [data-testid="stSidebarCollapsedControl"]:hover {
-            background-color: rgba(255, 255, 255, 0.4) !important;
-            transform: scale(1.1);
-        }
-
-        /* Icono de la flecha blanco puro */
-        [data-testid="stSidebarCollapsedControl"] svg {
-            fill: #FFFFFF !important;
-            stroke: #FFFFFF !important;
-        }
-
-        /* 3. ESTILOS GENERALES (FONDO Y FUENTES) */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Manrope:wght@400;600;800&display=swap');
+        /* 1. FONDO UNIVERSO ANIMADO MEJORADO */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;600;700&display=swap');
         
         .stApp {
-            background: radial-gradient(circle at top right, #1e293b, transparent 40%),
-                        radial-gradient(circle at bottom left, #1e1b4b, transparent 40%),
-                        linear-gradient(180deg, #0f172a 0%, #020617 100%) !important;
+            background: radial-gradient(ellipse at top, #0f0c29 0%, #302b63 50%, #24243e 100%) !important;
             background-attachment: fixed !important;
-            font-family: 'Inter', sans-serif;
-            color: #94a3b8;
+            font-family: 'Inter', sans-serif !important;
         }
         
-        h1, h2, h3 { color: white !important; font-family: 'Inter', sans-serif !important; }
-        #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
+        /* 2. BOTÓN DE MENÚ LATERAL MODERNO (SOLUCIÓN FUERZA BRUTA) */
+        [data-testid="stSidebarCollapsedControl"] {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            border: none !important;
+            border-radius: 50% !important;
+            padding: 8px !important;
+            width: 50px !important;
+            height: 50px !important;
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4) !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            position: fixed !important;
+            top: 20px !important;
+            left: 20px !important;
+            z-index: 999999 !important; /* Capa superior absoluta */
+            display: block !important; /* Forzar visibilidad */
+        }
         
-        /* Estilo para las tarjetas */
+        [data-testid="stSidebarCollapsedControl"]:hover {
+            transform: scale(1.15) rotate(90deg) !important;
+            box-shadow: 0 12px 40px rgba(102, 126, 234, 0.6) !important;
+        }
+        
+        [data-testid="stSidebarCollapsedControl"] svg {
+            fill: white !important;
+            stroke: white !important;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)) !important;
+        }
+        
+        /* 3. SIDEBAR GLASSMORPHISM */
+        [data-testid="stSidebar"] {
+            background: rgba(15, 23, 42, 0.85) !important;
+            backdrop-filter: blur(20px) saturate(180%) !important;
+            border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+            box-shadow: 10px 0 30px rgba(0, 0, 0, 0.3) !important;
+        }
+        
+        /* 4. TARJETAS NEOMORFISMO + GLASS */
         .glass-card, div[data-testid="stExpander"] {
-            background: rgba(30, 41, 59, 0.7) !important;
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.08) !important;
-            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05) !important;
+            backdrop-filter: blur(15px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 20px !important;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+            padding: 24px !important;
+            margin-bottom: 24px !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .glass-card:hover {
+            border-color: rgba(102, 126, 234, 0.4) !important;
+            box-shadow: 
+                0 15px 40px rgba(102, 126, 234, 0.25),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+            transform: translateY(-5px) !important;
+        }
+        
+        /* 5. BOTONES MODERNOS */
+        .stButton > button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            border: none !important;
+            border-radius: 12px !important;
+            color: white !important;
+            font-weight: 600 !important;
+            padding: 12px 24px !important;
+            font-family: 'Inter', sans-serif !important;
+            transition: all 0.3s ease !important;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+        }
+        
+        .stButton > button:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5) !important;
+        }
+        
+        /* 6. INPUTS Y SELECT ESTILIZADOS */
+        .stTextInput > div > div > input,
+        .stSelectbox > div > div > select {
+            background: rgba(255, 255, 255, 0.08) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 12px !important;
+            color: white !important;
+            padding: 12px 16px !important;
+            font-family: 'Inter', sans-serif !important;
+            backdrop-filter: blur(10px) !important;
+        }
+        
+        .stTextInput > div > div > input:focus,
+        .stSelectbox > div > div > select:focus {
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
+        }
+        
+        /* 7. TABLAS MODERNAS */
+        .dataframe {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border-radius: 12px !important;
+            overflow: hidden !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+        
+        .dataframe th {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%) !important;
+            color: white !important;
+            font-weight: 700 !important;
+            border: none !important;
+        }
+        
+        .dataframe td {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+            color: #e2e8f0 !important;
+        }
+        
+        /* 8. PROGRESS BAR ANIMADO */
+        .stProgress > div > div > div > div {
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb) !important;
+            background-size: 200% 100% !important;
+            animation: gradientShift 2s ease infinite !important;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* 9. HEADERS CON GRADIENTE */
+        h1, h2, h3 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+            font-family: 'Space Grotesk', sans-serif !important;
+            font-weight: 800 !important;
+            letter-spacing: -0.5px !important;
+        }
+        
+        /* 10. METRIC CARDS GLOW */
+        [data-testid="stMetricValue"] {
+            font-family: 'Space Grotesk', sans-serif !important;
+            font-weight: 800 !important;
+            font-size: 2.2rem !important;
+            background: linear-gradient(135deg, white 0%, #a5b4fc 100%) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+        }
+        
+        /* 11. SCROLLBAR PERSONALIZADO */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+        }
+        
+        /* 12. CHART CONTAINERS */
+        .stPlotlyChart, .stPydeckChart, .stGraphvizChart {
+            border-radius: 20px !important;
+            overflow: hidden !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            background: rgba(255, 255, 255, 0.05) !important;
+            padding: 15px !important;
+        }
+        
+        /* 13. EXPANDER MODERNO */
+        .stExpander {
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 12px !important;
+            margin-bottom: 16px !important;
+        }
+        
+        /* 14. NOTIFICACIONES Y TOAST */
+        .stAlert {
+            border-radius: 12px !important;
+            border: none !important;
+            background: rgba(255, 255, 255, 0.08) !important;
+            backdrop-filter: blur(10px) !important;
+        }
+        
+        /* 15. LOGIN SECTION ENHANCED */
+        .login-container {
+            background: rgba(15, 23, 42, 0.8) !important;
+            backdrop-filter: blur(30px) !important;
+            border-radius: 30px !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            padding: 40px !important;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4) !important;
+        }
+        
+        /* 16. DIVIDER GLOW */
+        hr {
+            border: none !important;
+            height: 2px !important;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.5), transparent) !important;
+            margin: 40px 0 !important;
+        }
+        
+        /* 17. MENU OPTION HOVER */
+        [data-testid="stSidebar"] .st-emotion-cache-16txtl3 {
+            padding: 12px 20px !important;
+            margin: 4px 0 !important;
+            border-radius: 12px !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        [data-testid="stSidebar"] .st-emotion-cache-16txtl3:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%) !important;
+            transform: translateX(5px) !important;
+        }
+        
+        /* 18. PULSING ANIMATION */
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(102, 126, 234, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0); }
+        }
+        
+        .pulse {
+            animation: pulse-glow 2s infinite;
+        }
+        
+        /* 19. SPINNER CUSTOM */
+        .stSpinner > div {
+            border-color: #667eea transparent transparent transparent !important;
+        }
+        
+        /* 20. FOOTER STYLING */
+        footer {
+            color: rgba(255, 255, 255, 0.5) !important;
+            font-size: 0.9rem !important;
+            text-align: center !important;
+            padding: 20px !important;
+            margin-top: 40px !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
         }
     </style>
 """, unsafe_allow_html=True)
