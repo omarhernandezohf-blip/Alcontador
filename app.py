@@ -45,6 +45,25 @@ with st.sidebar:
     
     st.markdown("---")
     
+    # ⚖️ LEGAL Y CORPORATIVO (BLINDAJE JURÍDICO)
+    # ==============================================================================
+    with st.expander("⚖️ LEGAL Y CORPORATIVO"):
+        st.markdown("""
+        **(1) TÉRMINOS DE USO**
+        **Obligación de Medio:** Este software actúa como herramienta de asistencia tecnológica y NO sustituye el criterio profesional del Contador Público.
+        **Responsabilidad:** No asumimos responsabilidad por sanciones de la DIAN/UGPP derivadas del uso de esta plataforma.
+        **Pagos:** El usuario acepta el cobro anticipado por servicios SaaS.
+
+        **(2) POLÍTICA DE PRIVACIDAD (Habeas Data)**
+        Cumplimiento Ley 1581/2012. Sus datos financieros se procesan con cifrado y confidencialidad. 
+        **Derechos:** Solicite la supresión de datos vía soporte cuando lo desee.
+
+        **(3) QUIÉNES SOMOS**
+        Proveedor de Tecnología SaaS enfocado en la automatización contable inteligente.
+        """)
+        
+    st.markdown("---")
+    
     # --- MENÚ PRINCIPAL ---
     try:
         from streamlit_option_menu import option_menu
