@@ -611,7 +611,7 @@ TRANSLATIONS = {
         'ben_bank': ["Algoritmo de Fecha Flexible (+/- 3 días)", "Detecta partidas pendientes", "Ahorra 90% de tiempo manual"],
 
         'title_ugpp': "Escáner de Riesgo UGPP (Ley 1393)",
-        'desc_ugpp': "Audit labor payments. Verifies if NON-salary payments exceed 40% of the total (Art. 30 Law 1393).",
+        'desc_ugpp': "Auditoría de Pagos Laborales. Verifica si los pagos NO salariales exceden el 40% del total de la remuneración (Art. 30 Ley 1393).",
         'ben_ugpp': ["Cálculo automático de exceso", "Alerta de riesgo alto", "Soporte para fiscalización"],
 
         'title_payroll': "Calculadora de Costo Real de Nómina",
