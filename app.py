@@ -2318,8 +2318,8 @@ else:
 # ==============================================================================
 st.markdown("---")
 st.markdown("<center><strong>Asistente Contable Pro</strong> | Versión 1.0</center>", unsafe_allow_html=True)
- 
- 
+
+
 
 # ==============================================================================
 # COPILOTO TRIBUTARIO (CHATBOT FLOTANTE SIDEBAR)
