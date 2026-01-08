@@ -16,6 +16,8 @@ import html
 import requests
 from fpdf import FPDF
 import io
+import threading
+import gc
 
 try:
     from streamlit_oauth import OAuth2Component
@@ -861,6 +863,46 @@ def render_upload_example(data_dict, title="👁️ Ver Formato Ejemplo"):
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
+# SANITIZACIÓN INTELIGENTE DE DATOS (DATA INTELLIGENCE LAYER)
+# ------------------------------------------------------------------------------
+def safe_read_excel(file_upl):
+    """
+    Lee archivos Excel/CSV y aplica limpieza automática de formatos numéricos 'humanos'.
+    Convierte: '$ 5,000.00' -> 5000.0 (float)
+    """
+    try:
+        # 1. Carga cruda del archivo
+        if file_upl.name.endswith('.csv'):
+             df = pd.read_csv(file_upl)
+        else:
+             df = pd.read_excel(file_upl)
+        
+        # 2. Inteligencia de Datos: Sanitización Automática
+        for col in df.columns:
+            if df[col].dtype == 'object': # Solo procesar columnas de texto
+                # A. Limpieza Agresiva: Quitar $, COP, USD, Espacios y (,) de miles
+                # Regex: Currency symbols, letters (COP/USD), whitespace, commas (miles)
+                # Nota: Asumimos punto (.) como decimal.
+                clean_col = df[col].astype(str).str.replace(r'[$,\s]|COP|USD|EUR', '', regex=True)
+                
+                # B. Intentar conversión a numérico
+                converted = pd.to_numeric(clean_col, errors='coerce')
+                
+                # C. Decisión Inteligente: ¿Es realmente una columna numérica?
+                # Si convertimos más del 50% de los datos no vacíos, asumimos que es número
+                valid_count = converted.notna().sum()
+                total_count = df[col].notna().sum()
+                
+                if total_count > 0 and (valid_count / total_count) > 0.5:
+                    df[col] = converted.fillna(0) # Convertir y llenar huecos con 0 para cálculos seguros
+                    # st.toast(f"🧹 Columna '{col}' sanitizada automáticamente.")
+                    
+        return df
+    except Exception as e:
+        st.error(f"❌ Error crítico leyendo archivo '{file_upl.name}': {str(e)}")
+        return pd.DataFrame()
+
+# ------------------------------------------------------------------------------
 # A. AUTENTICACIÓN GOOGLE OAUTH2 (THE GATEKEEPER)
 # ------------------------------------------------------------------------------
 
@@ -1036,17 +1078,19 @@ except Exception as e:
 
 def registrar_log(usuario, accion, detalle):
     """
-    Función de Auditoría:
-    Guarda un registro de actividad en Google Sheets si la DB está conectada.
-    Campos: Fecha y Hora, Usuario, Acción realizada, Detalle técnico.
+    Función de Auditoría ASÍNCRONA (NON-BLOCKING):
+    Usa hilos para guardar en Google Sheets sin congelar la pantalla del usuario.
+    Ideal para alta concurrencia (50-100 usuarios).
     """
     if db_conectada and sheet_logs:
-        try:
-            fecha_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            sheet_logs.append_row([fecha_hora, usuario, accion, detalle])
-        except:
-            # Si falla el registro del log, no detenemos la aplicación
-            pass 
+        def _write_background():
+            try:
+                fecha_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                sheet_logs.append_row([fecha_hora, usuario, accion, detalle])
+            except:
+                pass
+        # Ejecutar en segundo plano
+        threading.Thread(target=_write_background).start() 
 
 # --- SIDEBAR: LANGUAGE SELECTOR (Global Access) ---
 # Sidebar logic moved to top of file
@@ -1600,16 +1644,16 @@ else:
         with col_dian:
             st.subheader("🏛️ 1. Archivo DIAN")
             file_dian = st.file_uploader("Subir 'Reporte Terceros DIAN' (.xlsx)", type=['xlsx'])
-            render_upload_example({'NIT': ['900123456', '890987654'], 'Valor Reportado': [1500000, 5200000]})
+            render_upload_example({'NIT': ['900123456', '890987654'], 'Valor Reportado': ['$ 1,500,000.00', '$ 5,200,000 COP']})
 
         with col_conta:
             st.subheader("📒 2. Contabilidad")
             file_conta = st.file_uploader("Subir Auxiliar por Tercero (.xlsx)", type=['xlsx'])
-            render_upload_example({'NIT': ['900123456', '890987654'], 'Saldo Contable': [1500000, 4800000]})
+            render_upload_example({'NIT': ['900123456', '890987654'], 'Saldo Contable': ['$ 1,500,000', '4,800,000.00']})
             
         if file_dian and file_conta:
-            df_dian = pd.read_excel(file_dian)
-            df_conta = pd.read_excel(file_conta)
+            df_dian = safe_read_excel(file_dian)
+            df_conta = safe_read_excel(file_conta)
             
             # Cerebro de Auto-Detección
             def detectar_idx(columnas, keywords):
@@ -1682,7 +1726,11 @@ else:
                             summary_prompt = f"Actúa como un auditor fiscal experto. Se encontraron {num_hallazgos} diferencias por un total de {total_riesgo}. Analiza qué riesgos implica esto frente a la UGPP y la DIAN en Colombia."
                             response = consultar_ia_gemini(summary_prompt)
                             render_smart_advisor(response)
-                
+                    
+                    # Optimización de Memoria
+                    del df_dian, df_conta, cruce, diferencias
+                    gc.collect()
+
                 except Exception as e:
                     st.error(f"Algo salió mal: {e}. Revisa 'Configuración manual' arriba.")
 
@@ -1722,17 +1770,17 @@ else:
         with col_banco: 
             st.subheader("🏦 Extracto Bancario")
             file_banco = st.file_uploader("Subir Excel Banco", type=['xlsx'])
-            render_upload_example({'Fecha': ['2025-01-10', '2025-01-12'], 'Descripción': ['Pago Proveedor X', 'Comision Bancaria'], 'Valor': [-500000, -12000]})
+            render_upload_example({'Fecha': ['2025-01-10', '2025-01-12'], 'Descripción': ['Pago Proveedor X', 'Comision Bancaria'], 'Valor': ['-500,000.00', '$ -12,000']})
         
         with col_libro: 
             st.subheader("📒 Libro Auxiliar")
             file_libro = st.file_uploader("Subir Excel Contabilidad", type=['xlsx'])
-            render_upload_example({'Fecha': ['2025-01-10', '2025-01-12'], 'Detalle': ['Egreso #405', 'Nota Debito'], 'Crédito': [500000, 12000]})
+            render_upload_example({'Fecha': ['2025-01-10', '2025-01-12'], 'Detalle': ['Egreso #405', 'Nota Debito'], 'Crédito': ['$ 500,000', '12,000.00']})
         
         if file_banco and file_libro:
-            # Lectura
-            df_banco = pd.read_excel(file_banco)
-            df_libro = pd.read_excel(file_libro)
+            # Lectura Segura
+            df_banco = safe_read_excel(file_banco)
+            df_libro = safe_read_excel(file_libro)
             
             # --- CEREBRO DE AUTO-DETECCIÓN ---
             def detectar_idx(columnas, keywords):
@@ -1828,6 +1876,10 @@ else:
                 if api_key_valida:
                     with st.spinner("🤖 Analizando partidas pendientes..."):
                         render_smart_advisor(consultar_ia_gemini(f"Tengo {len(df_pend_banco)} partidas pendientes en bancos y {len(df_pend_libro)} en libros. ¿Qué me recomiendas revisar primero?"))
+                
+                # Optimización de Memoria
+                del df_banco, df_libro, df_matches, df_pend_banco, df_pend_libro
+                gc.collect()
 
     elif menu == "Auditoría Fiscal de Gastos":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/1642/1642346.png' class='pro-module-icon'><div class='pro-module-title'><h2>Auditoría Fiscal Masiva (Art. 771-5)</h2></div></div>""", unsafe_allow_html=True)
@@ -1837,12 +1889,12 @@ else:
         render_upload_example({
             'Fecha': ['2025-01-05', '2025-01-08'], 
             'Tercero': ['Comercializadora SAS', 'Servicios SA'], 
-            'Valor': [15000000, 450000],
+            'Valor': ['$ 15,000,000', '450,000 COP'],
             'Método Pago': ['Transferencia', 'Efectivo']
         })
         
         if ar:
-            df = pd.read_excel(ar)
+            df = safe_read_excel(ar)
             # ... (Existing Logic kept brief for length, assumig no changes needed in logic, just UI restoration)
             # Re-implementing logic for completeness as I am overwriting the file
             def detectar_idx(columnas, keywords):
@@ -1919,12 +1971,12 @@ else:
         an = st.file_uploader("Cargar Nómina UGPP (.xlsx)", type=['xlsx'], key="upl_ugpp")
         render_upload_example({
             'Empleado': ['Juan Perez', 'Maria Lopez'],
-            'Salario Básico': [2500000, 18000000],
-            'Bonos No Salariales': [500000, 12000000],
-            'Auxilios': [200000, 5000000]
+            'Salario Básico': ['$ 2,500,000', '$ 18,000,000'],
+            'Bonos No Salariales': ['500,000', '12,000,000 COP'],
+            'Auxilios': ['$ 200,000', '5,000,000']
         })
         if an:
-            dn = pd.read_excel(an)
+            dn = safe_read_excel(an)
             cols_todas = dn.columns.tolist()
             cols_numericas = dn.select_dtypes(include=['float64', 'int64']).columns.tolist()
             if not cols_numericas: cols_numericas = cols_todas
@@ -1995,13 +2047,13 @@ else:
         c1, c2 = st.columns(2)
         with c1:
              fcxc = st.file_uploader("Cartera (CxC)", type=['xlsx'])
-             render_upload_example({'Fecha Vencimiento': ['2025-02-15'], 'Cliente': ['Cliente ABC'], 'Saldo': [5000000]}, "Ejemplo CxC")
+             render_upload_example({'Fecha Vencimiento': ['2025-02-15'], 'Cliente': ['Cliente ABC'], 'Saldo': ['$ 5,000,000']}, "Ejemplo CxC")
         with c2:
              fcxp = st.file_uploader("Proveedores (CxP)", type=['xlsx'])
-             render_upload_example({'Fecha Vencimiento': ['2025-02-10'], 'Proveedor': ['Prov. XYZ'], 'Total': [2500000]}, "Ejemplo CxP")
+             render_upload_example({'Fecha Vencimiento': ['2025-02-10'], 'Proveedor': ['Prov. XYZ'], 'Total': ['2,500,000 COP']}, "Ejemplo CxP")
              
         if fcxc and fcxp:
-            dcxc = pd.read_excel(fcxc); dcxp = pd.read_excel(fcxp)
+            dcxc = safe_read_excel(fcxc); dcxp = safe_read_excel(fcxp)
             c1, c2, c3, c4 = st.columns(4)
             cfc = c1.selectbox("Fecha Vencimiento CxC:", dcxc.columns); cvc = c2.selectbox("Valor CxC:", dcxc.columns)
             cfp = c3.selectbox("Fecha Vencimiento CxP:", dcxp.columns); cvp = c4.selectbox("Valor CxP:", dcxp.columns)
@@ -2017,6 +2069,10 @@ else:
                     if api_key_valida:
                         with st.spinner("🤖 La IA está analizando tu flujo de caja..."):
                             render_smart_advisor(consultar_ia_gemini(f"Analiza este flujo de caja. Saldo inicial: {saldo_hoy}. Datos: {cal.head(10).to_string()}"))
+                    
+                    # Optimización de Memoria
+                    del dcxc, dcxp, cal
+                    gc.collect()
                 except: st.error("Error en el formato de fechas.")
 
     # ==============================================================================
@@ -2031,11 +2087,11 @@ else:
         )
         
         ac = st.file_uploader("Cargar Listado Personal (.xlsx)", type=['xlsx'])
-        render_upload_example({'Nombre': ['Ana Gomez'], 'Salario Base': [3500000], 'Auxilio Trans': ['NO'], 'Riesgo ARL': [1]})
+        render_upload_example({'Nombre': ['Ana Gomez'], 'Salario Base': ['$ 3,500,000'], 'Auxilio Trans': ['NO'], 'Riesgo ARL': [1]})
         
         if ac:
             try:
-                dc = pd.read_excel(ac)
+                dc = safe_read_excel(ac)
                 st.info("Configura las columnas (El sistema intenta detectarlas automáticamente):")
                 
                 cols = list(dc.columns)
@@ -2102,10 +2158,10 @@ else:
             get_text('ben_fin_ai')
         )
         fi = st.file_uploader("Cargar Datos Financieros (.xlsx/.csv)", type=['xlsx', 'csv'])
-        render_upload_example({'Cuenta': ['Ingresos Op', 'Gastos Admin', 'Costo Ventas'], 'Saldo': [50000000, 12000000, 25000000]})
+        render_upload_example({'Cuenta': ['Ingresos Op', 'Gastos Admin', 'Costo Ventas'], 'Saldo': ['$ 50,000,000', '$ 12,000,000', '25,000,000 COP']})
         
         if fi and api_key_valida:
-            df = pd.read_csv(fi) if fi.name.endswith('.csv') else pd.read_excel(fi)
+            df = safe_read_excel(fi)
             c1, c2 = st.columns(2); cd = c1.selectbox("Columna Descripción", df.columns); cv = c2.selectbox("Columna Valor", df.columns)
             if st.button("▶️ INICIAR ANÁLISIS IA"):
                 res = df.groupby(cd)[cv].sum().sort_values(ascending=False).head(10); st.bar_chart(res)
@@ -2125,13 +2181,13 @@ else:
         c1, c2 = st.columns(2)
         with c1:
              f1 = st.file_uploader("Año Actual", type=['xlsx'])
-             render_upload_example({'Cuenta': ['Caja General'], 'Saldo 2025': [15000000]}, "Ej. Año Actual")
+             render_upload_example({'Cuenta': ['Caja General'], 'Saldo 2025': ['$ 15,000,000.00']}, "Ej. Año Actual")
         with c2:
              f2 = st.file_uploader("Año Anterior", type=['xlsx'])
-             render_upload_example({'Cuenta': ['Caja General'], 'Saldo 2024': [12000000]}, "Ej. Año Anterior")
+             render_upload_example({'Cuenta': ['Caja General'], 'Saldo 2024': ['$ 12,000,000']}, "Ej. Año Anterior")
              
         if f1 and f2 and api_key_valida:
-            d1 = pd.read_excel(f1); d2 = pd.read_excel(f2)
+            d1 = safe_read_excel(f1); d2 = safe_read_excel(f2)
             st.divider(); c1, c2, c3 = st.columns(3); cta = c1.selectbox("Cuenta Contable", d1.columns); v1 = c2.selectbox("Valor Año Actual", d1.columns); v2 = c3.selectbox("Valor Año Anterior", d2.columns)
             if st.button("✨ GENERAR INFORME ESTRATÉGICO"):
                 # Limpieza de datos (Evitar TypeError)
@@ -2215,7 +2271,7 @@ else:
         archivo = st.file_uploader("Sube el Excel con los datos", type=["xlsx", "xls"])
         if archivo:
             try:
-                df = pd.read_excel(archivo)
+                df = safe_read_excel(archivo)
                 
                 # Limpieza de nombres de columnas (Quitar espacios, manejar tildes)
                 df.columns = [x.upper().strip() for x in df.columns]
