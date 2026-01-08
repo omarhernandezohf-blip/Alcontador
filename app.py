@@ -864,11 +864,74 @@ def render_upload_example(data_dict, title="👁️ Ver Formato Ejemplo"):
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
+# UI DE AUTO-DIAGNÓSTICO (DEFENSA EN PROFUNDIDAD)
+# ------------------------------------------------------------------------------
+def render_panic_ui(e):
+    """
+    Renderiza una interfaz amigable cuando ocurre un error técnico.
+    Ofrece la opción de usar IA para explicar el problema en lenguaje sencillo.
+    """
+    st.toast("⚠️ Problema detectado con el archivo", icon="🤧")
+    
+    # 1. Contenedor Visual de Error (Glassmorphism Red)
+    st.markdown(f"""
+    <div style="
+        background: rgba(220, 38, 38, 0.1); 
+        border-left: 4px solid #ef4444;
+        padding: 16px;
+        border-radius: 8px;
+        margin: 10px 0;
+        backdrop-filter: blur(5px);
+    ">
+        <h4 style="margin: 0; color: #fca5a5; display: flex; align-items: center;">
+            <span style="font-size: 1.5rem; margin-right: 10px;">🛡️</span> 
+            Sistema de Auto-Defensa Activado
+        </h4>
+        <p style="margin: 8px 0 0 0; color: #e2e8f0; font-size: 0.95rem;">
+            No pudimos procesar tu archivo correctamente. El sistema ha interceptado el error para proteger tus datos.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 2. Botón de Pánico (Acción IA)
+    # Usamos un key único basado en el timestamp o algo aleatorio si fuera necesario, 
+    # pero aquí confiamos en el flujo inmediato.
+    if st.button("🆘 ¿Por qué falló? Explicar con IA", key="btn_panic_ai", type="primary"):
+        if 'api_key_valida' in globals() and api_key_valida: # Check global availability
+             with st.spinner("🔍 Analizando estructura del archivo y el error..."):
+                prompt_soporte = f"""
+                ACTÚA COMO: Agente de Soporte Técnico Experto (Nivel 2) para la App 'Asistente Contable'.
+                
+                SITUACIÓN: El usuario intentó subir un archivo y falló.
+                ERROR TÉCNICO REGISTRADO: "{str(e)}"
+                
+                TU TAREA:
+                1.  Explica en ESPAÑOL SENCILLO y AMIGABLE qué pudo haber pasado.
+                2.  Usa analogías si es necesario (ej: "Es como intentar meter una pieza cuadrada en un agujero redondo").
+                3.  NO MENCIONES código Python, Tracebacks ni clases (ValueError, TypeError).
+                4.  Da 3 pasos accionables para que el usuario arregle su Excel.
+                
+                FORMATO DE RESPUESTA: Markdown limpio con bullets.
+                """
+                # Llamada directa a la función de IA (que ya maneja créditos)
+                response = consultar_ia_gemini(prompt_soporte)
+                
+                st.markdown(f"""
+                <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; padding: 20px; border-radius: 12px; margin-top: 15px;">
+                    <h3 style="color: #34d399; margin-top: 0;">🤖 Diagnóstico Inteligente</h3>
+                    <div style="color: #e2e8f0; line-height: 1.6;">{response}</div>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.error("Servicio de IA no disponible para diagnóstico.")
+    
+    with st.expander("Ver detalle técnico (Para desarrolladores)"):
+        st.code(str(e), language="python")
+
+# ------------------------------------------------------------------------------
 # SANITIZACIÓN INTELIGENTE DE DATOS (DATA INTELLIGENCE LAYER)
 # ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-# SANITIZACIÓN INTELIGENTE DE DATOS (DATA INTELLIGENCE LAYER)
-# ------------------------------------------------------------------------------
+
 PLAN_LIMITS = {
     "Gratis": 2 * 1024 * 1024,   # 2MB
     "Pro": 10 * 1024 * 1024,     # 10MB
@@ -916,7 +979,9 @@ def safe_read_excel(file_upl):
                     
         return df
     except Exception as e:
-        st.error(f"❌ Error crítico leyendo archivo '{file_upl.name}': {str(e)}")
+        # CAPTURA SILENCIOSA Y DELEGACIÓN A UI DE PÁNICO
+        st.session_state['last_error'] = str(e)
+        render_panic_ui(e)
         return pd.DataFrame()
 
 # ------------------------------------------------------------------------------
