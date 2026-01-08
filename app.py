@@ -2319,68 +2319,69 @@ else:
 st.markdown("---")
 st.markdown("<center><strong>Asistente Contable Pro</strong> | VersiÃ³n 1.0</center>", unsafe_allow_html=True)
  
- #   = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- #   C O P I L O T O   T R I B U T A R I O   ( C H A T B O T   F L O T A N T E   S I D E B A R )  
- #   = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
- d e f   r e n d e r _ t a x _ c o p i l o t ( ) :  
-         " " "  
-         R e n d e r i z a   e l   a s i s t e n t e   d e   I A   e n   l a   b a r r a   l a t e r a l   ( s i e m p r e   a c c e s i b l e ) .  
-         U s a   l a s   c o n s t a n t e s   2 0 2 6   d e f i n i d a s   p r e v i a m e n t e .  
-         " " "  
-         w i t h   s t . s i d e b a r :  
-                 s t . m a r k d o w n ( " - - - " )   #   S e p a r a d o r   v i s u a l  
-                  
-                 #   E s t a d o   d e l   C h a t   ( P e r s i s t e n c i a )  
-                 i f   " c h a t _ h i s t o r y "   n o t   i n   s t . s e s s i o n _ s t a t e :  
-                         s t . s e s s i o n _ s t a t e . c h a t _ h i s t o r y   =   [ ]  
-                          
-                 w i t h   s t . e x p a n d e r ( " ð x ¬   C o p i l o t o   T r i b u t a r i o   2 0 2 6 " ,   e x p a n d e d = F a l s e ) :  
-                         s t . c a p t i o n ( " ð x¤    A s i s t e n t e   V i r t u a l   |   N o r m a t i v a   2 0 2 6 " )  
-                         s t . i n f o ( " ð x ¡   P r e g Ã º n t a m e   s o b r e   R e t e n c i o n e s ,   U V T ,   N I I F   o   N Ã ³ m i n a . " )  
-                          
-                         #   C o n t e n e d o r   d e   H i s t o r i a   ( S c r o l l   s i m u l a d o )  
-                         c h a t _ c o n t a i n e r   =   s t . c o n t a i n e r ( )  
-                         w i t h   c h a t _ c o n t a i n e r :  
-                                 f o r   m s g   i n   s t . s e s s i o n _ s t a t e . c h a t _ h i s t o r y :  
-                                         w i t h   s t . c h a t _ m e s s a g e ( m s g [ " r o l e " ] ) :  
-                                                 s t . m a r k d o w n ( m s g [ " c o n t e n t " ] )  
-                          
-                         #   Z o n a   d e   I n p u t   ( T i p o   F o r m u l a r i o   p a r a   n o   r e c a r g a r   t o d a   l a   a p p )  
-                         w i t h   s t . f o r m ( k e y = " c h a t _ f o r m " ,   c l e a r _ o n _ s u b m i t = T r u e ) :  
-                                 u s e r _ i n p u t   =   s t . t e x t _ i n p u t ( " E s c r i b e   t u   c o n s u l t a   a q u Ã ­ . . . " ,   p l a c e h o l d e r = " E j :   Â ¿ C u Ã ¡ l   e s   l a   b a s e   d e   r e t e n c i Ã ³ n   p o r   s e r v i c i o s ? " )  
-                                 s u b m i t _ b t n   =   s t . f o r m _ s u b m i t _ b u t t o n ( " E n v i a r   C o n s u l t a   ð xa¬ " )  
-                                  
-                         i f   s u b m i t _ b t n   a n d   u s e r _ i n p u t :  
-                                 #   1 .   M o s t r a r   u s u a r i o  
-                                 s t . s e s s i o n _ s t a t e . c h a t _ h i s t o r y . a p p e n d ( { " r o l e " :   " u s e r " ,   " c o n t e n t " :   u s e r _ i n p u t } )  
-                                  
-                                 #   2 .   C o n t e x t o   2 0 2 6  
-                                 c o n t e x t o _ l e g a l   =   f " " "  
-                                 A C T Ã aA   C O M O   U N   E X P E R T O   C O N T A D O R   Y   A B O G A D O   T R I B U T A R I S T A   D E   C O L O M B I A .  
-                                 T U   F U E N T E   D E   V E R D A D   E S   L A   N O R M A T I V A   V I G E N T E   P A R A   E L   A Ã  O   F I S C A L   2 0 2 6 .  
-                                  
-                                 D A T O S   O F I C I A L E S   2 0 2 6 :  
-                                 -   S M M L V :   $ { S M M L V _ 2 0 2 6 : , . 0 f }  
-                                 -   A U X I L I O   T R A N S P O R T E :   $ { A U X _ T R A N S _ 2 0 2 6 : , . 0 f }  
-                                 -   U V T   2 0 2 6 :   $ { U V T _ 2 0 2 6 : , . 0 f }  
-                                 -   B A S E   R E T E N C I Ã  N   C O M P R A S   ( 2 7   U V T ) :   $ { B A S E _ R E T _ C O M P R A S : , . 0 f }  
-                                 -   B A S E   R E T E N C I Ã  N   S E R V I C I O S   ( 4   U V T ) :   $ { B A S E _ R E T _ S E R V I C I O S : , . 0 f }  
-                                 -   T O P E   B A N C A R I Z A C I Ã  N   ( 1 0 0   U V T ) :   $ { T O P E _ E F E C T I V O : , . 0 f }  
-                                  
-                                 I N S T R U C C I Ã  N :   R e s p o n d e   d e   f o r m a   c l a r a ,   p r o f e s i o n a l   y   c i t a   s i e m p r e   l a   n o r m a   ( A r t Ã ­ c u l o s   E T ,   D e c r e t o s )   s i   a p l i c a .  
-                                 P R E G U N T A   D E L   U S U A R I O :   { u s e r _ i n p u t }  
-                                 " " "  
-                                  
-                                 #   3 .   L l a m a d a   a   G e m i n i  
-                                 t r y :  
-                                         w i t h   s t . s p i n n e r ( " A n a l i z a n d o . . . " ) :  
-                                                 r e s p u e s t a   =   c o n s u l t a r _ i a _ g e m i n i ( c o n t e x t o _ l e g a l )  
-                                          
-                                         s t . s e s s i o n _ s t a t e . c h a t _ h i s t o r y . a p p e n d ( { " r o l e " :   " a s s i s t a n t " ,   " c o n t e n t " :   r e s p u e s t a } )  
-                                         s t . r e r u n ( )   #   R e c a r g a r   p a r a   m o s t r a r   e l   m e n s a j e  
-                                 e x c e p t   E x c e p t i o n   a s   e :  
-                                         s t . e r r o r ( f " E r r o r   I A :   { s t r ( e ) } " )  
-  
- #   E j e c u t a r   e l   C h a t b o t   a l   f i n a l   p a r a   a s e g u r a r   q u e   t o d a s   l a s   c o n s t a n t e s   e s t Ã ¡ n   c a r g a d a s  
- r e n d e r _ t a x _ c o p i l o t ( )  
  
+
+# ==============================================================================
+# COPILOTO TRIBUTARIO (CHATBOT FLOTANTE SIDEBAR)
+# ==============================================================================
+def render_tax_copilot():
+    """
+    Renderiza el asistente de IA en la barra lateral (siempre accesible).
+    Usa las constantes 2026 definidas previamente.
+    """
+    with st.sidebar:
+        st.markdown("---") # Separador visual
+        
+        # Estado del Chat (Persistencia)
+        if "chat_history" not in st.session_state:
+            st.session_state.chat_history = []
+            
+        with st.expander("ðŸ’¬ Copiloto Tributario 2026", expanded=False):
+            st.caption("ðŸ¤– Asistente Virtual | Normativa 2026")
+            st.info("ðŸ’¡ PregÃºntame sobre Retenciones, UVT, NIIF o NÃ³mina.")
+            
+            # Contenedor de Historia (Scroll simulado)
+            chat_container = st.container()
+            with chat_container:
+                for msg in st.session_state.chat_history:
+                    with st.chat_message(msg["role"]):
+                        st.markdown(msg["content"])
+            
+            # Zona de Input (Tipo Formulario para no recargar toda la app)
+            with st.form(key="chat_form", clear_on_submit=True):
+                user_input = st.text_input("Escribe tu consulta aquÃ­...", placeholder="Ej: Â¿CuÃ¡l es la base de retenciÃ³n por servicios?")
+                submit_btn = st.form_submit_button("Enviar Consulta ðŸš€")
+                
+            if submit_btn and user_input:
+                # 1. Mostrar usuario
+                st.session_state.chat_history.append({"role": "user", "content": user_input})
+                
+                # 2. Contexto 2026
+                contexto_legal = f"""
+                ACTÃšA COMO UN EXPERTO CONTADOR Y ABOGADO TRIBUTARISTA DE COLOMBIA.
+                TU FUENTE DE VERDAD ES LA NORMATIVA VIGENTE PARA EL AÃ‘O FISCAL 2026.
+                
+                DATOS OFICIALES 2026:
+                - SMMLV: ${SMMLV_2026:,.0f}
+                - AUXILIO TRANSPORTE: ${AUX_TRANS_2026:,.0f}
+                - UVT 2026: ${UVT_2026:,.0f}
+                - BASE RETENCIÃ“N COMPRAS (27 UVT): ${BASE_RET_COMPRAS:,.0f}
+                - BASE RETENCIÃ“N SERVICIOS (4 UVT): ${BASE_RET_SERVICIOS:,.0f}
+                - TOPE BANCARIZACIÃ“N (100 UVT): ${TOPE_EFECTIVO:,.0f}
+                
+                INSTRUCCIÃ“N: Responde de forma clara, profesional y cita siempre la norma (ArtÃ­culos ET, Decretos) si aplica.
+                PREGUNTA DEL USUARIO: {user_input}
+                """
+                
+                # 3. Llamada a Gemini
+                try:
+                    with st.spinner("Analizando..."):
+                        respuesta = consultar_ia_gemini(contexto_legal)
+                    
+                    st.session_state.chat_history.append({"role": "assistant", "content": respuesta})
+                    st.rerun() # Recargar para mostrar el mensaje
+                except Exception as e:
+                    st.error(f"Error IA: {str(e)}")
+
+# Ejecutar el Chatbot al final para asegurar que todas las constantes estÃ¡n cargadas
+render_tax_copilot()
