@@ -866,37 +866,53 @@ def render_upload_example(data_dict, title="👁️ Ver Formato Ejemplo"):
 # ------------------------------------------------------------------------------
 # SANITIZACIÓN INTELIGENTE DE DATOS (DATA INTELLIGENCE LAYER)
 # ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# SANITIZACIÓN INTELIGENTE DE DATOS (DATA INTELLIGENCE LAYER)
+# ------------------------------------------------------------------------------
+PLAN_LIMITS = {
+    "Gratis": 2 * 1024 * 1024,   # 2MB
+    "Pro": 10 * 1024 * 1024,     # 10MB
+    "Premium": 50 * 1024 * 1024  # 50MB
+}
+
 def safe_read_excel(file_upl):
     """
-    Lee archivos Excel/CSV y aplica limpieza automática de formatos numéricos 'humanos'.
-    Convierte: '$ 5,000.00' -> 5000.0 (float)
+    Lee archivos Excel/CSV con validación de Plan (Fair Use) y limpieza automática.
     """
     try:
-        # 1. Carga cruda del archivo
+        # 0. DETERMINAR PLAN DEL USUARIO (Simulación por ahora)
+        # En el futuro, esto leerá de la base de datos de usuarios
+        user_plan = "Premium" if st.session_state.get('api_key_valida', False) else "Gratis"
+        # Hack para demo: Si venimos de loguearnos como Pro, usar Pro. Por ahora simplificado.
+        
+        limit = PLAN_LIMITS.get(user_plan, 2 * 1024 * 1024) # Default 2MB
+        
+        # 1. Validación de PESO (Fair Use)
+        if file_upl.size > limit:
+            limit_mb = int(limit / (1024 * 1024))
+            st.error(f"⚠️ **Archivo Bloqueado**: Tu plan actual ({user_plan}) solo permite subir archivos de hasta {limit_mb} MB.")
+            st.info("💡 Sube al plan Pro o Premium para desbloquear archivos grandes.")
+            return pd.DataFrame()
+
+        # 2. Carga cruda del archivo
         if file_upl.name.endswith('.csv'):
              df = pd.read_csv(file_upl)
         else:
              df = pd.read_excel(file_upl)
         
-        # 2. Inteligencia de Datos: Sanitización Automática
+        # 3. Inteligencia de Datos: Sanitización Automática
         for col in df.columns:
-            if df[col].dtype == 'object': # Solo procesar columnas de texto
-                # A. Limpieza Agresiva: Quitar $, COP, USD, Espacios y (,) de miles
-                # Regex: Currency symbols, letters (COP/USD), whitespace, commas (miles)
-                # Nota: Asumimos punto (.) como decimal.
+            if df[col].dtype == 'object': 
+                # A. Limpieza Agresiva
                 clean_col = df[col].astype(str).str.replace(r'[$,\s]|COP|USD|EUR', '', regex=True)
-                
-                # B. Intentar conversión a numérico
+                # B. Intentar conversión
                 converted = pd.to_numeric(clean_col, errors='coerce')
-                
-                # C. Decisión Inteligente: ¿Es realmente una columna numérica?
-                # Si convertimos más del 50% de los datos no vacíos, asumimos que es número
+                # C. Decisión Inteligente
                 valid_count = converted.notna().sum()
                 total_count = df[col].notna().sum()
                 
                 if total_count > 0 and (valid_count / total_count) > 0.5:
-                    df[col] = converted.fillna(0) # Convertir y llenar huecos con 0 para cálculos seguros
-                    # st.toast(f"🧹 Columna '{col}' sanitizada automáticamente.")
+                    df[col] = converted.fillna(0) 
                     
         return df
     except Exception as e:
@@ -1596,7 +1612,7 @@ if menu == "Inicio / Dashboard":
             backdrop-filter: blur(12px);
             border: 1px solid var(--glass-border);
             border-radius: 12px;
-            padding: 2.5rem;
+            padding: 2rem;
             height: 100%;
             display: flex; flex-direction: column;
             transition: all 0.3s ease;
@@ -1609,66 +1625,81 @@ if menu == "Inicio / Dashboard":
             box-shadow: 0 0 30px rgba(99, 102, 241, 0.15);
             position: relative;
         }
-        .pro-badge {
+        .pricing-card.premium {
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.9) 0%, rgba(139, 92, 246, 0.2) 100%);
+            border: 1px solid #c084fc;
+            box-shadow: 0 0 40px rgba(192, 132, 252, 0.2);
+            position: relative;
+        }
+        .popular-badge {
             position: absolute; top: -12px; right: 24px;
-            background: var(--success);
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
             color: white; padding: 4px 12px; border-radius: 99px;
             font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px; font-family: 'Inter';
         }
-        .price-tag { font-family: 'Inter'; font-size: 3rem; font-weight: 800; color: white; margin: 10px 0; letter-spacing: -1px; }
-        .price-tag span { font-size: 1rem; color: var(--text-body); font-weight: 500; font-family: 'Inter'; }
-        .price-old { font-size: 1.1rem; color: #64748b; text-decoration: line-through; margin-top: 10px; font-family: 'Inter'; }
-        .features-ul { list-style: none; padding: 0; margin: 24px 0; color: var(--text-body); flex-grow: 1; font-family: 'Inter'; font-size: 1rem; }
-        .features-ul li { margin-bottom: 12px; display: flex; align-items: center; }
-        .check { color: var(--success); margin-right: 12px; font-weight: bold; }
-        .cross { color: #ef4444; margin-right: 12px; opacity: 0.7; }
-        .dimmed { color: #475569; }
+        .price-tag { font-family: 'Inter'; font-size: 2.5rem; font-weight: 800; color: white; margin: 10px 0; letter-spacing: -1px; }
+        .price-tag span { font-size: 0.9rem; color: var(--text-body); font-weight: 500; }
+        .price-old { font-size: 1rem; color: #64748b; text-decoration: line-through; margin-top: 10px; }
+        .features-ul { list-style: none; padding: 0; margin: 20px 0; color: var(--text-body); flex-grow: 1; font-size: 0.9rem; }
+        .features-ul li { margin-bottom: 10px; display: flex; align-items: center; }
+        .check { color: var(--success); margin-right: 8px; font-weight: bold; }
+        .cross { color: #ef4444; margin-right: 8px; opacity: 0.7; }
     </style>
     """, unsafe_allow_html=True)
 
-    col_p1, col_p2 = st.columns(2)
-    with col_p1:
+    col_free, col_pro, col_prem = st.columns(3)
+
+    # PLAN INICIAL
+    with col_free:
         st.markdown("""
         <div class="pricing-card">
-            <h3 style="color:white; margin:0; font-size: 1.4rem;">NIVEL INICIAL</h3>
+            <h3 style="color:#94a3b8; margin:0; font-size: 1.2rem;"> NIVEL INICIAL</h3>
             <div class="price-tag">$0 <span>COP/mes</span></div>
             <ul class="features-ul">
                 <li><span class="check">✓</span> Acceso al Dashboard</li>
                 <li><span class="check">✓</span> 5 Consultas IA/día</li>
+                <li><span class="check">✓</span> Archivos hasta 2 MB</li>
                 <li class="dimmed"><span class="cross">✕</span> Agente Tributario</li>
                 <li class="dimmed"><span class="cross">✕</span> Conexión Bancaria</li>
             </ul>
-        </div>""", unsafe_allow_html=True)
-        st.button("CONTINUAR GRATIS", key="btn_free", use_container_width=True)
+        </div>
+        """, unsafe_allow_html=True)
+        st.button("PLAN ACTUAL", disabled=True, use_container_width=True)
 
-    with col_p2:
+    # PLAN PRO
+    with col_pro:
         st.markdown("""
         <div class="pricing-card pro">
-            <div class="pro-badge">⭐ MÁS POPULAR</div>
-            <h3 style="color:white; margin:0; font-size: 1.4rem;">PLAN PRO</h3>
-            <div class="price-old">$100.000</div> <div class="price-tag">$70.000 <span>COP/mes</span></div>
+            <h3 style="color:#6366f1; margin:0; font-size: 1.2rem;"> PLAN PRO</h3>
+            <div class="price-old">$100.000</div>
+            <div class="price-tag">$70.000 <span>COP/mes</span></div>
             <ul class="features-ul">
-                <li><span class="check">✓</span> <strong>500 Créditos Mensuales</strong></li>
-                <li><span class="check">✓</span> Modelo Gemini 1.5 Flash (Rápido)</li>
-                <li><span class="check">✓</span> Todos los Módulos Contables</li>
+                <li><span class="check">✓</span> 500 Créditos Mensuales</li>
+                <li><span class="check">✓</span> Modelo Gemini 1.5 Flash</li>
+                <li><span class="check">✓</span> Archivos hasta 10 MB</li>
                 <li><span class="check">✓</span> Soporte Prioritario</li>
             </ul>
-        </div>""", unsafe_allow_html=True)
+        </div>
+        """, unsafe_allow_html=True)
         st.link_button("⚡ MEJORAR A PRO", "https://checkout.wompi.co/l/TU_LINK_PRO", type="primary", use_container_width=True)
 
-    with st.expander("🧠 Ver Plan Premium (Inteligencia Superior)"):
+    # PLAN PREMIUM
+    with col_prem:
         st.markdown("""
-        <div class="pricing-card" style="border: 1px solid #10b981;">
-            <h3 style="color:white; margin:0; font-size: 1.4rem;">PLAN PREMIUM</h3>
-            <div class="price-old">$180.000</div> <div class="price-tag">$120.000 <span>COP/mes</span></div>
+        <div class="pricing-card premium">
+            <div class="popular-badge">RECOMENDADO</div>
+            <h3 style="color:#c084fc; margin:0; font-size: 1.2rem;"> PLAN PREMIUM</h3>
+            <div class="price-old">$180.000</div>
+            <div class="price-tag">$120.000 <span>COP/mes</span></div>
             <ul class="features-ul">
-                <li><span class="check">✓</span> <strong>2.000 Créditos Mensuales</strong></li>
-                <li><span class="check">✓</span> <strong>Modelo Gemini 1.5 PRO (Razonamiento Complejo)</strong></li>
-                <li><span class="check">✓</span> Análisis Financiero Profundo</li>
+                <li><span class="check">✓</span> <strong>Ilimitado + Agentic IA</strong></li>
+                <li><span class="check">✓</span> Modelo Gemini 1.5 PRO</li>
+                <li><span class="check">✓</span> Archivos hasta 50 MB (Massive)</li>
                 <li><span class="check">✓</span> Auditoría NIIF Avanzada</li>
             </ul>
-        </div>""", unsafe_allow_html=True)
-        st.link_button("🚀 OBTENER PREMIUM", "https://checkout.wompi.co/l/TU_LINK_PREMIUM", use_container_width=True)
+        </div>
+        """, unsafe_allow_html=True)
+        st.link_button("🚀 OBTENER BLINDAJE TOTAL", "https://checkout.wompi.co/l/TU_LINK_PREMIUM", type="primary", use_container_width=True)
 
     if not db_conectada:
         st.warning("⚠️ BASE DE DATOS OFFLINE. Verifique conexión a 'DB_Alcontador'.")
