@@ -18,6 +18,7 @@ from fpdf import FPDF
 import io
 import threading
 import gc
+import plotly.express as px
 
 try:
     from streamlit_oauth import OAuth2Component
@@ -1520,14 +1521,59 @@ if menu == "Inicio / Dashboard":
     st.markdown("---")
 
     c_chart_1, c_chart_2 = st.columns([2, 1])
+
     with c_chart_1:
         st.markdown("#### 📈 TENDENCIA DE FLUJO DE CAJA")
-        chart_data = pd.DataFrame(np.random.randn(20, 3) + [10, 10, 10], columns=['Ingresos', 'Gastos', 'Utilidad'])
-        st.area_chart(chart_data, color=["#06b6d4", "#ef4444", "#10b981"])
+        # Generar datos más realistas con fechas
+        fechas_chart = pd.date_range(start="2025-01-01", periods=12, freq="M")
+        chart_data = pd.DataFrame({
+            "Mes": fechas_chart,
+            "Ingresos": np.random.randint(50000, 80000, 12),
+            "Gastos": np.random.randint(30000, 45000, 12),
+            "Utilidad": np.random.randint(10000, 35000, 12)
+        })
+        
+        fig_cash = px.area(chart_data, x="Mes", y=["Ingresos", "Gastos", "Utilidad"],
+                      title="",
+                      color_discrete_sequence=["#22d3ee", "#f43f5e", "#34d399"])
+        
+        fig_cash.update_layout(
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)", # Fondo transparente
+            font_color="#cbd5e1",
+            font_family="Inter",
+            hovermode="x unified",
+            margin=dict(l=0, r=0, t=0, b=0),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        fig_cash.update_xaxes(showgrid=False, gridcolor='rgba(255,255,255,0.1)')
+        fig_cash.update_yaxes(showgrid=True, gridcolor='rgba(255,255,255,0.05)')
+        
+        st.plotly_chart(fig_cash, use_container_width=True)
+
     with c_chart_2:
         st.markdown("#### 📉 DESGLOSE DE GASTOS")
-        gastos_data = pd.DataFrame({'Categoría': ['Nómina', 'Software', 'Oficina', 'Publicidad'], 'Monto': [5000, 2000, 1500, 3000]})
-        st.bar_chart(gastos_data.set_index('Categoría'), color="#8b5cf6")
+        gastos_data = pd.DataFrame({
+            'Categoría': ['Nómina', 'Software', 'Oficina', 'Publicidad'], 
+            'Monto': [5000, 2000, 1500, 3000]
+        })
+        
+        fig_don = px.pie(gastos_data, values='Monto', names='Categoría', hole=0.6,
+                         color_discrete_sequence=px.colors.sequential.Bluyl)
+        
+        fig_don.update_layout(
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            font_color="#cbd5e1",
+            font_family="Inter",
+            margin=dict(l=0, r=0, t=10, b=0),
+            showlegend=False,
+            annotations=[dict(text='GASTOS', x=0.5, y=0.5, font_size=14, showarrow=False)]
+        )
+        # Textos dentro del donut
+        fig_don.update_traces(textposition='outside', textinfo='percent+label')
+        
+        st.plotly_chart(fig_don, use_container_width=True)
 
     st.markdown("### 📝 REGISTRO DE TRANSACCIONES")
     df_transacciones = pd.DataFrame({
