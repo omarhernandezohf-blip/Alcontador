@@ -100,6 +100,10 @@ with st.sidebar:
         )
 
 # --- CONFIGURACIÓN DE ESTILO GLOBAL (SIDEBAR CLÁSICO MEJORADO) ---
+st.sidebar.markdown("---")
+st.sidebar.caption(f"🇨🇴 **Normativa 2026 Activa**")
+st.sidebar.caption(f"UVT: $52,374 | SMMLV: $1.7M")
+
 st.markdown("""
     <style>
         /* 1. FONDO UNIVERSO ANIMADO MEJORADO */
@@ -1077,13 +1081,13 @@ pass
 # ==============================================================================
 # ==============================================================================
 
-# CONSTANTES FISCALES COLOMBIA (AÑO GRAVABLE 2025)
-SMMLV_2025 = 1430000
-AUX_TRANS_2025 = 175000
-UVT_2025 = 49799
-TOPE_EFECTIVO = 100 * UVT_2025
-BASE_RET_SERVICIOS = 4 * UVT_2025
-BASE_RET_COMPRAS = 27 * UVT_2025
+# CONSTANTES FISCALES COLOMBIA (AÑO GRAVABLE 2026)
+SMMLV_2026 = 1750905
+AUX_TRANS_2026 = 249095
+UVT_2026 = 52374
+TOPE_EFECTIVO = 100 * UVT_2026
+BASE_RET_SERVICIOS = 4 * UVT_2026
+BASE_RET_COMPRAS = 27 * UVT_2026
 
 # ------------------------------------------------------------------------------
 # CALCULAR DÍGITO DE VERIFICACIÓN (RUT)
@@ -1179,7 +1183,7 @@ def calcular_costo_empresa_fila(row, col_salario, col_aux, col_arl, col_exo):
     es_exonerado = str(row[col_exo]).strip().lower() in ['si', 's', 'true', '1', 'yes']
     
     # --- CÁLCULOS DETALLADOS ---
-    aux_trans = AUX_TRANS_2025 if tiene_aux else 0
+    aux_trans = AUX_TRANS_2026 if tiene_aux else 0
     ibc = salario
     base_prest = salario + aux_trans
     
