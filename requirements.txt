@@ -13,3 +13,4 @@ streamlit-oauth
 firebase-admin
 streamlit-option-menu
 requests
+fpdf

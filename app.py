@@ -14,6 +14,9 @@ import xml.etree.ElementTree as ET
 import os
 import html
 import requests
+from fpdf import FPDF
+import io
+
 try:
     from streamlit_oauth import OAuth2Component
     OAUTH_OK = True
@@ -33,6 +36,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+# Force Reload: 2026-01-06 13:50:00
 
 # --- MENÚ LATERAL (MOVIDO AL INICIO PARA GARANTIZAR VISIBILIDAD) ---
 with st.sidebar:
@@ -60,12 +64,14 @@ with st.sidebar:
                 "Narrador Financiero & NIIF",
                 "Validador de RUT Oficial",
                 "Digitalización OCR",
-                "Generador de Cotizaciones"  # <--- ¡ESTO ES LO NUEVO!
+                "Generador de Cotizaciones",
+                "Generador Logístico"
             ],
             icons=[
                 "house", "shield-check", "file-earmark-code", "bank", "graph-up",
                 "people", "cash-coin", "calculator", "cpu", "book", "check-circle", "camera",
-                "file-earmark-pdf"  # <--- ¡ICONO NUEVO!
+                "file-earmark-pdf",
+                "airplane-engines"
             ],
             menu_icon="cast",
             default_index=0,
@@ -88,7 +94,8 @@ with st.sidebar:
                 "Narrador Financiero & NIIF",
                 "Validador de RUT Oficial",
                 "Digitalización OCR",
-                "Generador de Cotizaciones"
+                "Generador de Cotizaciones",
+                "Generador Logístico"
             ]
         )
 
@@ -420,21 +427,21 @@ render_universe_background()
 PLAN_CONFIG = {
     'FREE': {
         'limit': 5,
-        'model': 'gemini-1.5-flash',
+        'model': 'gemini-flash-latest',
         'price_display': 'GRATIS',
         'badge': 'Prueba',
         'name': 'Free'
     },
     'PRO': {
         'limit': 500,
-        'model': 'gemini-1.5-flash',
+        'model': 'gemini-flash-latest',
         'price_display': '$70.000 COP',
         'badge': '⭐ Más Popular',
         'name': 'Pro'
     },
     'PREMIUM': {
         'limit': 2000,
-        'model': 'gemini-1.5-flash',
+        'model': 'gemini-flash-latest',
         'price_display': '$120.000 COP',
         'badge': '🧠 Inteligencia Superior',
         'name': 'Premium'
@@ -1141,19 +1148,27 @@ def consultar_ia_gemini(prompt):
         # Ajustamos a las versiones estables conocidas si es necesario, o confiamos en el config.
         # Para seguridad, usamos try/catch con fallbacks
 
-        try:
-            model = genai.GenerativeModel(model_name)
-            response = model.generate_content(prompt)
+        # RETRY LOGIC / FALLBACK AUTOMÁTICO
+        intentos = [model_name, 'gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash']
+        last_error = ""
 
-            # Consumir crédito solo si éxito
-            consume_credit(email)
-            st.session_state['credits_used'] = credits + 1
+        for m in intentos:
+            try:
+                model = genai.GenerativeModel(m)
+                response = model.generate_content(prompt)
+                
+                # Si llegamos aquí, funcionó
+                consume_credit(email)
+                st.session_state['credits_used'] = credits + 1
+                return response.text
+                
+            except Exception as e:
+                last_error = str(e)
+                continue # Intenta el siguiente modelo
 
-            return response.text
-        except Exception as e:
-            return f"Error IA ({model_name}): {str(e)}"
+        return f"Error IA [v2] (Todos los modelos fallaron): {last_error}"
     except Exception as e:
-        return f"Error crítico IA: {str(e)}"
+        return f"Error Crítico IA [v2]: {str(e)}"
 
 # ------------------------------------------------------------------------------
 # OCR DE FACTURAS (VELOCIDAD)
@@ -1173,8 +1188,8 @@ def ocr_factura(imagen):
 
     try:
         # OCR siempre usa Flash por velocidad, a menos que se especifique otra cosa.
-        # Usamos 'gemini-1.5-flash' explicitamente o el del plan si es compatible.
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # Usamos 'gemini-flash-latest' explicitamente o el del plan si es compatible.
+        model = genai.GenerativeModel('gemini-flash-latest')
         prompt = """Extrae datos JSON estricto: {"fecha": "YYYY-MM-DD", "nit": "num", "proveedor": "txt", "concepto": "txt", "base": num, "iva": num, "total": num}"""
         response = model.generate_content([prompt, imagen])
 
@@ -2007,53 +2022,132 @@ else:
             if info: do.append(info)
             st.dataframe(pd.DataFrame(do), use_container_width=True)
 
-    elif menu == "Generador de Cotizaciones":
-        st.title("📄 Generador de Cotizaciones PDF")
-        
-        col1, col2 = st.columns([1, 1])
-        
-        with col1:
-            st.subheader("Datos del Cliente")
-            cliente = st.text_input("Nombre del Cliente / Empresa")
-            nit = st.text_input("NIT / CC")
-            fecha = st.date_input("Fecha de Cotización")
-            notas = st.text_area("Notas Adicionales", "Validez de la oferta: 15 días.")
-            
-        with col2:
-            st.subheader("Cargar Ítems (Excel)")
-            st.info("Sube un Excel con columnas: Descripción, Cantidad, Precio")
-            uploaded_file = st.file_uploader("Seleccionar archivo", type=["xlsx", "csv"])
-            
-        if uploaded_file is not None:
-            import pandas as pd
-            try:
-                if uploaded_file.name.endswith('.csv'):
-                    df = pd.read_csv(uploaded_file)
-                else:
-                    df = pd.read_excel(uploaded_file)
-                
-                st.write("---")
-                st.subheader("Selección de Columnas")
-                c1, c2, c3 = st.columns(3)
-                col_desc = c1.selectbox("Columna Descripción", df.columns, index=0)
-                col_cant = c2.selectbox("Columna Cantidad", df.columns, index=1 if len(df.columns) > 1 else 0)
-                col_val = c3.selectbox("Columna Precio Unitario", df.columns, index=2 if len(df.columns) > 2 else 0)
-                
-                # Calcular Totales
-                df['Subtotal'] = df[col_cant] * df[col_val]
-                total_final = df['Subtotal'].sum()
-                
-                st.dataframe(df[[col_desc, col_cant, col_val, 'Subtotal']], use_container_width=True)
-                st.metric("TOTAL COTIZACIÓN", f"${total_final:,.0f}")
-                
-                # Botón dummy para mostrar que funciona (La lógica PDF va aquí)
-                if st.button("Generar Cotización PDF"):
-                    st.success("¡Sistema listo! Configurando motor PDF...")
-                    
-            except Exception as e:
-                st.error(f"Error leyendo el archivo: {e}")
+    elif menu == "Generador Logístico" or menu == "Generador de Cotizaciones":
+        st.title("🚢 Generador de Liquidación Logística")
+        st.markdown("---")
+        # --- 1. CONFIGURACIÓN DE ENCABEZADO ---
+        col_a, col_b, col_c = st.columns(3)
+        cliente = col_a.text_input("Cliente / Razón Social", "CLIENTE GENERAL S.A.S")
+        nit_cliente = col_b.text_input("NIT / Identificación", "900.000.000")
+        fecha_op = col_c.date_input("Fecha de Operación")
+        # TRM DEL DÍA (CRÍTICO)
+        st.info("💡 Ingrese la TRM para convertir automáticamente los gastos en USD.")
+        trm_dia = st.number_input("Tasa Representativa (TRM)", value=4150.0, step=1.0, format="%.2f")
 
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.divider()
+        # --- 2. DESCARGA DE PLANTILLA ---
+        import io
+        import pandas as pd
+        from fpdf import FPDF
+        st.subheader("1. Descargar Plantilla")
+        # Modelo basado en el archivo "Juli" simplificado
+        df_base = pd.DataFrame({
+            "Categoria": ["GASTOS EN ORIGEN", "GASTOS EN ORIGEN", "FLETE INTERNACIONAL", "ADUANA", "TRANSPORTE TERRESTRE"],
+            "Descripcion": ["Pick Up / Recogida", "Trámites en Origen", "Flete Marítimo/Aéreo", "Agenciamiento Aduanero", "Entrega en Bodega"],
+            "Valor": [150, 65, 1200, 350000, 2800000],
+            "Moneda": ["USD", "USD", "USD", "COP", "COP"]
+        })
+        buffer_down = io.BytesIO()
+        with pd.ExcelWriter(buffer_down, engine='xlsxwriter') as writer:
+            df_base.to_excel(writer, index=False)
+
+        st.download_button("⬇️ Bajar Plantilla Excel", data=buffer_down.getvalue(), file_name="Plantilla_Liquidacion.xlsx", mime="application/vnd.ms-excel")
+
+        # --- 3. CARGA Y PROCESAMIENTO ---
+        st.subheader("2. Cargar Liquidación y Generar PDF")
+        archivo = st.file_uploader("Sube el Excel con los datos", type=["xlsx", "xls"])
+        if archivo:
+            try:
+                df = pd.read_excel(archivo)
+                
+                # Limpieza de nombres de columnas (Quitar espacios, manejar tildes)
+                df.columns = [x.upper().strip() for x in df.columns]
+                
+                # Mapeo inteligente de columnas
+                col_cat = next((x for x in df.columns if "CAT" in x), None)
+                col_desc = next((x for x in df.columns if "DESC" in x), None)
+                col_val = next((x for x in df.columns if "VAL" in x), None)
+                col_mon = next((x for x in df.columns if "MON" in x), None)
+                
+                if not all([col_cat, col_desc, col_val, col_mon]):
+                    st.error("❌ Error en columnas. Usa la plantilla descargable.")
+                else:
+                    # Lógica Matemática
+                    def calcular_final(fila):
+                        val = float(str(fila[col_val]).replace('$','').replace(',','')) # Limpiar texto
+                        moneda = str(fila[col_mon]).upper().strip()
+                        if "USD" in moneda:
+                            return val * trm_dia
+                        return val
+                    df['TOTAL_COP'] = df.apply(calcular_final, axis=1)
+                    
+                    # Métricas
+                    gran_total = df['TOTAL_COP'].sum()
+                    total_usd = df[df[col_mon].astype(str).str.contains("USD")]['TOTAL_COP'].sum() / trm_dia
+                    
+                    m1, m2 = st.columns(2)
+                    m1.metric("Total en Dólares (USD)", f"${total_usd:,.2f}")
+                    m2.metric("GRAN TOTAL (COP)", f"${gran_total:,.0f}")
+                    
+                    st.dataframe(df, use_container_width=True)
+                    # --- MOTOR PDF ---
+                    if st.button("🖨️ Generar PDF Formal"):
+                        class PDF(FPDF):
+                            def header(self):
+                                self.set_font('Arial', 'B', 14)
+                                self.cell(0, 10, 'LIQUIDACION DE IMPORTACION', 0, 1, 'C')
+                                self.ln(5)
+                                
+                        pdf = PDF()
+                        pdf.add_page()
+                        pdf.set_font('Arial', '', 10)
+                        
+                        # Datos
+                        pdf.cell(0, 8, f"CLIENTE: {cliente}", 0, 1)
+                        pdf.cell(0, 8, f"NIT: {nit_cliente} | FECHA: {fecha_op}", 0, 1)
+                        pdf.cell(0, 8, f"TRM NEGOCIACION: ${trm_dia:,.2f}", 0, 1)
+                        pdf.ln(5)
+                        
+                        # Iterar Categorías
+                        categorias = df[col_cat].unique()
+                        for cat in categorias:
+                            pdf.set_fill_color(220, 220, 220)
+                            pdf.set_font('Arial', 'B', 10)
+                            pdf.cell(0, 8, str(cat), 1, 1, 'L', 1) # Título Sección
+                            
+                            # Items
+                            pdf.set_font('Arial', '', 9)
+                            items = df[df[col_cat] == cat]
+                            for _, row in items.iterrows():
+                                desc = str(row[col_desc])[:50]
+                                val_orig = float(str(row[col_val]).replace('$','').replace(',',''))
+                                mon = str(row[col_mon])
+                                tot = row['TOTAL_COP']
+                                
+                                pdf.cell(100, 6, desc, 1)
+                                pdf.cell(30, 6, f"{val_orig:,.2f} {mon}", 1)
+                                pdf.cell(60, 6, f"${tot:,.0f}", 1, 1)
+                            
+                            # Subtotal
+                            sub = items['TOTAL_COP'].sum()
+                            pdf.set_font('Arial', 'B', 9)
+                            pdf.cell(130, 6, "SUBTOTAL:", 1, 0, 'R')
+                            pdf.cell(60, 6, f"${sub:,.0f}", 1, 1, 'R')
+                            pdf.ln(2)
+                            
+                        # Total Final
+                        pdf.ln(5)
+                        pdf.set_font('Arial', 'B', 12)
+                        pdf.cell(130, 10, "TOTAL A PAGAR:", 0, 0, 'R')
+                        pdf.cell(60, 10, f"${gran_total:,.0f}", 1, 1, 'R')
+                        
+                        val = pdf.output(dest='S').encode('latin-1')
+                        st.download_button("💾 Descargar PDF", data=val, file_name="Liquidacion.pdf", mime="application/pdf")
+            
+            except Exception as e:
+                st.error(f"Error técnico: {e}")
+
+
 
 # ==============================================================================
 # PIE DE PÁGINA
