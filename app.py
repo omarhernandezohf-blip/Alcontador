@@ -825,6 +825,13 @@ def download_section(df, file_label, title="Reporte Corporativo"):
     except Exception as e:
         c2.warning(f"PDF no disponible: {e}")
 
+def render_upload_example(data_dict, title="👁️ Ver Formato Ejemplo"):
+    """
+    Shows a collapsible example table to guide file uploads.
+    """
+    with st.expander(title):
+        st.info("Tu archivo Excel debe tener una estructura similar (los nombres de columnas pueden variar):")
+        st.dataframe(pd.DataFrame(data_dict), hide_index=True, use_container_width=True)
 
 # ==============================================================================
 # 2. GESTIÓN DE CONEXIONES EXTERNAS (BACKEND) Y SEGURIDAD (OAUTH2)
@@ -1570,9 +1577,12 @@ else:
         with col_dian:
             st.subheader("🏛️ 1. Archivo DIAN")
             file_dian = st.file_uploader("Subir 'Reporte Terceros DIAN' (.xlsx)", type=['xlsx'])
+            render_upload_example({'NIT': ['900123456', '890987654'], 'Valor Reportado': [1500000, 5200000]})
+
         with col_conta:
             st.subheader("📒 2. Contabilidad")
             file_conta = st.file_uploader("Subir Auxiliar por Tercero (.xlsx)", type=['xlsx'])
+            render_upload_example({'NIT': ['900123456', '890987654'], 'Saldo Contable': [1500000, 4800000]})
             
         if file_dian and file_conta:
             df_dian = pd.read_excel(file_dian)
@@ -1686,8 +1696,15 @@ else:
         )
         
         col_banco, col_libro = st.columns(2)
-        with col_banco: st.subheader("🏦 Extracto Bancario"); file_banco = st.file_uploader("Subir Excel Banco", type=['xlsx'])
-        with col_libro: st.subheader("📒 Libro Auxiliar"); file_libro = st.file_uploader("Subir Excel Contabilidad", type=['xlsx'])
+        with col_banco: 
+            st.subheader("🏦 Extracto Bancario")
+            file_banco = st.file_uploader("Subir Excel Banco", type=['xlsx'])
+            render_upload_example({'Fecha': ['2025-01-10', '2025-01-12'], 'Descripción': ['Pago Proveedor X', 'Comision Bancaria'], 'Valor': [-500000, -12000]})
+        
+        with col_libro: 
+            st.subheader("📒 Libro Auxiliar")
+            file_libro = st.file_uploader("Subir Excel Contabilidad", type=['xlsx'])
+            render_upload_example({'Fecha': ['2025-01-10', '2025-01-12'], 'Detalle': ['Egreso #405', 'Nota Debito'], 'Crédito': [500000, 12000]})
         
         if file_banco and file_libro:
             # Lectura
@@ -1794,6 +1811,12 @@ else:
         st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Verificar el cumplimiento de los requisitos de deducibilidad (Bancarización y Retenciones).<br>Detecta pagos en efectivo superiores a 100 UVT y bases de retención omitidas.</div>""", unsafe_allow_html=True)
         
         ar = st.file_uploader("Cargar Auxiliar de Gastos (.xlsx)", type=['xlsx'])
+        render_upload_example({
+            'Fecha': ['2025-01-05', '2025-01-08'], 
+            'Tercero': ['Comercializadora SAS', 'Servicios SA'], 
+            'Valor': [15000000, 450000],
+            'Método Pago': ['Transferencia', 'Efectivo']
+        })
         
         if ar:
             df = pd.read_excel(ar)
@@ -1871,6 +1894,12 @@ else:
         )
         
         an = st.file_uploader("Cargar Nómina UGPP (.xlsx)", type=['xlsx'], key="upl_ugpp")
+        render_upload_example({
+            'Empleado': ['Juan Perez', 'Maria Lopez'],
+            'Salario Básico': [2500000, 18000000],
+            'Bonos No Salariales': [500000, 12000000],
+            'Auxilios': [200000, 5000000]
+        })
         if an:
             dn = pd.read_excel(an)
             cols_todas = dn.columns.tolist()
@@ -1940,7 +1969,14 @@ else:
             get_text('ben_treasury')
         )
         saldo_hoy = st.number_input("💵 Saldo Disponible Hoy ($):", min_value=0.0, format="%.2f")
-        c1, c2 = st.columns(2); fcxc = c1.file_uploader("Cartera (CxC)", type=['xlsx']); fcxp = c2.file_uploader("Proveedores (CxP)", type=['xlsx'])
+        c1, c2 = st.columns(2)
+        with c1:
+             fcxc = st.file_uploader("Cartera (CxC)", type=['xlsx'])
+             render_upload_example({'Fecha Vencimiento': ['2025-02-15'], 'Cliente': ['Cliente ABC'], 'Saldo': [5000000]}, "Ejemplo CxC")
+        with c2:
+             fcxp = st.file_uploader("Proveedores (CxP)", type=['xlsx'])
+             render_upload_example({'Fecha Vencimiento': ['2025-02-10'], 'Proveedor': ['Prov. XYZ'], 'Total': [2500000]}, "Ejemplo CxP")
+             
         if fcxc and fcxp:
             dcxc = pd.read_excel(fcxc); dcxp = pd.read_excel(fcxp)
             c1, c2, c3, c4 = st.columns(4)
@@ -1972,6 +2008,8 @@ else:
         )
         
         ac = st.file_uploader("Cargar Listado Personal (.xlsx)", type=['xlsx'])
+        render_upload_example({'Nombre': ['Ana Gomez'], 'Salario Base': [3500000], 'Auxilio Trans': ['NO'], 'Riesgo ARL': [1]})
+        
         if ac:
             try:
                 dc = pd.read_excel(ac)
@@ -2041,6 +2079,8 @@ else:
             get_text('ben_fin_ai')
         )
         fi = st.file_uploader("Cargar Datos Financieros (.xlsx/.csv)", type=['xlsx', 'csv'])
+        render_upload_example({'Cuenta': ['Ingresos Op', 'Gastos Admin', 'Costo Ventas'], 'Saldo': [50000000, 12000000, 25000000]})
+        
         if fi and api_key_valida:
             df = pd.read_csv(fi) if fi.name.endswith('.csv') else pd.read_excel(fi)
             c1, c2 = st.columns(2); cd = c1.selectbox("Columna Descripción", df.columns); cv = c2.selectbox("Columna Valor", df.columns)
@@ -2059,7 +2099,14 @@ else:
             get_text('desc_narrator'),
             get_text('ben_narrator')
         )
-        c1, c2 = st.columns(2); f1 = c1.file_uploader("Año Actual", type=['xlsx']); f2 = c2.file_uploader("Año Anterior", type=['xlsx'])
+        c1, c2 = st.columns(2)
+        with c1:
+             f1 = st.file_uploader("Año Actual", type=['xlsx'])
+             render_upload_example({'Cuenta': ['Caja General'], 'Saldo 2025': [15000000]}, "Ej. Año Actual")
+        with c2:
+             f2 = st.file_uploader("Año Anterior", type=['xlsx'])
+             render_upload_example({'Cuenta': ['Caja General'], 'Saldo 2024': [12000000]}, "Ej. Año Anterior")
+             
         if f1 and f2 and api_key_valida:
             d1 = pd.read_excel(f1); d2 = pd.read_excel(f2)
             st.divider(); c1, c2, c3 = st.columns(3); cta = c1.selectbox("Cuenta Contable", d1.columns); v1 = c2.selectbox("Valor Año Actual", d1.columns); v2 = c3.selectbox("Valor Año Anterior", d2.columns)
