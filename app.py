@@ -754,6 +754,79 @@ def render_smart_advisor(content):
 
 
 # ==============================================================================
+# HELPER: UNIVERSAL DOWNLOADS (EXCEL + PDF)
+# ==============================================================================
+def create_pdf(df, title, filename):
+    class PDF(FPDF):
+        def header(self):
+            # Logo placeholder or simple text
+            self.set_font('Arial', 'B', 14)
+            self.cell(0, 10, title[:50], 0, 1, 'C')
+            self.set_font('Arial', 'I', 8)
+            self.cell(0, 10, f"Generado por Asistente Contable Pro - {datetime.now().strftime('%Y-%m-%d %H:%M')}", 0, 1, 'C')
+            self.ln(5)
+
+    pdf = PDF()
+    pdf.add_page()
+    pdf.set_font('Arial', '', 9)
+
+    # Column Widths (Dynamic)
+    cols = df.columns.tolist()
+    if len(cols) > 0:
+        eff_width = 190 / len(cols)
+        
+        # Header
+        pdf.set_fill_color(220, 220, 220)
+        pdf.set_font('Arial', 'B', 8)
+        for col in cols:
+            pdf.cell(eff_width, 8, str(col)[:15], 1, 0, 'C', 1)
+        pdf.ln()
+
+        # Rows
+        pdf.set_font('Arial', '', 8)
+        for _, row in df.iterrows():
+            for col in cols:
+                txt = str(row[col])[:20] # Truncate for table safety
+                pdf.cell(eff_width, 6, txt, 1, 0, 'L')
+            pdf.ln()
+    
+    return pdf.output(dest='S').encode('latin-1')
+
+def download_section(df, file_label, title="Reporte Corporativo"):
+    """
+    Renders two buttons: Download Excel and Download PDF.
+    """
+    st.markdown("### 📥 Descargar Resultados")
+    c1, c2 = st.columns(2)
+    
+    # EXCEL
+    buffer_xls = io.BytesIO()
+    with pd.ExcelWriter(buffer_xls, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Reporte')
+    
+    c1.download_button(
+        label="📊 Descargar Excel (.xlsx)",
+        data=buffer_xls.getvalue(),
+        file_name=f"{file_label}.xlsx",
+        mime="application/vnd.ms-excel",
+        use_container_width=True
+    )
+
+    # PDF
+    try:
+        pdf_bytes = create_pdf(df, title, file_label)
+        c2.download_button(
+            label="📄 Descargar PDF (.pdf)",
+            data=pdf_bytes,
+            file_name=f"{file_label}.pdf",
+            mime="application/pdf",
+            use_container_width=True
+        )
+    except Exception as e:
+        c2.warning(f"PDF no disponible: {e}")
+
+
+# ==============================================================================
 # 2. GESTIÓN DE CONEXIONES EXTERNAS (BACKEND) Y SEGURIDAD (OAUTH2)
 # ==============================================================================
 
@@ -1566,6 +1639,9 @@ else:
                         else:
                             st.success("💎 REPORTE COMPLETO (PRO)")
                             st.dataframe(diferencias, use_container_width=True)
+                            
+                        # Universal Download
+                        download_section(diferencias, "Reporte_Auditoria_DIAN", "Auditoría Cruce DIAN vs Contabilidad")
 
                     # --- AI SMART ADVISOR RESTORED ---
                     if api_key_valida:
@@ -1592,9 +1668,9 @@ else:
             for i, f in enumerate(archivos_xml): barra.progress((i+1)/len(archivos_xml)); datos_xml.append(parsear_xml_dian(f))
             df_xml = pd.DataFrame(datos_xml)
             st.success("Extracción completada."); st.dataframe(df_xml, use_container_width=True)
-            out = io.BytesIO();
-            with pd.ExcelWriter(out, engine='xlsxwriter') as w: df_xml.to_excel(w, index=False)
-            st.download_button("📥 Descargar Reporte Maestro (.xlsx)", out.getvalue(), "Resumen_XML.xlsx")
+            
+            # Universal Download
+            download_section(df_xml, "Resumen_Facturacion_XML", "Minería de Datos - Facturación Electrónica")
 
             # --- AI SMART ADVISOR RESTORED ---
             if api_key_valida:
@@ -1696,24 +1772,17 @@ else:
                 df_pend_banco = df_banco[~df_banco['Conciliado']]
                 df_pend_libro = df_libro[~df_libro['Conciliado']]
                 
-                buffer = io.BytesIO()
-                with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-                    df_matches.to_excel(writer, sheet_name='1. Cruzados', index=False)
-                    df_pend_banco.to_excel(writer, sheet_name='2. Pendientes Banco', index=False)
-                    df_pend_libro.to_excel(writer, sheet_name='3. Pendientes Libros', index=False)
-                    
-                st.download_button(
-                    label="📥 DESCARGAR CONCILIACIÓN (.xlsx)",
-                    data=buffer.getvalue(),
-                    file_name=f"Conciliacion_{datetime.now().strftime('%Y%m%d')}.xlsx",
-                    mime="application/vnd.ms-excel"
-                )
-                
                 t1, t2, t3 = st.tabs(["✅ Partidas Cruzadas", "⚠️ Pendientes en Banco", "⚠️ Pendientes en Libros"])
                 
-                with t1: st.dataframe(df_matches, use_container_width=True)
-                with t2: st.dataframe(df_pend_banco, use_container_width=True)
-                with t3: st.dataframe(df_pend_libro, use_container_width=True)
+                with t1: 
+                    st.dataframe(df_matches, use_container_width=True)
+                    download_section(df_matches, "Conciliacion_Cruzada", "Partidas Conciliadas")
+                with t2: 
+                    st.dataframe(df_pend_banco, use_container_width=True)
+                    download_section(df_pend_banco, "Pendientes_Banco", "Partidas Pendientes en Banco")
+                with t3: 
+                    st.dataframe(df_pend_libro, use_container_width=True)
+                    download_section(df_pend_libro, "Pendientes_Libros", "Partidas Pendientes en Libros")
 
                 # --- AI SMART ADVISOR RESTORED ---
                 if api_key_valida:
@@ -1784,6 +1853,7 @@ else:
                         "Hallazgo": df_riesgos['Hallazgo_Temp']
                     })
                     st.dataframe(df_res, use_container_width=True)
+                    download_section(df_res, "Auditoria_Fiscal_Gastos", "Auditoría Fiscal (Art. 771-5)")
                     
                     if api_key_valida:
                         with st.spinner("🤖 Analizando impacto tributario..."):
@@ -1856,6 +1926,7 @@ else:
                 else:
                     st.error(f"⚠️ {len(riesgos)} empleados exceden el límite del 40%.")
                     st.dataframe(riesgos, use_container_width=True)
+                    download_section(riesgos, "Riesgos_Nomina_UGPP", "Informe de Riesgos UGPP")
 
                     if api_key_valida:
                         with st.spinner("🤖 Calculando riesgo de sanción..."):
@@ -1882,6 +1953,8 @@ else:
                     cal = pd.merge(fi, fe, on='Fecha', how='outer').fillna(0); cal.columns = ['Fecha', 'Ingresos', 'Egresos']; cal = cal.sort_values('Fecha')
                     cal['Saldo Proyectado'] = saldo_hoy + (cal['Ingresos'] - cal['Egresos']).cumsum()
                     st.area_chart(cal.set_index('Fecha')['Saldo Proyectado']); st.dataframe(cal, use_container_width=True)
+                    download_section(cal, "Proyeccion_Tesoreria", "Proyección de Flujo de Caja")
+
                     if api_key_valida:
                         with st.spinner("🤖 La IA está analizando tu flujo de caja..."):
                             render_smart_advisor(consultar_ia_gemini(f"Analiza este flujo de caja. Saldo inicial: {saldo_hoy}. Datos: {cal.head(10).to_string()}"))
@@ -1945,7 +2018,9 @@ else:
                         st.success("✅ Cálculo exitoso.")
                     
                     st.markdown("### 📊 Resultado del Análisis")
-                    st.dataframe(pd.DataFrame(rc), use_container_width=True)
+                    df_rc = pd.DataFrame(rc)
+                    st.dataframe(df_rc, use_container_width=True)
+                    download_section(df_rc, "Costeo_Nomina_Real", "Costeo de Nómina Mensual")
 
                     if api_key_valida:
                         with st.spinner("🤖 Analizando carga prestacional..."):
@@ -1971,6 +2046,10 @@ else:
             c1, c2 = st.columns(2); cd = c1.selectbox("Columna Descripción", df.columns); cv = c2.selectbox("Columna Valor", df.columns)
             if st.button("▶️ INICIAR ANÁLISIS IA"):
                 res = df.groupby(cd)[cv].sum().sort_values(ascending=False).head(10); st.bar_chart(res)
+                df_res_ai = res.reset_index()
+                st.dataframe(df_res_ai, use_container_width=True)
+                download_section(df_res_ai, "Analitica_Financiera", "Análisis Financiero Inteligente")
+                
                 render_smart_advisor(consultar_ia_gemini(f"Actúa como auditor financiero. Analiza estos saldos principales y da recomendaciones: {res.to_string()}"))
 
     elif menu == "Narrador Financiero & NIIF":
@@ -1993,8 +2072,11 @@ else:
                 merged = pd.merge(g1, g2, on=cta, how='inner').fillna(0); merged['Variacion'] = merged['V_Act'] - merged['V_Ant']
                 top = merged.reindex(merged.Variacion.abs().sort_values(ascending=False).index).head(10)
                 st.markdown("### 📊 Tablero de Control Gerencial"); st.bar_chart(top.set_index(cta)['Variacion'])
+                
+                download_section(top, "Narrador_Financiero", "Informe Variaciones NIIF")
+
                 with st.spinner("🤖 El Consultor IA está redactando el informe..."):
-                    prompt = f"""Actúa como un CFO experto. Analiza la siguiente tabla de variaciones contables:{top.to_string()} GENERA: 1. Un Informe Gerencial Ejecutivo. 2. Un borrador de Nota a los Estados Financieros bajo NIIF."""
+                    prompt = f"""Actúa como un CfO experto. Analiza la siguiente tabla de variaciones contables:{top.to_string()} GENERA: 1. Un Informe Gerencial Ejecutivo. 2. Un borrador de Nota a los Estados Financieros bajo NIIF."""
                     render_smart_advisor(consultar_ia_gemini(prompt))
 
     elif menu == "Validador de RUT Oficial":
@@ -2020,7 +2102,12 @@ else:
             do = []; bar = st.progress(0)
             for i, f in enumerate(af): bar.progress((i+1)/len(af)); info = ocr_factura(Image.open(f)); 
             if info: do.append(info)
-            st.dataframe(pd.DataFrame(do), use_container_width=True)
+            df_ocr = pd.DataFrame(do)
+            st.dataframe(df_ocr, use_container_width=True)
+            download_section(df_ocr, "Digitalizacion_OCR", "Datos Extraídos (OCR)")
+            
+            with st.spinner("🤖 Generando resumen masivo..."):
+                 render_smart_advisor(consultar_ia_gemini(f"Resume estas facturas escaneadas: {df_ocr.to_string()}. Total: {df_ocr['total'].sum() if 'total' in df_ocr.columns else 'N/A'}."))
 
     elif menu == "Generador Logístico" or menu == "Generador de Cotizaciones":
         st.title("🚢 Generador de Liquidación Logística")
@@ -2090,7 +2177,14 @@ else:
                     m2.metric("GRAN TOTAL (COP)", f"${gran_total:,.0f}")
                     
                     st.dataframe(df, use_container_width=True)
-                    # --- MOTOR PDF ---
+                    # --- UNIVERSAL DOWNLOAD & AI ---
+                    download_section(df, "Liquidacion_Logistica", f"Liquidación Importación - {cliente}")
+
+                    if api_key_valida:
+                        with st.spinner("🤖 Optimizando costos logísticos..."):
+                             render_smart_advisor(consultar_ia_gemini(f"Analiza esta liquidación de importación. Total USD: {total_usd}. Total COP: {gran_total}. Ítems clave: {df[col_cat].unique()}. Da 3 tips de ahorro logístico."))
+                    
+                    # (Legacy PDF button removed to avoid confusion, using Universal instead)
                     if st.button("🖨️ Generar PDF Formal"):
                         class PDF(FPDF):
                             def header(self):
