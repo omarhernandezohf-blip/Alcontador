@@ -1,9 +1,11 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { GlassCard } from '@/components/ui/GlassCard';
-import { Activity, TrendingUp, Users, AlertTriangle, ArrowUpRight, DollarSign, FileText } from 'lucide-react';
+import { Activity, TrendingUp, Users, AlertTriangle, ArrowUpRight, ArrowDownRight, DollarSign, FileText, Zap, Shield, Crown } from 'lucide-react';
 import Link from 'next/link';
+import { HeroSection } from '@/components/dashboard/HeroSection';
+import { LuxuryCard } from '@/components/ui/LuxuryCard';
+import { PricingSection } from '@/components/modules/PricingSection';
 
 const container = {
     hidden: { opacity: 0 },
@@ -22,111 +24,147 @@ const item = {
 
 export default function DashboardPage() {
     return (
-        <div className="space-y-8">
-            {/* Header Section */}
-            <div className="flex justify-between items-end">
-                <div>
-                    <h1 className="text-4xl font-bold font-space bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-200 to-indigo-400">
-                        Resumen Ejecutivo
-                    </h1>
-                    <p className="text-slate-400 mt-2 text-lg">
-                        Bienvenido, Operador. Estado del sistema: <span className="text-emerald-400">● En Línea</span>
-                    </p>
-                </div>
-                <div className="text-right hidden md:block">
-                    <p className="text-sm text-slate-500">Última sincronización</p>
-                    <p className="font-mono text-indigo-300">2026-01-12 10:45 AM</p>
-                </div>
-            </div>
+        <div className="min-h-screen pb-20">
+            {/* Cinematic Hero */}
+            <HeroSection />
 
-            {/* Metrics Grid */}
+            {/* Asymmetrical Grid */}
             <motion.div
                 variants={container}
                 initial="hidden"
                 animate="show"
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-2"
             >
-                <Link href="/dashboard/treasury">
-                    <GlassCard gradient className="cursor-pointer hover:border-emerald-500/50 transition-colors">
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="p-3 rounded-lg bg-indigo-500/20 text-indigo-400">
-                                <DollarSign className="w-6 h-6" />
+                {/* Featured Metric - Treasury */}
+                <LuxuryCard featured className="relative group overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-50 group-hover:opacity-100 transition-opacity">
+                        <Crown className="w-24 h-24 text-amber-500/10 -rotate-12" />
+                    </div>
+
+                    <div className="flex flex-col justify-between h-full">
+                        <div>
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/30">
+                                    <DollarSign className="w-6 h-6 text-amber-400" />
+                                </div>
+                                <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20 backdrop-blur-sm">
+                                    +122.5% vs Año Pasado
+                                </span>
                             </div>
-                            <span className="flex items-center text-emerald-400 text-sm font-medium bg-emerald-500/10 px-2 py-1 rounded-full">
-                                +12.5% <ArrowUpRight className="w-3 h-3 ml-1" />
-                            </span>
+                            <h3 className="text-slate-400 font-medium">Patrimonio Líquido Proyectado</h3>
+                            <h2 className="text-5xl font-bold text-white mt-2 tracking-tight">$452.8M</h2>
                         </div>
-                        <p className="text-slate-400 text-sm">Flujo de Caja (Mes)</p>
-                        <h3 className="text-3xl font-bold text-white mt-1">$45.2M</h3>
-                    </GlassCard>
-                </Link>
 
-                <Link href="/dashboard/fiscal-audit">
-                    <GlassCard gradient className="cursor-pointer hover:border-rose-500/50 transition-colors">
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="p-3 rounded-lg bg-purple-500/20 text-purple-400">
-                                <Activity className="w-6 h-6" />
+                        <div className="mt-8">
+                            <div className="w-full bg-white/5 rounded-full h-2 mb-2 overflow-hidden">
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: "85%" }}
+                                    transition={{ duration: 1.5, delay: 0.5 }}
+                                    className="bg-gradient-to-r from-amber-400 to-yellow-600 h-full rounded-full"
+                                />
                             </div>
+                            <p className="text-xs text-slate-500 text-right">Objetivo Q1: 85% Completado</p>
                         </div>
-                        <p className="text-slate-400 text-sm">Gastos Auditados</p>
-                        <h3 className="text-3xl font-bold text-white mt-1">1,240</h3>
-                    </GlassCard>
-                </Link>
+                    </div>
+                </LuxuryCard>
 
-
-                <GlassCard gradient>
+                {/* Satellite Metrics */}
+                <LuxuryCard className="border-t-4 border-purple-500">
                     <div className="flex justify-between items-start mb-4">
-                        <div className="p-3 rounded-lg bg-rose-500/20 text-rose-400">
+                        <div className="p-3 rounded-lg bg-purple-500/10 text-purple-400">
+                            <Activity className="w-6 h-6" />
+                        </div>
+                        <Zap className="w-4 h-4 text-purple-500/50" />
+                    </div>
+                    <p className="text-slate-400 text-sm">Gastos Auditados IA</p>
+                    <h3 className="text-3xl font-bold text-white mt-1">1,240</h3>
+                    <p className="text-xs text-slate-500 mt-2">100% Verificado DIAN</p>
+                </LuxuryCard>
+
+                <LuxuryCard className="border-t-4 border-rose-500">
+                    <div className="flex justify-between items-start mb-4">
+                        <div className="p-3 rounded-lg bg-rose-500/10 text-rose-400">
                             <AlertTriangle className="w-6 h-6" />
                         </div>
-                        <span className="flex items-center text-rose-400 text-sm font-medium bg-rose-500/10 px-2 py-1 rounded-full">
-                            3 Pendientes
-                        </span>
+                        <div />
                     </div>
-                    <p className="text-slate-400 text-sm">Alertas Fiscales</p>
-                    <h3 className="text-3xl font-bold text-white mt-1">Riesgo Bajo</h3>
-                </GlassCard>
+                    <p className="text-slate-400 text-sm">Riesgo Fiscal</p>
+                    <h3 className="text-3xl font-bold text-white mt-1">Bajo</h3>
+                    <p className="text-xs text-emerald-400 mt-2 flex items-center gap-1">
+                        <Shield className="w-3 h-3" /> Blindaje Activo
+                    </p>
+                </LuxuryCard>
 
-                <Link href="/dashboard/ugpp">
-                    <GlassCard gradient className="cursor-pointer hover:border-blue-500/50 transition-colors">
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="p-3 rounded-lg bg-blue-500/20 text-blue-400">
-                                <Users className="w-6 h-6" />
-                            </div>
+                <LuxuryCard className="border-t-4 border-blue-500">
+                    <div className="flex justify-between items-start mb-6">
+                        <div className="p-3 rounded-lg bg-blue-500/10 text-blue-400">
+                            <Users className="w-6 h-6" />
                         </div>
-                        <p className="text-slate-400 text-sm">Nómina Activa</p>
-                        <h3 className="text-3xl font-bold text-white mt-1">14 Empleados</h3>
-                    </GlassCard>
-                </Link>
-            </motion.div>
-
-            {/* Main Content Area (Placeholder for Charts) */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <GlassCard className="lg:col-span-2 min-h-[400px] flex items-center justify-center relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/10 to-purple-500/10" />
-                    <div className="text-center z-10">
-                        <TrendingUp className="w-16 h-16 text-white/20 mx-auto mb-4" />
-                        <h3 className="text-xl font-bold text-white">Analíticas en Tiempo Real</h3>
-                        <p className="text-slate-400 mt-2">Los gráficos de tesorería se han movido a su <Link href="/dashboard/treasury" className="text-indigo-400 hover:underline">Módulo Dedicado</Link>.</p>
                     </div>
-                </GlassCard>
-
-                <GlassCard className="min-h-[400px]">
-                    <h3 className="text-xl font-bold mb-6">Actividad Reciente</h3>
-                    <div className="space-y-4">
-                        {[1, 2, 3, 4].map((i) => (
-                            <div key={i} className="flex items-center gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer group">
-                                <div className="w-2 h-2 rounded-full bg-indigo-500 group-hover:bg-indigo-400 transition-colors" />
-                                <div>
-                                    <p className="text-sm font-medium text-slate-200">Proceso XML #{1000 + i}</p>
-                                    <p className="text-xs text-slate-500">Hace {i * 15} minutos • Completado</p>
-                                </div>
-                                <FileText className="w-4 h-4 text-slate-600 ml-auto group-hover:text-white" />
+                    <p className="text-slate-400 text-sm">Nómina Inteligente</p>
+                    <h3 className="text-3xl font-bold text-white mt-1">14 Activos</h3>
+                    <div className="mt-4 flex -space-x-2">
+                        {[1, 2, 3, 4].map(i => (
+                            <div key={i} className="w-8 h-8 rounded-full bg-slate-800 border-2 border-slate-900 flex items-center justify-center text-xs text-slate-500">
+                                {String.fromCharCode(64 + i)}
                             </div>
                         ))}
                     </div>
-                </GlassCard>
-            </div>
+                </LuxuryCard>
+
+                {/* Action Modules */}
+                <LuxuryCard className="md:col-span-2 min-h-[200px] group cursor-pointer hover:border-indigo-500/50">
+                    <Link href="/dashboard/xml-mining" className="block h-full">
+                        <div className="flex flex-col h-full justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="p-4 rounded-full bg-indigo-500/20 text-indigo-400 group-hover:scale-110 transition-transform duration-300">
+                                    <FileText className="w-8 h-8" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-white group-hover:text-indigo-300 transition-colors">Minería de Datos XML</h3>
+                                    <p className="text-slate-400 text-sm">Procesamiento masivo de facturación electrónica.</p>
+                                </div>
+                            </div>
+                            <div className="w-full h-32 bg-indigo-900/10 rounded-xl mt-4 relative overflow-hidden flex items-center justify-center">
+                                <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
+                                <span className="text-indigo-500/50 font-mono text-sm">Iniciando Motor de Extracción...</span>
+                            </div>
+                        </div>
+                    </Link>
+                </LuxuryCard>
+
+                <LuxuryCard className="md:col-span-2 min-h-[200px] group cursor-pointer hover:border-emerald-500/50">
+                    <Link href="/dashboard/treasury" className="block h-full">
+                        <div className="flex flex-col h-full justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="p-4 rounded-full bg-emerald-500/20 text-emerald-400 group-hover:scale-110 transition-transform duration-300">
+                                    <TrendingUp className="w-8 h-8" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-white group-hover:text-emerald-300 transition-colors">Tesorería Proyectiva</h3>
+                                    <p className="text-slate-400 text-sm">Forward-looking cash flow analysis.</p>
+                                </div>
+                            </div>
+                            <div className="w-full h-32 bg-emerald-900/10 rounded-xl mt-4 relative overflow-hidden flex items-end px-4 pb-2 gap-1">
+                                {[40, 60, 45, 70, 50, 80, 65, 90].map((h, i) => (
+                                    <motion.div
+                                        key={i}
+                                        initial={{ height: 0 }}
+                                        animate={{ height: `${h}%` }}
+                                        transition={{ duration: 1, delay: i * 0.1 }}
+                                        className="flex-1 bg-emerald-500/30 rounded-t-sm hover:bg-emerald-400 transition-colors"
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    </Link>
+                </LuxuryCard>
+
+            </motion.div>
+
+            {/* Subscription Plans */}
+            <PricingSection />
         </div>
     );
 }

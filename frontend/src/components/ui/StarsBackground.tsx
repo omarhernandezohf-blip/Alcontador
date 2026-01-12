@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useState, useEffect } from 'react';
 
 const generateBoxShadow = (n: number) => {
     let value = '';
@@ -12,9 +12,17 @@ const generateBoxShadow = (n: number) => {
 };
 
 export function StarsBackground() {
-    const shadowsSmall = useMemo(() => generateBoxShadow(700), []);
-    const shadowsMedium = useMemo(() => generateBoxShadow(200), []);
-    const shadowsBig = useMemo(() => generateBoxShadow(100), []);
+    const [shadowsSmall, setShadowsSmall] = useState('');
+    const [shadowsMedium, setShadowsMedium] = useState('');
+    const [shadowsBig, setShadowsBig] = useState('');
+
+    useEffect(() => {
+        setShadowsSmall(generateBoxShadow(700));
+        setShadowsMedium(generateBoxShadow(200));
+        setShadowsBig(generateBoxShadow(100));
+    }, []);
+
+    if (!shadowsSmall) return null; // Evitar renderizado hasta que esté listo en cliente
 
     return (
         <div className="universe-bg fixed inset-0 pointer-events-none z-[-1]">

@@ -33,7 +33,7 @@ export function TreasuryChart({ data }: TreeMapProps) {
                     <Tooltip
                         contentStyle={{ backgroundColor: '#1e293b', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff' }}
                         itemStyle={{ color: '#fff' }}
-                        formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
+                        formatter={(value: any) => [`$${Number(value).toLocaleString()}`, '']}
                     />
                     <Legend />
 

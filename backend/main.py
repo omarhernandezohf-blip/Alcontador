@@ -98,6 +98,53 @@ async def process_xml_batch(files: List[UploadFile] = File(...)):
 
 class UGPPInput(BaseModel):
     salario: float
+
+# --- Authentication & User Endpoints ---
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+@app.post("/api/auth/login")
+def login(credentials: LoginRequest):
+    if not logic: raise HTTPException(status_code=500, detail="Logic module error")
+    
+    # Simulación de validación de contraseñas (MVP) - Moviendo lógica del frontend al backend
+    user_data = None
+    
+    if (credentials.email == 'admin@premium.com') or (credentials.email == 'suitmaxi@premium.com' and credentials.password == 'maxi54321'):
+        user_data = {
+            "email": credentials.email,
+            "name": "Maxi (Creador)",
+            "plan": "PREMIUM",
+            "avatar": "https://i.pravatar.cc/150?u=maxi",
+            "multiSession": True
+        }
+    elif credentials.email == 'contador@pro.com':
+        user_data = {"email": credentials.email, "name": "Juan Contador", "plan": "PRO", "avatar": "https://i.pravatar.cc/150?u=juan", "multiSession": False}
+    elif credentials.email == 'usuario@inicial.com':
+        user_data = {"email": credentials.email, "name": "Usuario Nuevo", "plan": "FREE", "avatar": "https://i.pravatar.cc/150?u=new", "multiSession": False}
+    else:
+        # Fallback para permitir registro/login genérico en demo
+        user_data = {"email": credentials.email, "name": credentials.email.split('@')[0], "plan": "FREE", "avatar": None, "multiSession": False}
+
+    # Generar Token Real en Firestore
+    try:
+        token = logic.update_session_token(credentials.email)
+        user_data['token'] = token
+    except Exception as e:
+        print(f"Firestore Error: {e}")
+        user_data['token'] = "offline-token"
+        
+    return user_data
+
+@app.get("/api/user/credits")
+def get_credits(email: str):
+    if not logic: raise HTTPException(status_code=500, detail="Logic module error")
+    
+    credits = logic.get_user_credits(email)
+    return {"credits_used": credits}
+
     no_salarial: float
 
 @app.post("/api/ugpp/analyze")
