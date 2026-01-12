@@ -1,5 +1,6 @@
-import { Info } from 'lucide-react';
-import { useState } from 'react';
+import { Info, X } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface FileGuideProps {
@@ -11,92 +12,105 @@ interface FileGuideProps {
 
 export function FileGuide({ moduleName, requiredColumns, exampleRow, tips }: FileGuideProps) {
     const [isOpen, setIsOpen] = useState(false);
+    const [position, setPosition] = useState({ top: 0, left: 0 });
+    const buttonRef = useRef<HTMLButtonElement>(null);
+
+    // Calculate position when opening
+    useEffect(() => {
+        if (isOpen && buttonRef.current) {
+            const rect = buttonRef.current.getBoundingClientRect();
+            // Position: Bottom Left aligned by default, adjust if screen edge is close
+            let top = rect.bottom + 8;
+            let left = rect.left;
+
+            // Simple bound check (if offscreen to right, align right edge)
+            if (left + 320 > window.innerWidth) {
+                left = window.innerWidth - 340;
+            }
+
+            setPosition({ top, left });
+        }
+    }, [isOpen]);
+
+    // Close on click outside
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (buttonRef.current && !buttonRef.current.contains(e.target as Node)) {
+                // If clicking inside the portal content (handled by preventing propagation in content)
+                // Actually, since portal is in body, we need a ref for the content or check target
+                const portalElement = document.getElementById('file-guide-portal');
+                if (portalElement && !portalElement.contains(e.target as Node)) {
+                    setIsOpen(false);
+                }
+            }
+        };
+
+        if (isOpen) {
+            window.addEventListener('click', handleClickOutside);
+        }
+        return () => window.removeEventListener('click', handleClickOutside);
+    }, [isOpen]);
 
     return (
         <>
             <button
-                onClick={() => setIsOpen(true)}
+                ref={buttonRef}
+                onClick={() => setIsOpen(!isOpen)}
                 className="flex items-center gap-2 text-sm text-emerald-400 hover:text-white hover:bg-emerald-600/40 transition-all bg-emerald-950/50 px-3 py-1.5 rounded-lg border border-emerald-500/30 cursor-pointer z-20 relative shadow-lg shadow-emerald-900/10"
             >
                 <Info className="w-4 h-4" />
                 <span className="font-medium">¿Cómo debe ser el archivo?</span>
             </button>
 
-            <AnimatePresence>
-                {isOpen && (
-                    <>
-                        {/* Backdrop */}
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setIsOpen(false)}
-                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9998]"
-                        />
+            {isOpen && typeof document !== 'undefined' && createPortal(
+                <AnimatePresence>
+                    <motion.div
+                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="fixed z-[9999] w-80 p-4 rounded-xl bg-slate-900/95 border border-emerald-500/30 shadow-2xl shadow-black/50 backdrop-blur-md"
+                        style={{ top: position.top, left: position.left }}
+                        id="file-guide-portal" // ID for click-outside check
+                    >
+                        <div className="flex justify-between items-start mb-3">
+                            <h4 className="font-bold text-white text-sm">Estructura para Importación</h4>
+                            <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-white">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
 
-                        {/* Modal Content */}
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] w-full max-w-lg p-6 rounded-2xl bg-slate-900 border border-emerald-500/30 shadow-2xl shadow-emerald-900/20"
-                        >
-                            <div className="space-y-6">
-                                <div className="flex items-start justify-between">
-                                    <div>
-                                        <h4 className="text-xl font-bold text-white mb-1">Estructura para {moduleName}</h4>
-                                        <p className="text-sm text-slate-400">Tu archivo Excel o CSV debe tener estas columnas:</p>
-                                    </div>
-                                    <button
-                                        onClick={() => setIsOpen(false)}
-                                        className="text-slate-500 hover:text-white transition-colors"
-                                    >
-                                        <span className="sr-only">Cerrar</span>
-                                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                    </button>
-                                </div>
+                        <div className="bg-slate-950/50 rounded-lg p-3 border border-white/5 overflow-x-auto mb-3">
+                            <table className="w-full text-xs text-left">
+                                <thead>
+                                    <tr className="border-b border-white/10 text-emerald-400">
+                                        {requiredColumns.map(col => (
+                                            <th key={col} className="pb-2 px-2 whitespace-nowrap">{col}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr className="text-slate-300">
+                                        {Object.values(exampleRow).map((val, i) => (
+                                            <td key={i} className="pt-2 px-2 whitespace-nowrap">{val}</td>
+                                        ))}
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
 
-                                <div className="bg-slate-950/50 rounded-xl p-4 border border-white/5 overflow-x-auto">
-                                    <table className="w-full text-sm text-left">
-                                        <thead>
-                                            <tr className="border-b border-white/10 text-emerald-400">
-                                                {requiredColumns.map(col => (
-                                                    <th key={col} className="pb-3 px-3 whitespace-nowrap">{col}</th>
-                                                ))}
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr className="text-slate-300">
-                                                {Object.values(exampleRow).map((val, i) => (
-                                                    <td key={i} className="pt-3 px-3 whitespace-nowrap font-mono text-xs">{val}</td>
-                                                ))}
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                {tips && (
-                                    <div className="bg-emerald-500/5 rounded-lg p-4 border border-emerald-500/10">
-                                        <h5 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">Recomendaciones</h5>
-                                        <ul className="text-sm text-slate-300 space-y-2 list-disc pl-4">
-                                            {tips.map((tip, i) => (
-                                                <li key={i}>{tip}</li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
-
-                                <button
-                                    onClick={() => setIsOpen(false)}
-                                    className="w-full py-3 text-sm font-medium bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition-colors shadow-lg shadow-emerald-900/20"
-                                >
-                                    ¡Entendido, gracias!
-                                </button>
+                        {tips && (
+                            <div className="bg-emerald-500/5 rounded-md p-2 border border-emerald-500/10">
+                                <ul className="text-[10px] text-slate-300 space-y-1 list-disc pl-3">
+                                    {tips.map((tip, i) => (
+                                        <li key={i}>{tip}</li>
+                                    ))}
+                                </ul>
                             </div>
-                        </motion.div>
-                    </>
-                )}
-            </AnimatePresence>
+                        )}
+                    </motion.div>
+                </AnimatePresence>,
+                document.body
+            )}
         </>
     );
 }
