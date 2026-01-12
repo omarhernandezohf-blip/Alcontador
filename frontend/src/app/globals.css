@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --primary: #6366f1;
+  --primary-glow: rgba(99, 102, 241, 0.4);
+}
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100 overflow-x-hidden;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  /* Glassmorphism Utilities */
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl transition-all duration-300;
+  }
+  
+  .glass-card:hover {
+    @apply bg-white/10 border-indigo-500/30 shadow-indigo-500/20 translate-y-[-2px];
+  }
+
+  .glass-panel {
+    @apply bg-slate-900/60 backdrop-blur-2xl border-r border-white/5;
+  }
+
+  .input-field {
+    @apply bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all;
+  }
+
+  .btn-primary {
+    @apply bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-2 px-6 rounded-lg shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-105 transition-all active:scale-95;
+  }
+}
+
+/* Universe Background Animation */
+@keyframes animStar {
+  from { transform: translateY(0px); }
+  to { transform: translateY(-2000px); }
+}
+
+.universe-bg {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: radial-gradient(ellipse at bottom, #0f172a 0%, #020617 100%);
+  z-index: -1;
+  overflow: hidden;
+}
+
+.star-layer {
+  position: absolute;
+  top: 0; left: 0;
+  background: transparent;
+}

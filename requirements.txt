@@ -15,3 +15,8 @@ streamlit-option-menu
 requests
 fpdf
 plotly
+fastapi
+uvicorn
+python-multipart
+pydantic
+toml
