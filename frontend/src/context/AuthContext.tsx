@@ -11,6 +11,8 @@ interface User {
     plan: PlanType;
     avatar?: string;
     multiSession?: boolean;
+    credits?: number;
+    subscriptionEnd?: string; // ISO Date string
 }
 
 interface AuthContextType {
@@ -20,6 +22,7 @@ interface AuthContextType {
     loginWithGoogle: () => Promise<void>;
     logout: () => void;
     checkPermission: (feature: string) => boolean;
+    updateUser: (data: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,15 +32,77 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
 
+    // Helper to get mock subscription date
+    const getMockSubscriptionEnd = () => {
+        const date = new Date();
+        date.setDate(date.getDate() + 30);
+        return date.toISOString();
+    };
+
+    // Helper to load persistent user data from "local database"
+    const loadFromLocalDB = (email: string) => {
+        try {
+            const db = localStorage.getItem('ac_users_db');
+            if (db) {
+                const parsedDB = JSON.parse(db);
+                return parsedDB[email] || {};
+            }
+        } catch (e) {
+            console.error("Error reading local DB", e);
+        }
+        return {};
+    };
+
+    // Helper to save persistent user data to "local database"
+    const saveToLocalDB = (email: string, data: Partial<User>) => {
+        try {
+            const dbStr = localStorage.getItem('ac_users_db');
+            const db = dbStr ? JSON.parse(dbStr) : {};
+
+            // Merge existing data for this user with new data
+            db[email] = { ...(db[email] || {}), ...data };
+
+            localStorage.setItem('ac_users_db', JSON.stringify(db));
+        } catch (e) {
+            console.error("Error saving to local DB", e);
+        }
+    };
+
     // Check for existing session on mount
     useEffect(() => {
         const storedUser = localStorage.getItem('ac_user');
         if (storedUser) {
-            setUser(JSON.parse(storedUser));
+            const parsedUser = JSON.parse(storedUser);
+            // Ensure we have the latest persisted data
+            const persistedData = loadFromLocalDB(parsedUser.email);
+            setUser({ ...parsedUser, ...persistedData });
         } else if (!pathname.includes('/login')) {
             router.push('/login');
         }
     }, []);
+
+    const updateUser = (data: Partial<User>) => {
+        if (!user) return;
+        const updatedUser = { ...user, ...data };
+        setUser(updatedUser);
+
+        try {
+            // 1. Update active session
+            localStorage.setItem('ac_user', JSON.stringify(updatedUser));
+
+            // 2. Update persistent storage (Avatar, Name, etc)
+            // We only persist fields that are meant to be editable by user
+            const persistentFields: Partial<User> = {};
+            if (data.name) persistentFields.name = data.name;
+            if (data.avatar) persistentFields.avatar = data.avatar;
+
+            if (Object.keys(persistentFields).length > 0) {
+                saveToLocalDB(user.email, persistentFields);
+            }
+        } catch (error) {
+            console.error("Error saving to localStorage:", error);
+        }
+    };
 
     const login = async (email: string, pass: string): Promise<boolean> => {
         try {
@@ -58,9 +123,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             const userData = await res.json();
 
+            // Load any persistent edits for this user
+            const persistedData = loadFromLocalDB(email);
+
             const user: User = {
                 ...userData,
-                plan: userData.plan.toLowerCase() as PlanType
+                plan: userData.plan.toLowerCase() as PlanType,
+                subscriptionEnd: getMockSubscriptionEnd(),
+                ...persistedData // Overwrite mock data with saved user edits
             };
 
             setUser(user);
@@ -74,6 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const loginWithGoogle = async () => {
+        console.log("GOOGLE AUTH STARTING..."); // Force Deploy Check
         try {
             // Import dynamically to avoid SSR issues if needed, or rely on top-level imports
             const { GoogleAuthProvider, signInWithPopup } = await import("firebase/auth");
@@ -82,15 +153,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const provider = new GoogleAuthProvider();
             const result = await signInWithPopup(auth, provider);
             const firebaseUser = result.user;
+            const email = firebaseUser.email || "";
+
+            // Load any persistent edits for this user
+            const persistedData = loadFromLocalDB(email);
 
             // Map Firebase user to App User
-            // In a real app, you would verify this with your backend here
             const user: User = {
-                email: firebaseUser.email || "",
+                email: email,
                 name: firebaseUser.displayName || "Usuario Google",
                 plan: 'inicial', // Default plan for new Google users
                 avatar: firebaseUser.photoURL || undefined,
-                multiSession: true
+                multiSession: true,
+                credits: 5, // Default credits for free plan
+                subscriptionEnd: getMockSubscriptionEnd(),
+                ...persistedData // Overwrite mock data with saved user edits (e.g. if they changed avatar locally)
             };
 
             setUser(user);
@@ -104,6 +181,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const logout = () => {
         setUser(null);
+        // We only clear the SESSION, not the persistent DB
         localStorage.removeItem('ac_user');
         router.push('/login');
     };
@@ -124,7 +202,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, loginWithGoogle, logout, checkPermission }}>
+        <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, loginWithGoogle, logout, checkPermission, updateUser }}>
             {children}
         </AuthContext.Provider>
     );

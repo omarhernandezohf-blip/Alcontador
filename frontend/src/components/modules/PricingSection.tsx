@@ -27,7 +27,7 @@ const plans = [
         originalPrice: '$100.000',
         period: 'COP/mes',
         features: [
-            { text: '500 Créditos Mensuales', included: true },
+            { text: '400 Créditos Mensuales', included: true },
             { text: 'Modelo Gemini 1.5 Flash', included: true },
             { text: 'Archivos hasta 10 MB', included: true },
             { text: 'Soporte Prioritario', included: true },
@@ -42,7 +42,7 @@ const plans = [
         originalPrice: '$180.000',
         period: 'COP/mes',
         features: [
-            { text: 'Ilimitado + Agentic IA', included: true },
+            { text: '2000 Créditos + Agentic IA', included: true },
             { text: 'Modelo Gemini 1.5 PRO', included: true },
             { text: 'Archivos hasta 50 MB (Massive)', included: true },
             { text: 'Auditoría NIIF Avanzada', included: true },

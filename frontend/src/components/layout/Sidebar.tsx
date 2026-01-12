@@ -101,8 +101,10 @@ export function Sidebar() {
                         </div>
                         {isExpanded && (
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-bold text-white truncate">{user.name}</p>
-                                <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                                <Link href="/dashboard/profile" className="hover:opacity-80 transition-opacity">
+                                    <p className="text-sm font-bold text-white truncate hover:text-indigo-400 transition-colors">{user.name}</p>
+                                    <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                                </Link>
                             </div>
                         )}
                     </div>
@@ -118,6 +120,14 @@ export function Sidebar() {
                         )}>
                             Plan {user.plan}
                         </div>
+                        {user.credits !== undefined && (
+                            <div className="mt-2 text-center">
+                                <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">Créditos Disponibles</p>
+                                <div className="text-sm font-bold text-white bg-slate-800/50 rounded-md py-1 border border-white/5">
+                                    {user.credits} <span className="text-slate-500 text-[10px]">/ {user.plan === 'premium' ? 2000 : user.plan === 'pro' ? 400 : 5}</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 

@@ -161,15 +161,16 @@ def login(credentials: LoginRequest):
             "name": "Maxi (Creador)",
             "plan": "PREMIUM",
             "avatar": "https://i.pravatar.cc/150?u=maxi",
-            "multiSession": True
+            "multiSession": True,
+            "credits": 2000
         }
     elif credentials.email == 'contador@pro.com':
-        user_data = {"email": credentials.email, "name": "Juan Contador", "plan": "PRO", "avatar": "https://i.pravatar.cc/150?u=juan", "multiSession": False}
+        user_data = {"email": credentials.email, "name": "Juan Contador", "plan": "PRO", "avatar": "https://i.pravatar.cc/150?u=juan", "multiSession": False, "credits": 400}
     elif credentials.email == 'usuario@inicial.com':
-        user_data = {"email": credentials.email, "name": "Usuario Nuevo", "plan": "FREE", "avatar": "https://i.pravatar.cc/150?u=new", "multiSession": False}
+        user_data = {"email": credentials.email, "name": "Usuario Nuevo", "plan": "FREE", "avatar": "https://i.pravatar.cc/150?u=new", "multiSession": False, "credits": 5}
     else:
         # Fallback para permitir registro/login genérico en demo
-        user_data = {"email": credentials.email, "name": credentials.email.split('@')[0], "plan": "FREE", "avatar": None, "multiSession": False}
+        user_data = {"email": credentials.email, "name": credentials.email.split('@')[0], "plan": "FREE", "avatar": None, "multiSession": False, "credits": 5}
 
     # Generar Token Real en Firestore
     try:

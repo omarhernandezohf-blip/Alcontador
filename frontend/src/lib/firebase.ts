@@ -4,14 +4,20 @@ import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    apiKey: "AIzaSyAp9XvGI9KumaUj2cPy4Oib0V-Fr_DAvpU",
+    authDomain: "asistentecontable-481806.firebaseapp.com",
+    projectId: "asistentecontable-481806",
+    storageBucket: "asistentecontable-481806.firebasestorage.app",
+    messagingSenderId: "247872611020",
+    appId: "1:247872611020:web:f6e32844706b996c975869",
+    measurementId: "G-TVZ1GLG2KZ"
 };
+
+console.log("Firebase Config Debug:", {
+    apiKey: firebaseConfig.apiKey ? "********" : "MISSING",
+    projectId: firebaseConfig.projectId,
+    authDomain: firebaseConfig.authDomain
+});
 
 // Initialize Firebase (Singleton pattern)
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
