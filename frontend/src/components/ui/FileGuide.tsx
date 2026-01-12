@@ -16,10 +16,10 @@ export function FileGuide({ moduleName, requiredColumns, exampleRow, tips }: Fil
         <>
             <button
                 onClick={() => setIsOpen(true)}
-                className="flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors bg-emerald-950/30 px-3 py-1.5 rounded-lg border border-emerald-500/20"
+                className="flex items-center gap-2 text-sm text-emerald-400 hover:text-white hover:bg-emerald-600/40 transition-all bg-emerald-950/50 px-3 py-1.5 rounded-lg border border-emerald-500/30 cursor-pointer z-20 relative shadow-lg shadow-emerald-900/10"
             >
                 <Info className="w-4 h-4" />
-                <span>¿Cómo debe ser el archivo?</span>
+                <span className="font-medium">¿Cómo debe ser el archivo?</span>
             </button>
 
             <AnimatePresence>

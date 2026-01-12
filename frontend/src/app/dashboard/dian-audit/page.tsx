@@ -123,7 +123,7 @@ export default function DianAuditPage() {
                 </div>
 
                 <GlassCard className="relative overflow-hidden group border-blue-500/30">
-                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
                         <ShieldCheck className="w-24 h-24 rotate-12" />
                     </div>
                     <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
@@ -147,7 +147,7 @@ export default function DianAuditPage() {
                 </GlassCard>
 
                 <GlassCard className="relative overflow-hidden group border-indigo-500/30">
-                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
                         <FileSpreadsheet className="w-24 h-24 rotate-12" />
                     </div>
                     <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
