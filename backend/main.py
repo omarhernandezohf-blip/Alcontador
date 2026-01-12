@@ -57,23 +57,29 @@ class CyberShieldMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(CyberShieldMiddleware)
 
-# --- HARDENED CORS CONFIGURATION ---
-# Permite explícitamente solo los dominios de confianza
+# --- HARDENED CORS CONFIGURATION (DEBUG MODE) ---
 origins = [
     "http://localhost:3000",
     "http://localhost:3001",
-    "https://asistentecontable-pro.vercel.app",  # Producción estimada
-    "https://asistente-contable-pro.vercel.app"  # Variante común
+    "https://asistente-contable-pro.vercel.app",
+    "https://alcontador.onrender.com"
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins, # ELIMINADO EL "*" (Wildcard)
-    allow_origin_regex=r"https://.*asistente.*\.vercel\.app", # Permite Deployments de Vercel
+    allow_origins=origins, 
+    allow_origin_regex=r"https://.*\.vercel\.app", # Allow ALL Vercel apps
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"], # Restringir métodos innecesarios
+    allow_methods=["*"], 
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    print(f"Incoming Request: {request.method} {request.url}")
+    print(f"Origin: {request.headers.get('origin')}")
+    response = await call_next(request)
+    return response
 
 @app.get("/")
 def read_root():
@@ -309,5 +315,7 @@ async def scan_invoice(file: UploadFile = File(...)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-# Force Deploy v2
+    import os
+    # Usar el puerto que asigna Render (variable de entorno PORT) o 8000 por defecto
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)

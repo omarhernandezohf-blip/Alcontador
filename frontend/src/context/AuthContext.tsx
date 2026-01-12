@@ -40,10 +40,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const login = async (email: string, pass: string): Promise<boolean> => {
-        // Mock Authentication Logic
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API
         try {
             const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            console.log("Attempting login to:", API_URL); // Debug
+
             const res = await fetch(`${API_URL}/api/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -51,12 +51,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             });
 
             if (!res.ok) {
-                console.error("Login failed: Invalid credentials or server error");
+                const errorData = await res.json().catch(() => ({}));
+                console.error("Login failed:", res.status, errorData);
                 return false;
             }
 
             const userData = await res.json();
-            // Map backend response 'plan' (uppercase) to frontend type (lowercase) if needed
+
             const user: User = {
                 ...userData,
                 plan: userData.plan.toLowerCase() as PlanType
@@ -67,23 +68,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             router.push('/dashboard');
             return true;
         } catch (error) {
-            console.error("Login Connection Error:", error);
+            console.error("Login Network Error:", error);
             return false;
         }
     };
 
     const loginWithGoogle = async () => {
-        // Mock Google Login -> Defaults to Initial Plan for demo
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        const mockUser: User = {
-            email: 'google.user@gmail.com',
-            name: 'Google User',
-            plan: 'inicial',
-            avatar: 'https://lh3.googleusercontent.com/a/default-user=s96-c'
-        };
-        setUser(mockUser);
-        localStorage.setItem('ac_user', JSON.stringify(mockUser));
-        router.push('/dashboard');
+        try {
+            // Import dynamically to avoid SSR issues if needed, or rely on top-level imports
+            const { GoogleAuthProvider, signInWithPopup } = await import("firebase/auth");
+            const { auth } = await import("@/lib/firebase");
+
+            const provider = new GoogleAuthProvider();
+            const result = await signInWithPopup(auth, provider);
+            const firebaseUser = result.user;
+
+            // Map Firebase user to App User
+            // In a real app, you would verify this with your backend here
+            const user: User = {
+                email: firebaseUser.email || "",
+                name: firebaseUser.displayName || "Usuario Google",
+                plan: 'inicial', // Default plan for new Google users
+                avatar: firebaseUser.photoURL || undefined,
+                multiSession: true
+            };
+
+            setUser(user);
+            localStorage.setItem('ac_user', JSON.stringify(user));
+            router.push('/dashboard');
+        } catch (error) {
+            console.error("Google Login Error:", error);
+            // Optional: Notify user of error
+        }
     };
 
     const logout = () => {
