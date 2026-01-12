@@ -7,6 +7,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { FileUpload } from '@/components/ui/FileUpload';
+import { FileGuide } from '@/components/ui/FileGuide';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function DianAuditPage() {
@@ -129,7 +130,14 @@ export default function DianAuditPage() {
                         <span className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-sm">1</span>
                         Archivo DIAN
                     </h3>
-                    <p className="text-sm text-slate-400 mb-6">Sube el Excel descargado del portal de la DIAN ("Información Reportada por Terceros").</p>
+                    <div className="mb-6 flex justify-between items-start">
+                        <p className="text-sm text-slate-400">Sube el Excel descargado del portal de la DIAN ("Información Reportada por Terceros").</p>
+                        <FileGuide
+                            moduleName="Exógena DIAN"
+                            requiredColumns={['NIT', 'Razón Social', 'Valor', 'Concepto']}
+                            exampleRow={{ 'NIT': '900123456', 'Razón Social': 'Empresa X', 'Valor': '5000000', 'Concepto': '5011' }}
+                        />
+                    </div>
                     <FileUpload
                         accept=".xlsx"
                         label="Reporte DIAN (.xlsx)"
@@ -146,7 +154,15 @@ export default function DianAuditPage() {
                         <span className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-sm">2</span>
                         Contabilidad
                     </h3>
-                    <p className="text-sm text-slate-400 mb-6">Sube tu Libro Auxiliar por Terceros para cruzar la información.</p>
+                    <div className="mb-6 flex justify-between items-start">
+                        <p className="text-sm text-slate-400">Sube tu balance de comprobación o auxiliar por terceros.</p>
+                        <FileGuide
+                            moduleName="Contabilidad Local"
+                            requiredColumns={['NIT', 'Saldo', 'Cuenta']}
+                            exampleRow={{ 'NIT': '900123456', 'Saldo': '4800000', 'Cuenta': '220505' }}
+                            tips={['Asegúrate de que los NITs no tengan dígito de verificación ni puntos']}
+                        />
+                    </div>
                     <FileUpload
                         accept=".xlsx"
                         label="Auxiliar Contable (.xlsx)"

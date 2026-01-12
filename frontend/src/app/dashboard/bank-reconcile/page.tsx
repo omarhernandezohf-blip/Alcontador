@@ -7,6 +7,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { FileUpload } from '@/components/ui/FileUpload';
+import { FileGuide } from '@/components/ui/FileGuide';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Types for reconciliation items
@@ -121,9 +122,16 @@ export default function BankReconcilePage() {
                     >
                         {/* Bank Side */}
                         <GlassCard className="h-full flex flex-col border-emerald-500/30">
-                            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                                <span className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-sm">A</span>
-                                Extracto Bancario
+                            <h3 className="text-lg font-bold text-white mb-4 flex items-center justify-between gap-2">
+                                <span className="flex items-center gap-2">
+                                    <span className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-sm">A</span>
+                                    Extracto Bancario
+                                </span>
+                                <FileGuide
+                                    moduleName="Bancos"
+                                    requiredColumns={['Fecha', 'Descripción', 'Valor', 'Saldo']}
+                                    exampleRow={{ 'Fecha': '2025-01-30', 'Descripción': 'Transferencia 123', 'Valor': '-50000', 'Saldo': '1200000' }}
+                                />
                             </h3>
                             <div className="flex-1">
                                 <FileUpload
@@ -152,9 +160,16 @@ export default function BankReconcilePage() {
 
                         {/* Book Side */}
                         <GlassCard className="h-full flex flex-col border-indigo-500/30">
-                            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                                <span className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-sm">B</span>
-                                Libro Auxiliar
+                            <h3 className="text-lg font-bold text-white mb-4 flex items-center justify-between gap-2">
+                                <span className="flex items-center gap-2">
+                                    <span className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-sm">B</span>
+                                    Libro Auxiliar
+                                </span>
+                                <FileGuide
+                                    moduleName="Libros"
+                                    requiredColumns={['Fecha', 'Documento', 'Detalle', 'Valor']}
+                                    exampleRow={{ 'Fecha': '2025-01-30', 'Documento': 'CE-001', 'Detalle': 'Pago Prov.', 'Valor': '-50000' }}
+                                />
                             </h3>
                             <div className="flex-1">
                                 <FileUpload

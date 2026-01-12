@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { TreasuryChart } from '@/components/modules/TreasuryChart';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { FileUpload } from '@/components/ui/FileUpload';
+import { FileGuide } from '@/components/ui/FileGuide';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function TreasuryPage() {
@@ -23,8 +25,7 @@ export default function TreasuryPage() {
         fileInputRef.current?.click();
     };
 
-    const processFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
+    const processFile = async (file: File) => {
         if (!file) return;
 
         setViewState('analyzing');
@@ -160,7 +161,10 @@ export default function TreasuryPage() {
             <input
                 type="file"
                 ref={fileInputRef}
-                onChange={processFile}
+                onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) processFile(file);
+                }}
                 className="hidden"
                 accept=".xlsx,.xls,.csv"
             />
@@ -196,31 +200,28 @@ export default function TreasuryPage() {
                         exit={{ opacity: 0, y: -20 }}
                         className="grid grid-cols-1 lg:grid-cols-2 gap-8"
                     >
-                        {/* Instrucciones */}
-                        <GlassCard className="p-8 space-y-6">
-                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                <Info className="w-5 h-5 text-indigo-400" />
-                                Instrucciones de Carga
-                            </h2>
-                            <div className="space-y-4 text-slate-300">
-                                <p>Carga un Excel con al menos estas columnas (o similares):</p>
-                                <ul className="space-y-3 text-sm">
-                                    <li className="flex items-center gap-3"><div className="w-2 h-2 rounded-full bg-cyan-400" /> Fecha / Mes</li>
-                                    <li className="flex items-center gap-3"><div className="w-2 h-2 rounded-full bg-emerald-400" /> Ingresos / Entradas</li>
-                                    <li className="flex items-center gap-3"><div className="w-2 h-2 rounded-full bg-rose-400" /> Egresos / Salidas</li>
-                                </ul>
-                                {error && <p className="text-red-400 text-sm mt-4 bg-red-500/10 p-3 rounded-lg border border-red-500/20">{error}</p>}
+                        <div className="flex justify-between items-center mb-6">
+                            <div>
+                                <h2 className="text-xl font-bold text-white mb-2">Cargar Movimientos</h2>
+                                <p className="text-slate-400 text-sm">Sube tu reporte de banco o contabilidad</p>
                             </div>
-                        </GlassCard>
+                            <FileGuide
+                                moduleName="Tesorería"
+                                requiredColumns={['Fecha', 'Ingresos', 'Egresos', 'Concepto']}
+                                exampleRow={{ 'Fecha': '2025-01-15', 'Ingresos': '5000000', 'Egresos': '0', 'Concepto': 'Pago Cliente' }}
+                                tips={[
+                                    'Las fechas pueden estar en formato YYYY-MM-DD o DD/MM/YYYY',
+                                    'Los valores numéricos no deben tener símbolos de moneda, solo números',
+                                    'Si no tienes columna "Concepto", el sistema la dejará en blanco'
+                                ]}
+                            />
+                        </div>
 
-                        {/* Área de Carga */}
-                        <GlassCard className="p-8 flex flex-col items-center justify-center border-2 border-dashed border-slate-700 hover:border-indigo-500/50 transition-colors group cursor-pointer" onClick={triggerFileUpload}>
-                            <div className="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center mb-6 shadow-xl shadow-indigo-500/10">
-                                <UploadCloud className="w-10 h-10 text-indigo-400" />
-                            </div>
-                            <h3 className="text-xl font-bold text-white mb-2">Cargar Archivo</h3>
-                            <button className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-medium mt-4">Seleccionar Excel</button>
-                        </GlassCard>
+                        <FileUpload
+                            onFilesSelected={(files) => files[0] && processFile(files[0])}
+                            accept=".xlsx, .xls, .csv"
+                            label="Arrastra tu Excel de Flujo de Caja aquí"
+                        />
                     </motion.div>
                 )}
 

@@ -5,6 +5,7 @@ import { FileText, Download } from 'lucide-react';
 import { FileUpload } from '@/components/ui/FileUpload';
 import { DataGrid } from '@/components/ui/DataGrid';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { FileGuide } from '@/components/ui/FileGuide';
 import { motion } from 'framer-motion';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -50,7 +51,15 @@ export default function XmlMiningPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <GlassCard className="lg:col-span-1 h-fit">
-                    <h3 className="text-lg font-bold mb-4 text-indigo-300">Cargar Archivos</h3>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-bold text-indigo-300">Cargar Archivos</h3>
+                        <FileGuide
+                            moduleName="Minería de Facturas"
+                            requiredColumns={['Estructura UBL 2.1']}
+                            exampleRow={{ 'Requisito': 'XML Válido DIAN', 'Versión': 'UBL 2.1', 'Tipo': 'Factura/Nota' }}
+                            tips={['Puedes subir múltiples archivos XML a la vez', 'El sistema ignora archivos que no sean XML válidos']}
+                        />
+                    </div>
                     <FileUpload
                         accept=".xml"
                         multiple

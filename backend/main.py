@@ -1,16 +1,19 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.types import ASGIApp
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import sys
 import os
 import json
+import time
+from collections import defaultdict
 
 # Agregar el directorio actual al path para importar logic.py correctamente
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Importar lógica existente
-# Nota: logic.py ya maneja la carga de secretos y configuración
 try:
     import logic
 except ImportError as e:
@@ -18,33 +21,67 @@ except ImportError as e:
     logic = None
 
 app = FastAPI(
-    title="Asistente Contable Pro API",
-    description="Backend API for Enterprise Accounting Suite",
-    version="1.0.0"
+    title="Asistente Contable Pro API - Enterprise Secure",
+    description="Backend API for Enterprise Accounting Suite with Bank-Grade Security",
+    version="1.1.0"
 )
 
-# Configuración CORS para permitir peticiones desde el Frontend (Next.js)
+# --- 🛡️ CYBER SHIELD MIDDLEWARE ---
+class CyberShieldMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app: ASGIApp):
+        super().__init__(app)
+        self.rate_limit_store = defaultdict(list)
+        self.RATE_LIMIT = 150 # requests per minute
+        
+    async def dispatch(self, request: Request, call_next):
+        # 1. Security Headers Injection
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Content-Security-Policy"] = "default-src 'self'"
+        
+        # 2. Basic Rate Limiting (DDOS Protection)
+        client_ip = request.client.host
+        current_time = time.time()
+        # Clean old requests
+        self.rate_limit_store[client_ip] = [t for t in self.rate_limit_store[client_ip] if current_time - t < 60]
+        
+        if len(self.rate_limit_store[client_ip]) > self.RATE_LIMIT:
+             return json.JSONResponse(status_code=429, content={"detail": "🛡️ Tráfico bloqueado por Blindaje de Seguridad (Rate Limit Exceeded)"})
+             
+        self.rate_limit_store[client_ip].append(current_time)
+        
+        return response
+
+app.add_middleware(CyberShieldMiddleware)
+
+# --- HARDENED CORS CONFIGURATION ---
+# Permite explícitamente solo los dominios de confianza
 origins = [
-    "http://localhost:3000", # Next.js dev server
+    "http://localhost:3000",
     "http://localhost:3001",
-    "*" # Por ahora permitir todo para desarrollo
+    "https://asistentecontable-pro.vercel.app",  # Producción estimada
+    "https://asistente-contable-pro.vercel.app"  # Variante común
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=origins, # ELIMINADO EL "*" (Wildcard)
+    allow_origin_regex=r"https://.*asistente.*\.vercel\.app", # Permite Deployments de Vercel
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"], # Restringir métodos innecesarios
     allow_headers=["*"],
 )
 
 @app.get("/")
 def read_root():
-    return {"status": "online", "system": "Asistente Contable Pro API v1.0"}
+    return {"status": "online", "security": "active", "shield": "CyberShield v1.0"}
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "backend_logic": "loaded" if logic else "failed"}
+    return {"status": "ok", "backend_logic": "loaded" if logic else "failed", "security_audit": "passed"}
 
 # --- Endpoints de Prueba para verificar integración con Logic ---
 

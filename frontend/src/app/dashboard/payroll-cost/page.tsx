@@ -7,6 +7,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { FileUpload } from '@/components/ui/FileUpload';
+import { FileGuide } from '@/components/ui/FileGuide';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Types
@@ -238,13 +239,22 @@ export default function PayrollCostPage() {
                                     <h3 className="text-2xl font-bold text-white mb-2">Carga tu Nómina</h3>
                                     <p className="text-slate-400">Sube tu archivo .xlsx o .pdf. Nuestro motor procesará cada empleado, calculará prestaciones, seguridad social y parafiscales automáticamente.</p>
                                 </div>
-
-                                <FileUpload
-                                    accept=".xlsx,.xls,.pdf"
-                                    label="Arrastra hoja de cálculo o PDF"
-                                    onFilesSelected={handleFileUpload}
-                                />
-
+                                <div className="w-full max-w-md mx-auto">
+                                    <div className="flex justify-end mb-2">
+                                        <FileGuide
+                                            moduleName="Costo Nómina"
+                                            requiredColumns={['Nombre', 'Cargo', 'Salario_Base', 'Auxilio_Transporte']}
+                                            exampleRow={{ 'Nombre': 'Pepito Perez', 'Cargo': 'Analista', 'Salario_Base': '2500000', 'Auxilio_Transporte': '0' }}
+                                            tips={['Si tiene Auxilio de Transporte pon el valor (ej. 162000) o 0']}
+                                        />
+                                    </div>
+                                    <FileUpload
+                                        accept=".xlsx, .csv"
+                                        label="Cargar Nómina de Empleados"
+                                        onFilesSelected={handleFileUpload}
+                                    />
+                                    {uploadedFile && <p className="mt-2 text-emerald-400 text-sm flex items-center justify-center gap-1 font-medium bg-emerald-500/10 p-2 rounded">✅ Cargado: {uploadedFile.name}</p>}
+                                </div>
                                 {isProcessing && (
                                     <div className="max-w-md mx-auto bg-emerald-900/20 border border-emerald-500/20 rounded-xl p-4 flex items-center gap-4">
                                         <div className="w-6 h-6 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />

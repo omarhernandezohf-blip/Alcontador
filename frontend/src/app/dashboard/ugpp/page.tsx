@@ -7,6 +7,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { FileUpload } from '@/components/ui/FileUpload';
+import { FileGuide } from '@/components/ui/FileGuide';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function UgppPage() {
@@ -117,6 +118,14 @@ export default function UgppPage() {
                             </div>
 
                             <div className="w-full max-w-md">
+                                <div className="flex justify-end mb-2">
+                                    <FileGuide
+                                        moduleName="UGPP / Nómina"
+                                        requiredColumns={['Empleado', 'Ingreso_Total', 'Pagos_No_Salariales']}
+                                        exampleRow={{ 'Empleado': 'Juan Perez', 'Ingreso_Total': '5000000', 'Pagos_No_Salariales': '2500000' }}
+                                        tips={['El sistema validará si lo NO salarial supera el 40% del total (Ley 1393)']}
+                                    />
+                                </div>
                                 <FileUpload
                                     accept=".xlsx"
                                     label="Cargar Planilla Mensual"

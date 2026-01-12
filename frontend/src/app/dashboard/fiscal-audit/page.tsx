@@ -8,6 +8,7 @@ import autoTable from 'jspdf-autotable';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { FileUpload } from '@/components/ui/FileUpload';
 import { DataGrid } from '@/components/ui/DataGrid';
+import { FileGuide } from '@/components/ui/FileGuide';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function FiscalAuditPage() {
@@ -129,13 +130,21 @@ export default function FiscalAuditPage() {
                                 <p className="text-slate-400">Sube tu Auxiliar de Gastos. Detectaremos pagos en efectivo que superen los topes legales y pongan en riesgo la deducibilidad.</p>
                             </div>
 
-                            <div className="w-full max-w-md bg-slate-900/50 p-4 rounded-xl border border-white/5">
+                            <div className="w-full max-w-md">
+                                <div className="flex justify-end mb-2">
+                                    <FileGuide
+                                        moduleName="Auditoría Fiscal"
+                                        requiredColumns={['Fecha', 'Tercero', 'NIT', 'Concepto', 'Valor', 'Medio_Pago']}
+                                        exampleRow={{ 'Fecha': '2025-02-15', 'Tercero': 'Prov. ABC', 'NIT': '900123456', 'Concepto': 'Compra Insumos', 'Valor': '5000000', 'Medio_Pago': 'Efectivo' }}
+                                        tips={['La columna Medio_Pago es vital para validar el Art. 771-5 (Efectivo vs Bancarizado)']}
+                                    />
+                                </div>
                                 <FileUpload
-                                    accept=".xlsx,.csv"
-                                    label="Cargar Auxiliar de Gastos"
+                                    accept=".xlsx, .csv"
+                                    label="Cargar Libro Auxiliar de Costos y Gastos"
                                     onFilesSelected={(f) => setFile(f[0])}
                                 />
-                                {file && <p className="mt-2 text-emerald-400 text-sm flex items-center justify-center gap-1 font-medium bg-emerald-500/10 p-2 rounded">✅ Listo: {file.name}</p>}
+                                {file && <p className="mt-2 text-emerald-400 text-sm flex items-center justify-center gap-1 font-medium bg-emerald-500/10 p-2 rounded">✅ Cargado: {file.name}</p>}
                             </div>
 
                             <button

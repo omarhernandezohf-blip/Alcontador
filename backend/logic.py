@@ -8,7 +8,10 @@ import time
 import random
 import io
 from datetime import datetime, timedelta
-import xml.etree.ElementTree as ET
+try:
+    import defusedxml.ElementTree as ET
+except ImportError:
+    import xml.etree.ElementTree as ET # Fallback solo si falla install, pero debe estarinstalado
 import os
 import html
 import requests
