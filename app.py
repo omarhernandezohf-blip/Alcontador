@@ -813,6 +813,8 @@ def create_pdf(df, title, filename):
         for _, row in df.iterrows():
             for col in cols:
                 txt = str(row[col])[:20] # Truncate for table safety
+                # Evitar errores de latin-1 con emojis u otros caracteres especiales
+                txt = txt.encode('latin-1', 'replace').decode('latin-1')
                 pdf.cell(eff_width, 6, txt, 1, 0, 'L')
             pdf.ln()
     
@@ -1931,7 +1933,7 @@ else:
                     
                     # Optimización de Memoria
                     del df_dian, df_conta, cruce, diferencias
-                    gc.collect()
+                    # gc.collect() # Comentado para evitar AttributeError con gspread
 
                 except Exception as e:
                     st.error(f"Algo salió mal: {e}. Revisa 'Configuración manual' arriba.")
@@ -2081,7 +2083,7 @@ else:
                 
                 # Optimización de Memoria
                 del df_banco, df_libro, df_matches, df_pend_banco, df_pend_libro
-                gc.collect()
+                # gc.collect() # Comentado para evitar AttributeError con gspread
 
     elif menu == "Auditoría Fiscal de Gastos":
         st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/1642/1642346.png' class='pro-module-icon'><div class='pro-module-title'><h2>Auditoría Fiscal Masiva (Art. 771-5)</h2></div></div>""", unsafe_allow_html=True)
