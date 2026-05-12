@@ -853,12 +853,14 @@ def download_section(df, file_label, title="Reporte Corporativo"):
     except Exception as e:
         c2.warning(f"PDF no disponible: {e}")
 
-def render_upload_example(data_dict, title="👁️ Ver Formato Ejemplo"):
+def render_upload_example(data_dict, title="👉 IMPORTANTE: ¿Qué archivo debo subir?", help_text=""):
     """
-    Shows a collapsible example table to guide file uploads.
+    Shows a collapsible example table and optional help text to guide file uploads.
     """
+    if help_text:
+        st.info(help_text)
     with st.expander(title):
-        st.info("Tu archivo Excel debe tener una estructura similar (los nombres de columnas pueden variar):")
+        st.markdown("**Estructura requerida (los nombres de columnas pueden variar):**")
         st.dataframe(pd.DataFrame(data_dict), hide_index=True, use_container_width=True)
 
 # ==============================================================================
@@ -1848,16 +1850,21 @@ else:
         with col_dian:
             st.subheader("🏛️ 1. Archivo DIAN")
             file_dian = st.file_uploader("Subir 'Reporte Terceros DIAN' (.xlsx)", type=['xlsx'])
-            render_upload_example({'NIT': ['900123456', '890987654'], 'Valor Reportado': ['$ 1,500,000.00', '$ 5,200,000 COP']})
+            render_upload_example({'NIT': ['900123456', '890987654'], 'Valor Reportado': ['$ 1,500,000.00', '$ 5,200,000 COP']}, help_text="Sube el reporte de terceros generado por la DIAN. Debe tener una columna con los NITs y otra con los valores reportados.")
 
         with col_conta:
             st.subheader("📒 2. Contabilidad")
             file_conta = st.file_uploader("Subir Auxiliar por Tercero (.xlsx)", type=['xlsx'])
-            render_upload_example({'NIT': ['900123456', '890987654'], 'Saldo Contable': ['$ 1,500,000', '4,800,000.00']})
+            render_upload_example({'NIT': ['900123456', '890987654'], 'Saldo Contable': ['$ 1,500,000', '4,800,000.00']}, help_text="Sube tu balance de comprobación o auxiliar contable. Debe tener una columna con los NITs y otra con los saldos.")
             
         if file_dian and file_conta:
             df_dian = safe_read_excel(file_dian)
             df_conta = safe_read_excel(file_conta)
+            
+            # Validación Pre-Vuelo
+            if df_dian.empty or len(df_dian.columns) < 2 or df_conta.empty or len(df_conta.columns) < 2:
+                st.error("❌ Error de Validación: Uno de los archivos está vacío o no tiene las columnas mínimas necesarias (NIT y Valor). Por favor, verifica el formato de tus Excel antes de continuar.")
+                st.stop()
             
             # Cerebro de Auto-Detección
             def detectar_idx(columnas, keywords):
@@ -1974,17 +1981,22 @@ else:
         with col_banco: 
             st.subheader("🏦 Extracto Bancario")
             file_banco = st.file_uploader("Subir Excel Banco", type=['xlsx'])
-            render_upload_example({'Fecha': ['2025-01-10', '2025-01-12'], 'Descripción': ['Pago Proveedor X', 'Comision Bancaria'], 'Valor': ['-500,000.00', '$ -12,000']})
+            render_upload_example({'Fecha': ['2025-01-10', '2025-01-12'], 'Descripción': ['Pago Proveedor X', 'Comision Bancaria'], 'Valor': ['-500,000.00', '$ -12,000']}, help_text="Sube tu extracto bancario mensual. Obligatorio: Columna de Fecha, Descripción y Valor.")
         
         with col_libro: 
             st.subheader("📒 Libro Auxiliar")
             file_libro = st.file_uploader("Subir Excel Contabilidad", type=['xlsx'])
-            render_upload_example({'Fecha': ['2025-01-10', '2025-01-12'], 'Detalle': ['Egreso #405', 'Nota Debito'], 'Crédito': ['$ 500,000', '12,000.00']})
+            render_upload_example({'Fecha': ['2025-01-10', '2025-01-12'], 'Detalle': ['Egreso #405', 'Nota Debito'], 'Crédito': ['$ 500,000', '12,000.00']}, help_text="Sube tu auxiliar contable de bancos. Obligatorio: Columna de Fecha, Detalle y Crédito/Débito.")
         
         if file_banco and file_libro:
             # Lectura Segura
             df_banco = safe_read_excel(file_banco)
             df_libro = safe_read_excel(file_libro)
+            
+            # Validación Pre-Vuelo
+            if df_banco.empty or len(df_banco.columns) < 3 or df_libro.empty or len(df_libro.columns) < 3:
+                st.error("❌ Error de Validación: Uno de los archivos está vacío o no tiene las columnas mínimas (Fecha, Descripción, Valor). Por favor revisa y vuelve a subir.")
+                st.stop()
             
             # --- CEREBRO DE AUTO-DETECCIÓN ---
             def detectar_idx(columnas, keywords):
@@ -2095,10 +2107,14 @@ else:
             'Tercero': ['Comercializadora SAS', 'Servicios SA'], 
             'Valor': ['$ 15,000,000', '450,000 COP'],
             'Método Pago': ['Transferencia', 'Efectivo']
-        })
+        }, help_text="Sube el auxiliar de gastos/egresos. Obligatorio: Fecha, Tercero, Valor y Método de Pago (ej. Efectivo, Transferencia).")
         
         if ar:
             df = safe_read_excel(ar)
+            
+            if df.empty or len(df.columns) < 4:
+                st.error("❌ Error de Validación: El archivo está vacío o le faltan columnas clave. Asegúrate de tener al menos Fecha, Tercero, Valor y Método de Pago.")
+                st.stop()
             # ... (Existing Logic kept brief for length, assumig no changes needed in logic, just UI restoration)
             # Re-implementing logic for completeness as I am overwriting the file
             def detectar_idx(columnas, keywords):
@@ -2178,9 +2194,13 @@ else:
             'Salario Básico': ['$ 2,500,000', '$ 18,000,000'],
             'Bonos No Salariales': ['500,000', '12,000,000 COP'],
             'Auxilios': ['$ 200,000', '5,000,000']
-        })
+        }, help_text="Sube tu reporte de nómina. Obligatorio: Nombre del empleado, Salario Básico y Pagos No Salariales.")
         if an:
             dn = safe_read_excel(an)
+            
+            if dn.empty or len(dn.columns) < 2:
+                st.error("❌ Error de Validación: Tu archivo de nómina no tiene suficientes columnas. Necesitas al menos el Empleado y su Salario.")
+                st.stop()
             cols_todas = dn.columns.tolist()
             cols_numericas = dn.select_dtypes(include=['float64', 'int64']).columns.tolist()
             if not cols_numericas: cols_numericas = cols_todas
@@ -2251,13 +2271,17 @@ else:
         c1, c2 = st.columns(2)
         with c1:
              fcxc = st.file_uploader("Cartera (CxC)", type=['xlsx'])
-             render_upload_example({'Fecha Vencimiento': ['2025-02-15'], 'Cliente': ['Cliente ABC'], 'Saldo': ['$ 5,000,000']}, "Ejemplo CxC")
+             render_upload_example({'Fecha Vencimiento': ['2025-02-15'], 'Cliente': ['Cliente ABC'], 'Saldo': ['$ 5,000,000']}, "Ejemplo CxC", help_text="Sube tus Cuentas por Cobrar. Obligatorio: Fecha de vencimiento y Saldo.")
         with c2:
              fcxp = st.file_uploader("Proveedores (CxP)", type=['xlsx'])
-             render_upload_example({'Fecha Vencimiento': ['2025-02-10'], 'Proveedor': ['Prov. XYZ'], 'Total': ['2,500,000 COP']}, "Ejemplo CxP")
+             render_upload_example({'Fecha Vencimiento': ['2025-02-10'], 'Proveedor': ['Prov. XYZ'], 'Total': ['2,500,000 COP']}, "Ejemplo CxP", help_text="Sube tus Cuentas por Pagar. Obligatorio: Fecha de vencimiento y Total a pagar.")
              
         if fcxc and fcxp:
             dcxc = safe_read_excel(fcxc); dcxp = safe_read_excel(fcxp)
+            
+            if dcxc.empty or len(dcxc.columns) < 2 or dcxp.empty or len(dcxp.columns) < 2:
+                st.error("❌ Error de Validación: Los archivos deben tener al menos una columna de Fecha y una de Saldo/Valor.")
+                st.stop()
             c1, c2, c3, c4 = st.columns(4)
             cfc = c1.selectbox("Fecha Vencimiento CxC:", dcxc.columns); cvc = c2.selectbox("Valor CxC:", dcxc.columns)
             cfp = c3.selectbox("Fecha Vencimiento CxP:", dcxp.columns); cvp = c4.selectbox("Valor CxP:", dcxp.columns)
@@ -2291,11 +2315,15 @@ else:
         )
         
         ac = st.file_uploader("Cargar Listado Personal (.xlsx)", type=['xlsx'])
-        render_upload_example({'Nombre': ['Ana Gomez'], 'Salario Base': ['$ 3,500,000'], 'Auxilio Trans': ['NO'], 'Riesgo ARL': [1]})
+        render_upload_example({'Nombre': ['Ana Gomez'], 'Salario Base': ['$ 3,500,000'], 'Auxilio Trans': ['NO'], 'Riesgo ARL': [1]}, help_text="Sube el listado de empleados. Obligatorio: Nombre y Salario Base. Opcional: Nivel ARL y si tienen Auxilio de Transporte.")
         
         if ac:
             try:
                 dc = safe_read_excel(ac)
+                
+                if dc.empty or len(dc.columns) < 2:
+                    st.error("❌ Error de Validación: El archivo está vacío o no tiene al menos la columna de Nombre y Salario.")
+                    st.stop()
                 st.info("Configura las columnas (El sistema intenta detectarlas automáticamente):")
                 
                 cols = list(dc.columns)
@@ -2362,10 +2390,14 @@ else:
             get_text('ben_fin_ai')
         )
         fi = st.file_uploader("Cargar Datos Financieros (.xlsx/.csv)", type=['xlsx', 'csv'])
-        render_upload_example({'Cuenta': ['Ingresos Op', 'Gastos Admin', 'Costo Ventas'], 'Saldo': ['$ 50,000,000', '$ 12,000,000', '25,000,000 COP']})
+        render_upload_example({'Cuenta': ['Ingresos Op', 'Gastos Admin', 'Costo Ventas'], 'Saldo': ['$ 50,000,000', '$ 12,000,000', '25,000,000 COP']}, help_text="Sube tus datos financieros. Obligatorio: Una columna con los nombres (Cuentas/Categorías) y otra con los valores numéricos.")
         
         if fi and api_key_valida:
             df = safe_read_excel(fi)
+            
+            if df.empty or len(df.columns) < 2:
+                st.error("❌ Error de Validación: El archivo debe tener al menos una columna de texto (Categoría) y una de números (Valor).")
+                st.stop()
             c1, c2 = st.columns(2); cd = c1.selectbox("Columna Descripción", df.columns); cv = c2.selectbox("Columna Valor", df.columns)
             if st.button("▶️ INICIAR ANÁLISIS IA"):
                 # Forzar a numérico por si el usuario elige una columna de texto por error
@@ -2387,14 +2419,38 @@ else:
         c1, c2 = st.columns(2)
         with c1:
              f1 = st.file_uploader("Año Actual", type=['xlsx'])
-             render_upload_example({'Cuenta': ['Caja General'], 'Saldo 2025': ['$ 15,000,000.00']}, "Ej. Año Actual")
+             render_upload_example({'Cuenta': ['Caja General'], 'Saldo 2025': ['$ 15,000,000.00']}, "Ej. Año Actual", help_text="Sube el balance del periodo actual. Obligatorio: Nombre de Cuenta y Valor.")
         with c2:
              f2 = st.file_uploader("Año Anterior", type=['xlsx'])
-             render_upload_example({'Cuenta': ['Caja General'], 'Saldo 2024': ['$ 12,000,000']}, "Ej. Año Anterior")
+             render_upload_example({'Cuenta': ['Caja General'], 'Saldo 2024': ['$ 12,000,000']}, "Ej. Año Anterior", help_text="Sube el balance del periodo anterior. Obligatorio: Nombre de Cuenta y Valor.")
              
         if f1 and f2 and api_key_valida:
             d1 = safe_read_excel(f1); d2 = safe_read_excel(f2)
-            st.divider(); c1, c2, c3 = st.columns(3); cta = c1.selectbox("Cuenta Contable", d1.columns); v1 = c2.selectbox("Valor Año Actual", d1.columns); v2 = c3.selectbox("Valor Año Anterior", d2.columns)
+            
+            if d1.empty or len(d1.columns) < 2 or d2.empty or len(d2.columns) < 2:
+                st.error("❌ Error de Validación: Ambos balances deben tener al menos la columna de Cuenta y su Valor.")
+                st.stop()
+            
+            # Auto-detección inteligente para evitar errores
+            def detectar_idx(columnas, keywords):
+                cols_str = [str(c).lower().strip() for c in columnas]
+                for i, col in enumerate(cols_str):
+                    for kw in keywords:
+                        if kw in col: return i
+                return 0
+            
+            idx_cta = detectar_idx(d1.columns, ['cuenta', 'concepto', 'rubro', 'detalle'])
+            idx_v1 = detectar_idx(d1.columns, ['saldo', 'valor', 'total', 'monto'])
+            if idx_v1 == idx_cta and len(d1.columns) > 1: idx_v1 = 1 if idx_cta == 0 else 0
+            
+            idx_v2 = detectar_idx(d2.columns, ['saldo', 'valor', 'total', 'monto'])
+            idx_cta_2 = detectar_idx(d2.columns, ['cuenta', 'concepto', 'rubro', 'detalle'])
+            if idx_v2 == idx_cta_2 and len(d2.columns) > 1: idx_v2 = 1 if idx_cta_2 == 0 else 0
+
+            st.divider(); c1, c2, c3 = st.columns(3)
+            cta = c1.selectbox("Cuenta Contable", d1.columns, index=idx_cta)
+            v1 = c2.selectbox("Valor Año Actual", d1.columns, index=idx_v1)
+            v2 = c3.selectbox("Valor Año Anterior", d2.columns, index=idx_v2)
             if st.button("✨ GENERAR INFORME ESTRATÉGICO"):
                 # Limpieza de datos (Evitar TypeError)
                 d1[v1] = pd.to_numeric(d1[v1], errors='coerce').fillna(0)
