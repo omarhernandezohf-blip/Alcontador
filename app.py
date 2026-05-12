@@ -122,9 +122,8 @@ with st.sidebar:
         )
 
 # --- CONFIGURACIÓN DE ESTILO GLOBAL (SIDEBAR CLÁSICO MEJORADO) ---
-st.sidebar.markdown("---")
-st.sidebar.caption(f"🇨🇴 **Normativa 2026 Activa**")
-st.sidebar.caption(f"UVT: $52,374 | SMMLV: $1.7M")
+# --- CONFIGURACIÓN DE ESTILO GLOBAL (SIDEBAR CLÁSICO MEJORADO) ---
+# La normativa se movió al final de la barra lateral (después del chat)
 
 st.markdown("""
     <style>
@@ -2667,9 +2666,9 @@ def render_tax_copilot():
         if "chat_history" not in st.session_state:
             st.session_state.chat_history = []
             
-        with st.expander("💬 Copiloto Tributario 2026", expanded=False):
-            st.caption("🤖 Asistente Virtual | Normativa 2026")
-            st.info("💡 Pregúntame sobre Retenciones, UVT, NIIF o Nómina.")
+        with st.expander("💬 Copiloto y Soporte IA", expanded=False):
+            st.caption("🤖 Asistente Tributario y Soporte App")
+            st.info("💡 Pregúntame sobre normas contables o cómo usar esta aplicación.")
             
             # Contenedor de Historia (Scroll simulado)
             chat_container = st.container()
@@ -2680,7 +2679,7 @@ def render_tax_copilot():
             
             # Zona de Input (Tipo Formulario para no recargar toda la app)
             with st.form(key="chat_form", clear_on_submit=True):
-                user_input = st.text_input("Escribe tu consulta aquí...", placeholder="Ej: ¿Cuál es la base de retención por servicios?")
+                user_input = st.text_input("Escribe tu consulta aquí...", placeholder="Ej: ¿Cuál es la retención? o ¿Cómo subo el Excel?")
                 submit_btn = st.form_submit_button("Enviar Consulta 🚀")
                 
             if submit_btn and user_input:
@@ -2689,8 +2688,9 @@ def render_tax_copilot():
                 
                 # 2. Contexto 2026
                 contexto_legal = f"""
-                ACTÚA COMO UN EXPERTO CONTADOR Y ABOGADO TRIBUTARISTA DE COLOMBIA.
-                TU FUENTE DE VERDAD ES LA NORMATIVA VIGENTE PARA EL AÑO FISCAL 2026.
+                ACTÚA COMO: 
+                1. EXPERTO CONTADOR Y ABOGADO TRIBUTARISTA DE COLOMBIA (Normativa 2026).
+                2. AGENTE DE SOPORTE TÉCNICO de esta aplicación ('Asistente Contable Pro'). Ayuda al usuario a entender cómo usar los módulos, qué archivos subir o cómo solucionar errores.
                 
                 DATOS OFICIALES 2026:
                 - SMMLV: ${SMMLV_2026:,.0f}
@@ -2700,7 +2700,7 @@ def render_tax_copilot():
                 - BASE RETENCIÓN SERVICIOS (4 UVT): ${BASE_RET_SERVICIOS:,.0f}
                 - TOPE BANCARIZACIÓN (100 UVT): ${TOPE_EFECTIVO:,.0f}
                 
-                INSTRUCCIÓN: Responde de forma clara, profesional y cita siempre la norma (Artículos ET, Decretos) si aplica.
+                INSTRUCCIÓN: Responde de forma clara y amigable. Si es una duda contable, cita la norma. Si es una duda sobre la app, guíalo paso a paso.
                 PREGUNTA DEL USUARIO: {user_input}
                 """
                 
@@ -2713,6 +2713,11 @@ def render_tax_copilot():
                     st.rerun() # Recargar para mostrar el mensaje
                 except Exception as e:
                     st.error(f"Error IA: {str(e)}")
+        
+        # Colocar la normativa al final de la barra lateral
+        st.markdown("---")
+        st.caption(f"🇨🇴 **Normativa 2026 Activa**")
+        st.caption(f"UVT: $52,374 | SMMLV: $1.7M")
 
 # Ejecutar el Chatbot al final para asegurar que todas las constantes están cargadas
 render_tax_copilot()
