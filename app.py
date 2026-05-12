@@ -1666,7 +1666,7 @@ if menu == "Inicio / Dashboard":
     with c_chart_1:
         st.markdown("#### 📈 TENDENCIA DE FLUJO DE CAJA")
         # Generar datos más realistas con fechas
-        fechas_chart = pd.date_range(start="2025-01-01", periods=12, freq="M")
+        fechas_chart = pd.date_range(start="2025-01-01", periods=12, freq="ME")
         chart_data = pd.DataFrame({
             "Mes": fechas_chart,
             "Ingresos": np.random.randint(50000, 80000, 12),

@@ -8,6 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Lock, Mail, ChevronRight, AlertCircle, Command } from 'lucide-react';
 import Image from 'next/image';
 
+
 export default function LoginPage() {
     const { login, loginWithGoogle } = useAuth();
     const [email, setEmail] = useState('');
@@ -55,7 +56,7 @@ export default function LoginPage() {
                         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-xl shadow-indigo-500/30 mb-6">
                             <Command className="w-8 h-8 text-white" />
                         </div>
-                        <h1 className="text-3xl font-bold text-white mb-2 font-space tracking-tight">Bienvenido de Nuevo</h1>
+                        <h1 className="text-3xl font-bold text-white mb-2 font-space tracking-tight">Bienvenido de Nuevo <span className="text-xs align-top bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-500/30">v1.0</span></h1>
                         <p className="text-slate-400">Accede a tu Suite Financiera Premium</p>
                     </div>
 
@@ -150,6 +151,7 @@ export default function LoginPage() {
                             <span className="cursor-pointer hover:text-white" onClick={() => setEmail('admin@premium.com')}>admin@premium.com</span>
                         </div>
                     </div>
+
 
                 </motion.div>
             </div>

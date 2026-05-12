@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import {
     Home, FileText, Banknote, ShieldCheck, Activity,
     PieChart, Users, FileDigit, Smartphone, Cpu, Settings, CheckCircle,
-    Truck, ScrollText, Calculator, BookOpen, LogOut
+    Truck, ScrollText, Calculator, BookOpen, LogOut, History
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -35,6 +35,7 @@ const menuItems = [
     { icon: FileDigit, label: 'OCR Facturas', href: '/dashboard/ocr' },
     { icon: ScrollText, label: 'Cotizaciones', href: '/dashboard/quotes' },
     { icon: Truck, label: 'Logística', href: '/dashboard/logistics' },
+    { icon: History, label: 'Historial', href: '/dashboard/history' },
 ];
 
 export function Sidebar() {

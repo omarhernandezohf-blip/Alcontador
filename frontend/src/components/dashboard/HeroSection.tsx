@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { Sparkles, Command, Radio } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { PremiumAvatarFrame } from '../ui/PremiumAvatarFrame';
 
 export function HeroSection() {
     const { user } = useAuth();
@@ -21,7 +22,7 @@ export function HeroSection() {
                 >
                     <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold tracking-wider uppercase flex items-center gap-2">
                         <Sparkles className="w-3 h-3" />
-                        Edición Platino
+                        Edición Premium
                     </span>
                     <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold tracking-wider uppercase flex items-center gap-2">
                         <Radio className="w-3 h-3 animate-pulse" />
@@ -51,21 +52,13 @@ export function HeroSection() {
             </div>
 
             {/* The Core Animation (Right Side) */}
-            <div className="relative z-10 hidden lg:block">
-                <div className="relative w-48 h-48 flex items-center justify-center">
-                    {/* Outer Rings */}
-                    <div className="absolute inset-0 border border-indigo-500/20 rounded-full animate-[spin_10s_linear_infinite]" />
-                    <div className="absolute inset-2 border border-purple-500/20 rounded-full animate-[spin_15s_linear_infinite_reverse]" />
-                    <div className="absolute inset-12 border-2 border-dashed border-white/10 rounded-full animate-[spin_20s_linear_infinite]" />
-
-                    {/* The Core Orb */}
-                    <div className="relative w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full shadow-[0_0_50px_rgba(99,102,241,0.5)] flex items-center justify-center animate-pulse">
-                        <Command className="w-8 h-8 text-white" />
-                    </div>
-
-                    {/* Orbital Particles */}
-                    <div className="absolute top-0 left-1/2 w-2 h-2 bg-emerald-400 rounded-full shadow-[0_0_10px_rgba(52,211,153,0.8)] animate-bounce" />
-                </div>
+            <div className="relative z-10 hidden lg:block scale-125 origin-center">
+                <PremiumAvatarFrame
+                    avatarUrl={user?.avatar}
+                    userName={user?.name}
+                    plan={user?.plan || 'free'}
+                    size="xl"
+                />
             </div>
 
             {/* Interactive Grid overlay */}

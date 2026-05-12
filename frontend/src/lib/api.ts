@@ -1,4 +1,23 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// Centralized API URL configuration
+// This ensures that production builds (Vercel) automatically point to Render
+// while local development continues to work with localhost.
+
+const getApiUrl = () => {
+    // 1. Priority: Environment Variable (set in Vercel or .env.local)
+    if (process.env.NEXT_PUBLIC_API_URL) {
+        return process.env.NEXT_PUBLIC_API_URL;
+    }
+
+    // 2. Production Fallback (When deployed on Vercel but env var missing)
+    if (process.env.NODE_ENV === 'production') {
+        return 'https://alcontador.onrender.com';
+    }
+
+    // 3. Local Development Fallback
+    return 'http://localhost:8000';
+};
+
+export const API_URL = getApiUrl();
 
 export async function consultAI(prompt: string, userPlan: string = 'FREE', email?: string) {
     try {

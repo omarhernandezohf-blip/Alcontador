@@ -2,6 +2,9 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { API_URL } from '@/lib/api';
+import { db } from '@/lib/firebase';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 
 export type PlanType = 'inicial' | 'pro' | 'premium';
 
@@ -73,40 +76,83 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const storedUser = localStorage.getItem('ac_user');
         if (storedUser) {
             const parsedUser = JSON.parse(storedUser);
-            // Ensure we have the latest persisted data
-            const persistedData = loadFromLocalDB(parsedUser.email);
-            setUser({ ...parsedUser, ...persistedData });
+            setUser(parsedUser);
+
+            // Immediately sync with Firestore if we have an email
+            if (parsedUser.email) {
+                syncWithFirestore(parsedUser.email);
+            }
         } else if (!pathname.includes('/login')) {
             router.push('/login');
         }
     }, []);
 
-    const updateUser = (data: Partial<User>) => {
+    // Listen to Firestore changes for specific user data (Avatar, Name, Plan)
+    const syncWithFirestore = (email: string) => {
+        const userRef = doc(db, 'users', email);
+
+        // Real-time listener for profile updates (cross-device sync)
+        const unsubscribe = onSnapshot(userRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const cloudData = docSnap.data();
+
+                setUser(prev => {
+                    if (!prev) return null;
+
+                    // Only update if data actually changed to avoid loop
+                    const newAvatar = cloudData.avatar;
+                    const newName = cloudData.name;
+
+                    if (prev.avatar !== newAvatar || prev.name !== newName) {
+                        const updated = {
+                            ...prev,
+                            avatar: newAvatar || prev.avatar,
+                            name: newName || prev.name
+                        };
+
+                        // Update local storage too so it persists offline/refresh
+                        localStorage.setItem('ac_user', JSON.stringify(updated));
+                        return updated;
+                    }
+                    return prev;
+                });
+            }
+        }, (error) => {
+            console.error("Error syncing with Firestore:", error);
+        });
+
+        return unsubscribe;
+    };
+
+    const updateUser = async (data: Partial<User>) => {
         if (!user) return;
+
+        // 1. Optimistic Update (Local)
         const updatedUser = { ...user, ...data };
         setUser(updatedUser);
+        localStorage.setItem('ac_user', JSON.stringify(updatedUser));
 
+        // 2. Persist to Cloud (Firestore)
         try {
-            // 1. Update active session
-            localStorage.setItem('ac_user', JSON.stringify(updatedUser));
+            const userRef = doc(db, 'users', user.email);
+            // We only persist specific fields to avoid overwriting auth/credits logic which might be handled by backend
+            const persistentData: any = {};
+            if (data.avatar !== undefined) persistentData.avatar = data.avatar;
+            if (data.name !== undefined) persistentData.name = data.name;
 
-            // 2. Update persistent storage (Avatar, Name, etc)
-            // We only persist fields that are meant to be editable by user
-            const persistentFields: Partial<User> = {};
-            if (data.name) persistentFields.name = data.name;
-            if (data.avatar) persistentFields.avatar = data.avatar;
-
-            if (Object.keys(persistentFields).length > 0) {
-                saveToLocalDB(user.email, persistentFields);
+            if (Object.keys(persistentData).length > 0) {
+                await setDoc(userRef, persistentData, { merge: true });
+                // Also legacy save to local DB just in case
+                saveToLocalDB(user.email, persistentData);
             }
-        } catch (error) {
-            console.error("Error saving to localStorage:", error);
+        } catch (e) {
+            console.error("Error saving to Firestore", e);
         }
     };
 
     const login = async (email: string, pass: string): Promise<boolean> => {
         try {
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            // Robust API URL selection: Centralized
             console.log("Attempting login to:", API_URL); // Debug
 
             const res = await fetch(`${API_URL}/api/auth/login`, {
@@ -135,6 +181,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             setUser(user);
             localStorage.setItem('ac_user', JSON.stringify(user));
+
+            // Start cloud sync
+            syncWithFirestore(email);
+
             router.push('/dashboard');
             return true;
         } catch (error) {
@@ -172,6 +222,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             setUser(user);
             localStorage.setItem('ac_user', JSON.stringify(user));
+
+            // Start cloud sync
+            syncWithFirestore(email);
+
             router.push('/dashboard');
         } catch (error) {
             console.error("Google Login Error:", error);

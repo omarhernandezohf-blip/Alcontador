@@ -1,5 +1,26 @@
-.streamlit/secrets.toml
-**/__pycache__
+# Python
+__pycache__/
 *.pyc
 .streamlit/secrets.toml
 client_secret.json
+venv/
+.venv/
+
+# Node/Next.js
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+frontend/.env.local
+
+# System
+.DS_Store
+Thumbs.db

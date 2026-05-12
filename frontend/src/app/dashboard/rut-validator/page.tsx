@@ -5,7 +5,7 @@ import { CheckCircle, Hash, Copy } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+import { API_URL } from '@/lib/api';
 
 export default function RutValidatorPage() {
     const [nit, setNit] = useState('');
