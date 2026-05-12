@@ -2653,68 +2653,148 @@ st.markdown("<center><strong>Asistente Contable Pro</strong> | Versión 1.0</cen
 
 # ==============================================================================
 # COPILOTO TRIBUTARIO (CHATBOT FLOTANTE SIDEBAR)
-# ==============================================================================
 def render_tax_copilot():
     """
-    Renderiza el asistente de IA en la barra lateral (siempre accesible).
-    Usa las constantes 2026 definidas previamente.
+    Renderiza el asistente de IA como un widget flotante en la esquina inferior derecha.
     """
+    # 1. Inyectar CSS para el popover flotante
+    st.markdown("""
+    <style>
+    /* Mover el popover a la esquina inferior derecha */
+    div[data-testid="stPopover"] {
+        position: fixed !important;
+        bottom: 30px !important;
+        right: 30px !important;
+        z-index: 999999 !important;
+    }
+    
+    /* Convertir el botón del popover en un gran botón circular */
+    div[data-testid="stPopover"] > button {
+        border-radius: 50% !important;
+        width: 70px !important;
+        height: 70px !important;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+        color: white !important;
+        border: none !important;
+        box-shadow: 0 10px 25px rgba(99, 102, 241, 0.5) !important;
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    div[data-testid="stPopover"] > button:hover {
+        transform: scale(1.1) !important;
+    }
+    div[data-testid="stPopover"] > button p {
+        font-size: 32px !important;
+        margin: 0 !important;
+    }
+    
+    /* Configurar la ventana interna del chat */
+    div[data-testid="stPopoverBody"] {
+        width: 380px !important;
+        height: 550px !important;
+        border-radius: 20px !important;
+        padding: 20px !important;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.5) !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+        background: rgba(15, 23, 42, 0.95) !important;
+        backdrop-filter: blur(20px) !important;
+        overflow-y: auto !important;
+    }
+    
+    .chat-header-float {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .chat-avatar-float {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #34d399;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Estado del Chat (Persistencia)
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+
+    # Cargar la imagen del avatar con audífonos en Base64 para inyectarla en HTML
+    import base64
+    import os
+    img_b64 = ""
+    img_path = r"d:\OneDrive\Desktop\proyecto contador\assets\asesor_ia.png"
+    if os.path.exists(img_path):
+        try:
+            with open(img_path, "rb") as f:
+                img_b64 = base64.b64encode(f.read()).decode()
+        except: pass
+        
+    img_src = f"data:image/png;base64,{img_b64}" if img_b64 else "https://cdn-icons-png.flaticon.com/512/8943/8943377.png"
+
+    # Desplegar el botón flotante (Popover nativo de Streamlit)
+    with st.popover("💬", use_container_width=False):
+        
+        # Cabecera del chat con la imagen
+        st.markdown(f"""
+        <div class="chat-header-float">
+            <img src="{img_src}" class="chat-avatar-float">
+            <div>
+                <h3 style="margin:0; color:white; font-size:18px;">Soporte y Copiloto IA</h3>
+                <span style="color:#34d399; font-size:12px; font-weight:600;">● En línea | Responde al instante</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Historial (scrollable nativo de streamlit en un contenedor)
+        chat_container = st.container(height=300)
+        with chat_container:
+            for msg in st.session_state.chat_history:
+                with st.chat_message(msg["role"]):
+                    st.markdown(msg["content"])
+        
+        # Zona de Input
+        with st.form(key="chat_form_float", clear_on_submit=True):
+            user_input = st.text_input("Escribe tu consulta aquí...", placeholder="Ej: ¿Cómo subo el archivo?")
+            submit_btn = st.form_submit_button("Enviar 🚀")
+            
+        if submit_btn and user_input:
+            st.session_state.chat_history.append({"role": "user", "content": user_input})
+            
+            contexto_legal = f"""
+            ACTÚA COMO: 
+            1. EXPERTO CONTADOR Y ABOGADO TRIBUTARISTA DE COLOMBIA (Normativa 2026).
+            2. AGENTE DE SOPORTE TÉCNICO de esta aplicación ('Asistente Contable Pro'). Ayuda al usuario a entender cómo usar los módulos, qué archivos subir o cómo solucionar errores.
+            
+            DATOS OFICIALES 2026:
+            - SMMLV: ${SMMLV_2026:,.0f}
+            - AUXILIO TRANSPORTE: ${AUX_TRANS_2026:,.0f}
+            - UVT 2026: ${UVT_2026:,.0f}
+            - BASE RETENCIÓN COMPRAS (27 UVT): ${BASE_RET_COMPRAS:,.0f}
+            - BASE RETENCIÓN SERVICIOS (4 UVT): ${BASE_RET_SERVICIOS:,.0f}
+            - TOPE BANCARIZACIÓN (100 UVT): ${TOPE_EFECTIVO:,.0f}
+            
+            INSTRUCCIÓN: Responde de forma clara y amigable. Si es una duda contable, cita la norma. Si es una duda sobre la app, guíalo paso a paso.
+            PREGUNTA DEL USUARIO: {user_input}
+            """
+            
+            try:
+                with st.spinner("Analizando..."):
+                    respuesta = consultar_ia_gemini(contexto_legal)
+                st.session_state.chat_history.append({"role": "assistant", "content": respuesta})
+                st.rerun() 
+            except Exception as e:
+                st.error(f"Error IA: {str(e)}")
+                
+    # 2. Mantener la Normativa al final de la barra lateral
     with st.sidebar:
-        st.markdown("---") # Separador visual
-        
-        # Estado del Chat (Persistencia)
-        if "chat_history" not in st.session_state:
-            st.session_state.chat_history = []
-            
-        with st.expander("💬 Copiloto y Soporte IA", expanded=False):
-            st.caption("🤖 Asistente Tributario y Soporte App")
-            st.info("💡 Pregúntame sobre normas contables o cómo usar esta aplicación.")
-            
-            # Contenedor de Historia (Scroll simulado)
-            chat_container = st.container()
-            with chat_container:
-                for msg in st.session_state.chat_history:
-                    with st.chat_message(msg["role"]):
-                        st.markdown(msg["content"])
-            
-            # Zona de Input (Tipo Formulario para no recargar toda la app)
-            with st.form(key="chat_form", clear_on_submit=True):
-                user_input = st.text_input("Escribe tu consulta aquí...", placeholder="Ej: ¿Cuál es la retención? o ¿Cómo subo el Excel?")
-                submit_btn = st.form_submit_button("Enviar Consulta 🚀")
-                
-            if submit_btn and user_input:
-                # 1. Mostrar usuario
-                st.session_state.chat_history.append({"role": "user", "content": user_input})
-                
-                # 2. Contexto 2026
-                contexto_legal = f"""
-                ACTÚA COMO: 
-                1. EXPERTO CONTADOR Y ABOGADO TRIBUTARISTA DE COLOMBIA (Normativa 2026).
-                2. AGENTE DE SOPORTE TÉCNICO de esta aplicación ('Asistente Contable Pro'). Ayuda al usuario a entender cómo usar los módulos, qué archivos subir o cómo solucionar errores.
-                
-                DATOS OFICIALES 2026:
-                - SMMLV: ${SMMLV_2026:,.0f}
-                - AUXILIO TRANSPORTE: ${AUX_TRANS_2026:,.0f}
-                - UVT 2026: ${UVT_2026:,.0f}
-                - BASE RETENCIÓN COMPRAS (27 UVT): ${BASE_RET_COMPRAS:,.0f}
-                - BASE RETENCIÓN SERVICIOS (4 UVT): ${BASE_RET_SERVICIOS:,.0f}
-                - TOPE BANCARIZACIÓN (100 UVT): ${TOPE_EFECTIVO:,.0f}
-                
-                INSTRUCCIÓN: Responde de forma clara y amigable. Si es una duda contable, cita la norma. Si es una duda sobre la app, guíalo paso a paso.
-                PREGUNTA DEL USUARIO: {user_input}
-                """
-                
-                # 3. Llamada a Gemini
-                try:
-                    with st.spinner("Analizando..."):
-                        respuesta = consultar_ia_gemini(contexto_legal)
-                    
-                    st.session_state.chat_history.append({"role": "assistant", "content": respuesta})
-                    st.rerun() # Recargar para mostrar el mensaje
-                except Exception as e:
-                    st.error(f"Error IA: {str(e)}")
-        
-        # Colocar la normativa al final de la barra lateral
         st.markdown("---")
         st.caption(f"🇨🇴 **Normativa 2026 Activa**")
         st.caption(f"UVT: $52,374 | SMMLV: $1.7M")
