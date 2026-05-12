@@ -640,6 +640,10 @@ TRANSLATIONS = {
         'desc_ugpp': "Auditoría de Pagos Laborales. Verifica si los pagos NO salariales exceden el 40% del total de la remuneración (Art. 30 Ley 1393).",
         'ben_ugpp': ["Cálculo automático de exceso", "Alerta de riesgo alto", "Soporte para fiscalización"],
 
+        'title_fiscal': "Auditoría Fiscal Masiva (Art. 771-5)",
+        'desc_fiscal': "Verificar el cumplimiento de los requisitos de deducibilidad (Bancarización y Retenciones). Detecta pagos en efectivo superiores a 100 UVT y bases de retención omitidas.",
+        'ben_fiscal': ["Detección de pagos en efectivo", "Validación de topes 100 UVT", "Prevención de rechazo de costos"],
+
         'title_payroll': "Calculadora de Costo Real de Nómina",
         'desc_payroll': "Ver el desglose exacto de cuánto le cuesta un empleado a la empresa. Incluye Salud, Pensión, ARL, Parafiscales, Primas, Cesantías, Intereses y Vacaciones.",
         'ben_payroll': ["Desglose parafiscal exacto", "Cálculo de provisiones", "Proyección anualizada"],
@@ -657,6 +661,10 @@ TRANSLATIONS = {
         'menu_narrator': "Financial Narrator & IFRS",
         'menu_rut': "Official RUT Validator",
         'menu_ocr': "OCR Digitization",
+
+        'title_fiscal': "Massive Fiscal Audit (Art. 771-5)",
+        'desc_fiscal': "Verify compliance with deductibility requirements (Bankization and Withholdings). Detects cash payments over 100 UVT.",
+        'ben_fiscal': ["Cash payment detection", "100 UVT limit validation", "Cost rejection prevention"],
 
         # --- UI LABELS (Sidebar & Login) ---
         'lbl_operator': "OPERATOR:",
@@ -2098,8 +2106,13 @@ else:
                 # gc.collect() # Comentado para evitar AttributeError con gspread
 
     elif menu == "Auditoría Fiscal de Gastos":
-        st.markdown("""<div class='pro-module-header'><img src='https://cdn-icons-png.flaticon.com/512/1642/1642346.png' class='pro-module-icon'><div class='pro-module-title'><h2>Auditoría Fiscal Masiva (Art. 771-5)</h2></div></div>""", unsafe_allow_html=True)
-        st.markdown("""<div class='detail-box'><strong>Objetivo:</strong> Verificar el cumplimiento de los requisitos de deducibilidad (Bancarización y Retenciones).<br>Detecta pagos en efectivo superiores a 100 UVT y bases de retención omitidas.</div>""", unsafe_allow_html=True)
+        render_module_guide(
+            get_text('title_fiscal'),
+            "https://cdn-icons-png.flaticon.com/512/1642/1642346.png",
+            get_text('desc_fiscal'),
+            get_text('ben_fiscal')
+        )
+        
         
         ar = st.file_uploader("Cargar Auxiliar de Gastos (.xlsx)", type=['xlsx'])
         render_upload_example({
