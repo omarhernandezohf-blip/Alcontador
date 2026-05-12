@@ -2368,6 +2368,8 @@ else:
             df = safe_read_excel(fi)
             c1, c2 = st.columns(2); cd = c1.selectbox("Columna Descripción", df.columns); cv = c2.selectbox("Columna Valor", df.columns)
             if st.button("▶️ INICIAR ANÁLISIS IA"):
+                # Forzar a numérico por si el usuario elige una columna de texto por error
+                df[cv] = pd.to_numeric(df[cv], errors='coerce').fillna(0)
                 res = df.groupby(cd)[cv].sum().sort_values(ascending=False).head(10); st.bar_chart(res)
                 df_res_ai = res.reset_index()
                 st.dataframe(df_res_ai, use_container_width=True)
