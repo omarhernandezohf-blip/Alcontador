@@ -1527,6 +1527,21 @@ st.markdown("""
         header {background: transparent !important;}
         [data-testid="stToolbar"] {visibility: hidden;}
         
+        /* Asegurar que el botón de expandir (>) sea visible, blanco y tenga un fondo clicable */
+        [data-testid="collapsedControl"] {
+            background-color: rgba(59, 130, 246, 0.3) !important;
+            border-radius: 50% !important;
+            color: #ffffff !important;
+            z-index: 999999 !important;
+        }
+        [data-testid="collapsedControl"] svg {
+            fill: #ffffff !important;
+            stroke: #ffffff !important;
+        }
+        [data-testid="collapsedControl"]:hover {
+            background-color: rgba(59, 130, 246, 0.8) !important;
+        }
+        
         /* Estilo para las tarjetas */
         .glass-card, div[data-testid="stExpander"] {
             background: rgba(30, 41, 59, 0.7) !important;
