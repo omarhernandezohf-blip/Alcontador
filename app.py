@@ -122,16 +122,7 @@ with st.sidebar:
             ]
         )
 
-    # Lógica de registro de historial (Firestore)
-    if 'last_menu' not in st.session_state:
-        st.session_state['last_menu'] = menu
-        # No registramos el primer render
-    elif st.session_state['last_menu'] != menu:
-        st.session_state['last_menu'] = menu
-        if st.session_state.get('logged_in'):
-            email = st.session_state.get('user_email')
-            if email:
-                log_user_action(email, f"Consultó el módulo: {menu}")
+
 
 # --- CONFIGURACIÓN DE ESTILO GLOBAL (SIDEBAR CLÁSICO MEJORADO) ---
 # --- CONFIGURACIÓN DE ESTILO GLOBAL (SIDEBAR CLÁSICO MEJORADO) ---
@@ -573,6 +564,17 @@ def check_single_session():
 
 # Ejecutar verificación de sesión inmediatamente
 check_single_session()
+
+# Lógica de registro de historial (Firestore)
+if 'last_menu' not in st.session_state:
+    st.session_state['last_menu'] = menu
+    # No registramos el primer render
+elif st.session_state['last_menu'] != menu:
+    st.session_state['last_menu'] = menu
+    if st.session_state.get('logged_in'):
+        email = st.session_state.get('user_email')
+        if email:
+            log_user_action(email, f"Consultó el módulo: {menu}")
 
 # ==============================================================================
 # 0.1 INTERNATIONALIZATION & HELPERS (NEW & RESTORED)
