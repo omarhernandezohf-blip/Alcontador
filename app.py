@@ -74,6 +74,7 @@ with st.sidebar:
             menu_title="Navegación",
             options=[
                 "Inicio / Dashboard",
+                "🏢 Quiénes Somos / Historia",
                 "Auditoría Cruce DIAN",
                 "Minería de XML (Facturación)",
                 "Conciliación Bancaria IA",
@@ -89,7 +90,7 @@ with st.sidebar:
                 "Generador Logístico"
             ],
             icons=[
-                "house", "shield-check", "file-earmark-code", "bank", "graph-up",
+                "house", "building", "shield-check", "file-earmark-code", "bank", "graph-up",
                 "people", "cash-coin", "calculator", "cpu", "book", "check-circle", "camera",
                 "file-earmark-pdf",
                 "airplane-engines"
@@ -104,6 +105,7 @@ with st.sidebar:
             "Navegación",
             [
                 "Inicio / Dashboard",
+                "🏢 Quiénes Somos / Historia",
                 "Auditoría Cruce DIAN",
                 "Minería de XML (Facturación)",
                 "Conciliación Bancaria IA",
@@ -1535,6 +1537,92 @@ st.markdown("""
 # ==============================================================================
 # ==============================================================================
 
+def render_quienes_somos():
+    st.markdown("""
+    <style>
+        .qs-hero {
+            background: linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95));
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+        .qs-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: -webkit-linear-gradient(45deg, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        .qs-subtitle {
+            color: #94a3b8;
+            font-size: 1.2rem;
+            margin-bottom: 0;
+        }
+        .qs-card {
+            background: rgba(30,41,59,0.5);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.05);
+            height: 100%;
+        }
+        .qs-card h3 {
+            color: #f8fafc;
+            border-bottom: 2px solid #3b82f6;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .qs-card p {
+            color: #cbd5e1;
+            line-height: 1.7;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="qs-hero">
+        <h1 class="qs-title">KINETIK IA</h1>
+        <p class="qs-subtitle">El Futuro de la Contabilidad, Hoy.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("""
+        <div class="qs-card">
+            <h3>🏢 Nuestra Empresa</h3>
+            <p>En <b>KINETIK IA</b>, desarrollamos tecnología de vanguardia para transformar la forma en que los profesionales financieros y contables operan en Colombia. Nuestra misión es automatizar las tareas repetitivas y blindar a las empresas frente a los entes de control (DIAN, UGPP) mediante el uso estratégico de Inteligencia Artificial.</p>
+            <p>Creemos en una contabilidad proactiva, analítica y sin errores humanos, elevando el valor del Contador Público hacia un rol de consultor estratégico.</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col2:
+        st.markdown("""
+        <div class="qs-card">
+            <h3>👨‍💻 Nuestro Creador</h3>
+            <p>Fundada y desarrollada por <b>Omar Hernández</b>, un visionario apasionado por la intersección entre las finanzas corporativas y la tecnología disruptiva.</p>
+            <p>Inspirado por la complejidad del sistema tributario colombiano, Omar creó <b>Asistente Contable PRO</b> para democratizar el acceso a herramientas de auditoría y análisis de datos de clase mundial, permitiendo que cualquier pyme o contador independiente pueda operar con la eficiencia de una gran corporación.</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div class="qs-card" style="margin-top: 10px;">
+        <h3>🚀 Nuestros Servicios Principales</h3>
+        <ul style="color: #cbd5e1; line-height: 1.8; font-size: 1.05rem;">
+            <li><b>Auditoría Fiscal e Inteligencia Artificial:</b> Motores de cruce masivo para XML de facturación electrónica y reportes exógenos.</li>
+            <li><b>Análisis de Riesgo UGPP:</b> Escáner paramétrico avanzado de nómina y costos reales basados en la Ley 1393.</li>
+            <li><b>Copiloto Tributario 24/7:</b> Asistente IA interactivo entrenado permanentemente con el Estatuto Tributario y conceptos de la DIAN.</li>
+            <li><b>Automatización Documental:</b> Digitalización OCR y conciliaciones bancarias potenciadas por algoritmos predictivos.</li>
+        </ul>
+    </div>
+    """, unsafe_allow_html=True)
+
 if menu == "Inicio / Dashboard":
     # 1. HEADER EJECUTIVO (HERO SECTION - ENTERPRISE TRUST)
     st.markdown("""
@@ -1679,14 +1767,7 @@ if menu == "Inicio / Dashboard":
         </div>
         """, unsafe_allow_html=True)
         
-        st.markdown("#### 🏢 Quiénes Somos")
-        st.markdown("""
-        <div class="glass-card" style="padding: 20px; margin-top: 20px;">
-            <p style="font-size: 0.9rem; color: #cbd5e1; margin:0; line-height: 1.6;">
-                Somos <b>Asistente Contable Pro</b>, tu aliado tecnológico diseñado para modernizar y simplificar la gestión financiera y tributaria en Colombia. Combinamos normativas actualizadas con Inteligencia Artificial avanzada.
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
+
 
     # 3. SECCIÓN PLANES Y PRECIOS
     st.markdown("---")
@@ -1796,7 +1877,10 @@ if menu == "Inicio / Dashboard":
 # ---------------------------------------------------------
 else:
     # 1. AUDITORÍA
-    if menu == "Auditoría Cruce DIAN":
+    if menu == "🏢 Quiénes Somos / Historia":
+        render_quienes_somos()
+
+    elif menu == "Auditoría Cruce DIAN":
         render_module_guide(
             get_text('title_dian'),
             "https://cdn-icons-png.flaticon.com/512/921/921591.png",
