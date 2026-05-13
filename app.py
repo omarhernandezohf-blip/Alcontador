@@ -2534,17 +2534,37 @@ else:
             get_text('desc_ocr'),
             get_text('ben_ocr')
         )
-        af = st.file_uploader("Cargar Imágenes", type=["jpg", "png"], accept_multiple_files=True)
-        if af and st.button("🧠 PROCESAR IMÁGENES") and api_key_valida:
-            do = []; bar = st.progress(0)
-            for i, f in enumerate(af): bar.progress((i+1)/len(af)); info = ocr_factura(Image.open(f)); 
-            if info: do.append(info)
-            df_ocr = pd.DataFrame(do)
-            st.dataframe(df_ocr, use_container_width=True)
-            download_section(df_ocr, "Digitalizacion_OCR", "Datos Extraídos (OCR)")
+        tab_up, tab_cam = st.tabs(["📂 Cargar Imágenes", "📸 Tomar Foto (Cámara)"])
+        imagenes_a_procesar = []
+        
+        with tab_up:
+            af = st.file_uploader("Sube facturas escaneadas", type=["jpg", "png"], accept_multiple_files=True)
+            if af: imagenes_a_procesar.extend(af)
             
-            with st.spinner("🤖 Generando resumen masivo..."):
-                 render_smart_advisor(consultar_ia_gemini(f"Resume estas facturas escaneadas: {df_ocr.to_string()}. Total: {df_ocr['total'].sum() if 'total' in df_ocr.columns else 'N/A'}."))
+        with tab_cam:
+            foto = st.camera_input("Apunta a la factura física y captura")
+            if foto: imagenes_a_procesar.append(foto)
+            
+        if len(imagenes_a_procesar) > 0:
+            if st.button("🧠 PROCESAR IMÁGENES", type="primary", use_container_width=True):
+                if not api_key_valida:
+                    st.error("⚠️ La IA no está conectada. Verifica la API Key.")
+                else:
+                    do = []; bar = st.progress(0)
+                    for i, f in enumerate(imagenes_a_procesar): 
+                        bar.progress((i+1)/len(imagenes_a_procesar))
+                        info = ocr_factura(Image.open(f))
+                        if info: do.append(info)
+                        
+                    if do:
+                        df_ocr = pd.DataFrame(do)
+                        st.dataframe(df_ocr, use_container_width=True)
+                        download_section(df_ocr, "Digitalizacion_OCR", "Datos Extraídos (OCR)")
+                        
+                        with st.spinner("🤖 Generando resumen masivo..."):
+                             render_smart_advisor(consultar_ia_gemini(f"Resume estas facturas escaneadas: {df_ocr.to_string()}. Total: {df_ocr['total'].sum() if 'total' in df_ocr.columns else 'N/A'}."))
+                    else:
+                        st.warning("No se pudo extraer información de las imágenes.")
 
     elif menu == "Generador Logístico" or menu == "Generador de Cotizaciones":
         st.title("🚢 Generador de Liquidación Logística")
