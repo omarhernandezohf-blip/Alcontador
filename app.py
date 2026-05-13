@@ -1588,65 +1588,8 @@ if menu == "Inicio / Dashboard":
     </style>
     """, unsafe_allow_html=True)
 
-    # --- 1.2 AI TICKER (Noticias en tiempo real) ---
-    st.markdown("""
-    <div style="
-        background: rgba(16, 185, 129, 0.1); 
-        border: 1px solid rgba(16, 185, 129, 0.2);
-        color: #6ee7b7;
-        padding: 8px 16px;
-        border-radius: 8px;
-        margin-bottom: 24px;
-        font-family: 'Inter';
-        font-size: 0.9rem;
-        display: flex; align-items: center;
-        animation: fadeIn 1s ease-in;
-    ">
-        <span style="margin-right: 10px; font-weight: bold;">🤖 IA INSIGHT:</span>
-        <span class="ticker-text">Se detectó una reducción del 4% en gastos de oficina vs mes anterior. • No hay vencimientos fiscales esta semana. • Flujo de caja saludable.</span>
-    </div>
-    <style>
-        .ticker-text { animation: blinkCustom 4s infinite; }
-        @keyframes blinkCustom { 0% {opacity: 1;} 50% {opacity: 0.7;} 100% {opacity: 1;} }
-        
-        .action-card {
-            background: rgba(30, 41, 59, 0.7);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 12px;
-            padding: 1.2rem;
-            text-align: center;
-            transition: all 0.2s;
-            cursor: pointer;
-            height: 100%;
-        }
-        .action-card:hover {
-            background: rgba(99, 102, 241, 0.15);
-            border-color: #6366f1;
-            transform: translateY(-2px);
-        }
-        .action-icon { font-size: 2rem; margin-bottom: 10px; display: block; }
-        .action-title { font-weight: 600; font-size: 1rem; color: #f1f5f9; display: block; }
-        .action-desc { font-size: 0.8rem; color: #94a3b8; display: block; margin-top: 4px;}
-    </style>
-    """, unsafe_allow_html=True)
-
-    # --- 1.3 QUICK ACTIONS COMMAND CENTER ---
-    c_act1, c_act2, c_act3, c_act4 = st.columns(4)
-    
-    with c_act1:
-        st.markdown("""<div class="action-card"><span class="action-icon">📂</span><span class="action-title">Cargar DIAN</span><span class="action-desc">Auditoría Fiscal</span></div>""", unsafe_allow_html=True)
-        # st.button("Ir a Auditoría", key="btn_go_dian", use_container_width=True) # Functional link requires nav logic
-        
-    with c_act2:
-        st.markdown("""<div class="action-card"><span class="action-icon">🏦</span><span class="action-title">Conciliar</span><span class="action-desc">Bancos vs Libros</span></div>""", unsafe_allow_html=True)
-
-    with c_act3:
-        st.markdown("""<div class="action-card"><span class="action-icon">🤖</span><span class="action-title">Agente IA</span><span class="action-desc">Consultar Asistente</span></div>""", unsafe_allow_html=True)
-
-    with c_act4:
-        st.markdown("""<div class="action-card"><span class="action-icon">📊</span><span class="action-title">Reportes</span><span class="action-desc">Estados Financieros</span></div>""", unsafe_allow_html=True)
-
-    st.markdown("---")
+    # Los atajos (Quick Actions) falsos y el Ticker falso fueron eliminados.
+    # El usuario ahora navegará 100% mediante el menú lateral que sí es funcional.
 
     # 2. NUEVO DASHBOARD: QUIÉNES SOMOS, NOTICIAS E HISTORIAL
 
