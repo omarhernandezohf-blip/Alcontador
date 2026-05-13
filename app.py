@@ -2534,14 +2534,13 @@ else:
             get_text('desc_ocr'),
             get_text('ben_ocr')
         )
-        tab_up, tab_cam = st.tabs(["📂 Cargar Imágenes", "📸 Tomar Foto (Cámara)"])
+        metodo_ingreso = st.radio("Método de Ingreso", ["📂 Cargar Imágenes", "📸 Tomar Foto (Cámara)"], horizontal=True, label_visibility="collapsed")
         imagenes_a_procesar = []
         
-        with tab_up:
+        if metodo_ingreso == "📂 Cargar Imágenes":
             af = st.file_uploader("Sube facturas escaneadas", type=["jpg", "png"], accept_multiple_files=True)
             if af: imagenes_a_procesar.extend(af)
-            
-        with tab_cam:
+        else:
             foto = st.camera_input("Apunta a la factura física y captura")
             if foto: imagenes_a_procesar.append(foto)
             
