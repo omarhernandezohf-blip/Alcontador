@@ -1648,8 +1648,85 @@ if menu == "Inicio / Dashboard":
 
     st.markdown("---")
 
-    # Las métricas, gráficos y tablas fueron eliminados a petición del usuario.
-    # Aquí se implementarán las nuevas secciones (Quiénes somos, Noticias, etc.)
+    # 2. NUEVO DASHBOARD: QUIÉNES SOMOS, NOTICIAS E HISTORIAL
+
+    @st.cache_data(ttl=86400) # Cache por 24 horas para no agotar cuota y cargar rápido
+    def get_daily_ai_content():
+        try:
+            import google.generativeai as genai
+            # Usar un modelo rápido y estable
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            noticia = model.generate_content("Escribe un párrafo muy corto (máximo 4 líneas) con una noticia tributaria o contable importante para Colombia en 2026. Sé profesional.").text
+            chiste = model.generate_content("Escribe un chiste corto y amigable sobre contadores, auditores o impuestos para sacar una sonrisa al usuario que está trabajando. Corto y sin explicaciones.").text
+            return noticia, chiste
+        except Exception:
+            return "Las tasas de usura y retención en la fuente se mantienen estables para este mes. Verifica las actualizaciones de la DIAN.", "¡Un contador no envejece, solo se deprecia! Tómate 5 minutos para estirarte y tomar agua."
+
+    noticia_dia, chiste_dia = get_daily_ai_content()
+
+    st.markdown("### 🌟 BIENVENIDO A ASISTENTE CONTABLE PRO")
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.markdown("#### 🎯 ¿En qué te podemos ayudar?")
+        st.markdown("""
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+            <div class="glass-card" style="padding: 20px; border-left: 4px solid #6366f1;">
+                <h4 style="margin:0; color: #a5b4fc;">📄 Digitalización OCR</h4>
+                <p style="font-size: 0.9rem; color: #cbd5e1; margin-top: 10px;">Extrae datos de facturas y recibos físicos al instante con inteligencia artificial.</p>
+            </div>
+            <div class="glass-card" style="padding: 20px; border-left: 4px solid #10b981;">
+                <h4 style="margin:0; color: #6ee7b7;">💰 Costeo de Nómina</h4>
+                <p style="font-size: 0.9rem; color: #cbd5e1; margin-top: 10px;">Calcula el costo real de tus empleados incluyendo parafiscales y provisiones 2026.</p>
+            </div>
+            <div class="glass-card" style="padding: 20px; border-left: 4px solid #f43f5e;">
+                <h4 style="margin:0; color: #fda4af;">🔍 Auditoría Fiscal</h4>
+                <p style="font-size: 0.9rem; color: #cbd5e1; margin-top: 10px;">Detecta inconsistencias en reportes de la DIAN automáticamente.</p>
+            </div>
+            <div class="glass-card" style="padding: 20px; border-left: 4px solid #f59e0b;">
+                <h4 style="margin:0; color: #fcd34d;">🤖 Copiloto Tributario</h4>
+                <p style="font-size: 0.9rem; color: #cbd5e1; margin-top: 10px;">Resuelve tus dudas fiscales 24/7 en el menú interactivo lateral.</p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("#### 🕒 Tu Historial de Actividad Reciente")
+        # Historial de ejemplo (Mock) para demostrar la funcionalidad
+        st.markdown("""
+        <div class="glass-card" style="padding: 20px;">
+            <ul style="list-style-type: none; padding-left: 0; color: #cbd5e1; font-size: 0.95rem; margin: 0;">
+                <li style="margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;">🟢 <b>Hoy, 08:30 AM</b> - Consultaste el módulo de <i>Costeo de Nómina Real</i>.</li>
+                <li style="margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;">🔵 <b>Ayer, 16:45 PM</b> - Subiste un Excel en <i>Digitalización OCR</i>.</li>
+                <li style="margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;">🟣 <b>Ayer, 11:20 AM</b> - Preguntaste al Copiloto sobre <i>Bases de Retención</i>.</li>
+                <li style="margin-bottom: 0;">⚪ <b>Hace 3 días</b> - Usaste el <i>Validador de RUT Oficial</i>.</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col2:
+        st.markdown("#### 📰 Noticia del Día (IA)")
+        st.markdown(f"""
+        <div class="glass-card" style="padding: 20px; border-top: 4px solid #3b82f6; margin-bottom: 20px; background: linear-gradient(180deg, rgba(59, 130, 246, 0.1) 0%, rgba(0,0,0,0) 100%);">
+            <p style="color: #e2e8f0; font-size: 0.95rem; line-height: 1.5; margin:0;">{noticia_dia}</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("#### ☕ Pausa Activa")
+        st.markdown(f"""
+        <div class="glass-card" style="padding: 20px; border-top: 4px solid #8b5cf6; background: linear-gradient(180deg, rgba(139, 92, 246, 0.1) 0%, rgba(0,0,0,0) 100%);">
+            <p style="color: #e2e8f0; font-size: 0.95rem; font-style: italic; margin:0;">"{chiste_dia}"</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("#### 🏢 Quiénes Somos")
+        st.markdown("""
+        <div class="glass-card" style="padding: 20px; margin-top: 20px;">
+            <p style="font-size: 0.9rem; color: #cbd5e1; margin:0; line-height: 1.6;">
+                Somos <b>Asistente Contable Pro</b>, tu aliado tecnológico diseñado para modernizar y simplificar la gestión financiera y tributaria en Colombia. Combinamos normativas actualizadas con Inteligencia Artificial avanzada.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
 
     # 3. SECCIÓN PLANES Y PRECIOS
     st.markdown("---")
