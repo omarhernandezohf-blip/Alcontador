@@ -43,8 +43,7 @@ st.set_page_config(
 
 # --- MENÚ LATERAL (MOVIDO AL INICIO PARA GARANTIZAR VISIBILIDAD) ---
 with st.sidebar:
-    # Language selector accessible even on Login Page
-    lang = st.selectbox("Language / Idioma", ["Español", "English"], key="lang")
+    # Idioma fijado en Español por defecto, eliminamos el selector para evitar confusión.
     
     st.markdown("---")
     
@@ -120,6 +119,17 @@ with st.sidebar:
                 "Generador Logístico"
             ]
         )
+
+    # Lógica de registro de historial (Firestore)
+    if 'last_menu' not in st.session_state:
+        st.session_state['last_menu'] = menu
+        # No registramos el primer render
+    elif st.session_state['last_menu'] != menu:
+        st.session_state['last_menu'] = menu
+        if st.session_state.get('logged_in'):
+            email = st.session_state.get('user_email')
+            if email:
+                log_user_action(email, f"Consultó el módulo: {menu}")
 
 # --- CONFIGURACIÓN DE ESTILO GLOBAL (SIDEBAR CLÁSICO MEJORADO) ---
 # --- CONFIGURACIÓN DE ESTILO GLOBAL (SIDEBAR CLÁSICO MEJORADO) ---
@@ -518,6 +528,37 @@ def verify_session(email, token):
     except Exception:
         pass
     return True
+
+def log_user_action(email, action_text):
+    """Guarda un registro de actividad del usuario en Firestore."""
+    if not email: return
+    db = get_firestore_db()
+    if not db: return
+    try:
+        hist_ref = db.collection('users').document(email).collection('history')
+        hist_ref.add({
+            'action': action_text,
+            'timestamp': firestore.SERVER_TIMESTAMP
+        })
+    except Exception as e:
+        pass
+
+def get_user_history(email, limit=4):
+    """Obtiene los últimos N registros de actividad del usuario."""
+    if not email: return []
+    db = get_firestore_db()
+    if not db: return []
+    try:
+        hist_ref = db.collection('users').document(email).collection('history')
+        query = hist_ref.order_by('timestamp', direction=firestore.Query.DESCENDING).limit(limit)
+        docs = query.stream()
+        history = []
+        for doc in docs:
+            data = doc.to_dict()
+            history.append(data)
+        return history
+    except Exception as e:
+        return []
 
 def get_user_credits(email):
     """Obtiene los créditos usados del usuario."""
@@ -954,10 +995,10 @@ def safe_read_excel(file_upl):
     Lee archivos Excel/CSV con validación de Plan (Fair Use) y limpieza automática.
     """
     try:
-        # 0. DETERMINAR PLAN DEL USUARIO (Simulación por ahora)
-        # En el futuro, esto leerá de la base de datos de usuarios
-        user_plan = "Premium" if st.session_state.get('api_key_valida', False) else "Gratis"
-        # Hack para demo: Si venimos de loguearnos como Pro, usar Pro. Por ahora simplificado.
+        # DETERMINAR PLAN REAL DEL USUARIO DESDE LA SESIÓN
+        raw_plan = st.session_state.get('user_plan', 'FREE').upper()
+        plan_mapping = {"FREE": "Gratis", "PRO": "Pro", "PREMIUM": "Premium"}
+        user_plan = plan_mapping.get(raw_plan, "Gratis")
         
         limit = PLAN_LIMITS.get(user_plan, 2 * 1024 * 1024) # Default 2MB
         
@@ -1635,17 +1676,47 @@ if menu == "Inicio / Dashboard":
         """, unsafe_allow_html=True)
         
         st.markdown("#### 🕒 Tu Historial de Actividad Reciente")
-        # Historial de ejemplo (Mock) para demostrar la funcionalidad
-        st.markdown("""
-        <div class="glass-card" style="padding: 20px;">
-            <ul style="list-style-type: none; padding-left: 0; color: #cbd5e1; font-size: 0.95rem; margin: 0;">
-                <li style="margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;">🟢 <b>Hoy, 08:30 AM</b> - Consultaste el módulo de <i>Costeo de Nómina Real</i>.</li>
-                <li style="margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;">🔵 <b>Ayer, 16:45 PM</b> - Subiste un Excel en <i>Digitalización OCR</i>.</li>
-                <li style="margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;">🟣 <b>Ayer, 11:20 AM</b> - Preguntaste al Copiloto sobre <i>Bases de Retención</i>.</li>
-                <li style="margin-bottom: 0;">⚪ <b>Hace 3 días</b> - Usaste el <i>Validador de RUT Oficial</i>.</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
+        # Leer historial real desde Firestore
+        email = st.session_state.get('user_email')
+        if not email or not st.session_state.get('logged_in'):
+            st.markdown("""
+            <div class="glass-card" style="padding: 20px; text-align: center; color: #94a3b8;">
+                <p>Inicia sesión para ver tu historial de actividad real.</p>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            history = get_user_history(email, limit=4)
+            if not history:
+                st.markdown("""
+                <div class="glass-card" style="padding: 20px; text-align: center; color: #94a3b8;">
+                    <p>Aún no tienes actividad registrada.</p>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                import datetime
+                html_list = '<div class="glass-card" style="padding: 20px;"><ul style="list-style-type: none; padding-left: 0; color: #cbd5e1; font-size: 0.95rem; margin: 0;">'
+                colors = ['🟢', '🔵', '🟣', '⚪']
+                
+                for i, item in enumerate(history):
+                    action = item.get('action', 'Acción')
+                    timestamp = item.get('timestamp')
+                    time_str = "Recientemente"
+                    if timestamp:
+                        try:
+                            # Dependiendo del tipo de objeto devuelto por Firestore
+                            if hasattr(timestamp, 'timestamp'):
+                                dt = datetime.datetime.fromtimestamp(timestamp.timestamp())
+                            else:
+                                dt = timestamp
+                            time_str = dt.strftime('%d/%m/%Y %H:%M')
+                        except: pass
+                        
+                    color = colors[i % len(colors)]
+                    border = 'border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;' if i < len(history)-1 else 'margin-bottom: 0;'
+                    html_list += f'<li style="margin-bottom: 15px; {border}">{color} <b>{time_str}</b> - {action}</li>'
+                    
+                html_list += '</ul></div>'
+                st.markdown(html_list, unsafe_allow_html=True)
 
     with col2:
         st.markdown("#### 📰 Noticia del Día (IA)")
