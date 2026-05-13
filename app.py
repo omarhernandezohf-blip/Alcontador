@@ -2595,7 +2595,7 @@ def render_tax_copilot():
     import base64
     import os
     img_b64 = ""
-    img_path = r"d:\OneDrive\Desktop\proyecto contador\assets\asesor_ia.png"
+    img_path = r"d:\OneDrive\Desktop\proyecto contador\assets\asesor_formal.jpg"
     if os.path.exists(img_path):
         try:
             with open(img_path, "rb") as f:
@@ -2653,7 +2653,9 @@ def render_tax_copilot():
             chat_container = st.container(height=300)
             with chat_container:
                 for msg in st.session_state.chat_history:
-                    with st.chat_message(msg["role"]):
+                    # Usar la foto formal para el asistente, y el emoji predeterminado para el usuario
+                    avatar_img = img_path if msg["role"] == "assistant" else "👤"
+                    with st.chat_message(msg["role"], avatar=avatar_img):
                         st.markdown(msg["content"])
             
             # Zona de Input (Tipo Formulario para no recargar toda la app)
