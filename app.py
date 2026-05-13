@@ -2595,14 +2595,17 @@ def render_tax_copilot():
     import base64
     import os
     img_b64 = ""
-    img_path = r"d:\OneDrive\Desktop\proyecto contador\assets\asesor_formal.jpg"
+    # Usar ruta relativa para mayor compatibilidad
+    img_path = os.path.join("assets", "asesor_formal.jpg")
+    
     if os.path.exists(img_path):
         try:
             with open(img_path, "rb") as f:
                 img_b64 = base64.b64encode(f.read()).decode()
-        except: pass
-        
-    img_src = f"data:image/png;base64,{img_b64}" if img_b64 else "https://cdn-icons-png.flaticon.com/512/8943/8943377.png"
+        except Exception as e:
+            st.error(f"Error cargando imagen: {e}")
+            
+    img_src = f"data:image/jpeg;base64,{img_b64}" if img_b64 else "https://cdn-icons-png.flaticon.com/512/8943/8943377.png"
 
     # Inyectar CSS para el header del chat en el sidebar
     st.markdown("""
@@ -2654,7 +2657,7 @@ def render_tax_copilot():
             with chat_container:
                 for msg in st.session_state.chat_history:
                     # Usar la foto formal para el asistente, y el emoji predeterminado para el usuario
-                    avatar_img = img_path if msg["role"] == "assistant" else "👤"
+                    avatar_img = img_src if msg["role"] == "assistant" else "👤"
                     with st.chat_message(msg["role"], avatar=avatar_img):
                         st.markdown(msg["content"])
             
