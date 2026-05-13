@@ -146,36 +146,6 @@ st.markdown("""
             font-family: 'Inter', sans-serif !important;
         }
         
-        /* 2. BOTÓN DE MENÚ LATERAL MODERNO (SOLUCIÓN FUERZA BRUTA) */
-        [data-testid="stSidebarCollapsedControl"], [data-testid="collapsedControl"] {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-            border: none !important;
-            border-radius: 50% !important;
-            padding: 8px !important;
-            width: 50px !important;
-            height: 50px !important;
-            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4) !important;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            position: fixed !important;
-            top: 20px !important;
-            left: 20px !important;
-            z-index: 999999 !important; /* Capa superior absoluta */
-            display: flex !important; /* Forzar visibilidad */
-            justify-content: center !important;
-            align-items: center !important;
-        }
-        
-        [data-testid="stSidebarCollapsedControl"]:hover, [data-testid="collapsedControl"]:hover {
-            transform: scale(1.15) rotate(90deg) !important;
-            box-shadow: 0 12px 40px rgba(102, 126, 234, 0.6) !important;
-        }
-        
-        [data-testid="stSidebarCollapsedControl"] svg, [data-testid="collapsedControl"] svg {
-            fill: white !important;
-            stroke: white !important;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)) !important;
-        }
-        
         /* 3. SIDEBAR GLASSMORPHISM */
         [data-testid="stSidebar"] {
             background: rgba(15, 23, 42, 0.85) !important;
@@ -1533,35 +1503,7 @@ st.markdown("""
             border-right: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* 2. EL BOTÓN DE MENÚ (LA CLAVE DEL ÉXITO) */
-        [data-testid="stSidebarCollapsedControl"], [data-testid="collapsedControl"] {
-            display: flex !important;
-            justify-content: center !important;
-            align-items: center !important;
-            position: fixed !important; /* Fijo en la pantalla */
-            top: 20px !important;
-            left: 20px !important;
-            z-index: 99999999 !important; /* Encima de todo */
-            color: #FFFFFF !important;
-            background-color: rgba(255, 255, 255, 0.15) !important; /* Círculo semitransparente */
-            border: 2px solid rgba(255, 255, 255, 0.8) !important;
-            border-radius: 50%;
-            padding: 4px;
-            width: 45px !important;
-            height: 45px !important;
-            transition: all 0.3s;
-        }
-
-        [data-testid="stSidebarCollapsedControl"]:hover, [data-testid="collapsedControl"]:hover {
-            background-color: rgba(255, 255, 255, 0.4) !important;
-            transform: scale(1.1);
-        }
-
-        /* Icono de la flecha blanco puro */
-        [data-testid="stSidebarCollapsedControl"] svg, [data-testid="collapsedControl"] svg {
-            fill: #FFFFFF !important;
-            stroke: #FFFFFF !important;
-        }
+        /* El botón de menú lateral se dejará nativo para evitar conflictos con Streamlit Cloud */
 
         /* 3. ESTILOS GENERALES (FONDO Y FUENTES) */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Manrope:wght@400;600;800&display=swap');
