@@ -147,7 +147,7 @@ st.markdown("""
         }
         
         /* 2. BOTÓN DE MENÚ LATERAL MODERNO (SOLUCIÓN FUERZA BRUTA) */
-        [data-testid="stSidebarCollapsedControl"] {
+        [data-testid="stSidebarCollapsedControl"], [data-testid="collapsedControl"] {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
             border: none !important;
             border-radius: 50% !important;
@@ -160,15 +160,17 @@ st.markdown("""
             top: 20px !important;
             left: 20px !important;
             z-index: 999999 !important; /* Capa superior absoluta */
-            display: block !important; /* Forzar visibilidad */
+            display: flex !important; /* Forzar visibilidad */
+            justify-content: center !important;
+            align-items: center !important;
         }
         
-        [data-testid="stSidebarCollapsedControl"]:hover {
+        [data-testid="stSidebarCollapsedControl"]:hover, [data-testid="collapsedControl"]:hover {
             transform: scale(1.15) rotate(90deg) !important;
             box-shadow: 0 12px 40px rgba(102, 126, 234, 0.6) !important;
         }
         
-        [data-testid="stSidebarCollapsedControl"] svg {
+        [data-testid="stSidebarCollapsedControl"] svg, [data-testid="collapsedControl"] svg {
             fill: white !important;
             stroke: white !important;
             filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)) !important;
@@ -1532,8 +1534,10 @@ st.markdown("""
         }
 
         /* 2. EL BOTÓN DE MENÚ (LA CLAVE DEL ÉXITO) */
-        [data-testid="stSidebarCollapsedControl"] {
-            display: block !important;
+        [data-testid="stSidebarCollapsedControl"], [data-testid="collapsedControl"] {
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
             position: fixed !important; /* Fijo en la pantalla */
             top: 20px !important;
             left: 20px !important;
@@ -1548,13 +1552,13 @@ st.markdown("""
             transition: all 0.3s;
         }
 
-        [data-testid="stSidebarCollapsedControl"]:hover {
+        [data-testid="stSidebarCollapsedControl"]:hover, [data-testid="collapsedControl"]:hover {
             background-color: rgba(255, 255, 255, 0.4) !important;
             transform: scale(1.1);
         }
 
         /* Icono de la flecha blanco puro */
-        [data-testid="stSidebarCollapsedControl"] svg {
+        [data-testid="stSidebarCollapsedControl"] svg, [data-testid="collapsedControl"] svg {
             fill: #FFFFFF !important;
             stroke: #FFFFFF !important;
         }
