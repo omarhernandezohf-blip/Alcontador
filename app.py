@@ -1522,7 +1522,10 @@ st.markdown("""
         }
         
         h1, h2, h3 { color: white !important; font-family: 'Inter', sans-serif !important; }
-        #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
+        #MainMenu {visibility: hidden;} 
+        footer {visibility: hidden;} 
+        header {background: transparent !important;}
+        [data-testid="stToolbar"] {visibility: hidden;}
         
         /* Estilo para las tarjetas */
         .glass-card, div[data-testid="stExpander"] {
