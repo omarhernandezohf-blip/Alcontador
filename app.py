@@ -2688,6 +2688,10 @@ def render_tax_copilot():
         object-fit: cover;
         border: 2px solid #34d399;
     }
+    /* Ocultar el texto "Press Enter to submit form" de Streamlit */
+    div[data-testid="InputInstructions"] {
+        display: none !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
