@@ -427,21 +427,21 @@ render_universe_background()
 PLAN_CONFIG = {
     'FREE': {
         'limit': 5,
-        'model': 'gemini-flash-latest',
+        'model': 'gemini-1.5-flash',
         'price_display': 'GRATIS',
         'badge': 'Prueba',
         'name': 'Free'
     },
     'PRO': {
         'limit': 500,
-        'model': 'gemini-flash-latest',
+        'model': 'gemini-1.5-flash',
         'price_display': '$70.000 COP',
         'badge': '⭐ Más Popular',
         'name': 'Pro'
     },
     'PREMIUM': {
         'limit': 2000,
-        'model': 'gemini-flash-latest',
+        'model': 'gemini-1.5-flash',
         'price_display': '$120.000 COP',
         'badge': '🧠 Inteligencia Superior',
         'name': 'Premium'
@@ -1440,7 +1440,7 @@ def consultar_ia_gemini(prompt):
         # Para seguridad, usamos try/catch con fallbacks
 
         # RETRY LOGIC / FALLBACK AUTOMÁTICO
-        intentos = [model_name, 'gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash']
+        intentos = [model_name, 'gemini-1.5-flash', 'gemini-2.5-flash', 'gemini-2.0-flash']
         last_error = ""
 
         for m in intentos:
@@ -1479,8 +1479,8 @@ def ocr_factura(imagen):
 
     try:
         # OCR siempre usa Flash por velocidad, a menos que se especifique otra cosa.
-        # Usamos 'gemini-flash-latest' explicitamente o el del plan si es compatible.
-        model = genai.GenerativeModel('gemini-flash-latest')
+        # Usamos 'gemini-1.5-flash' explicitamente o el del plan si es compatible.
+        model = genai.GenerativeModel('gemini-1.5-flash')
         prompt = """Extrae datos JSON estricto: {"fecha": "YYYY-MM-DD", "nit": "num", "proveedor": "txt", "concepto": "txt", "base": num, "iva": num, "total": num}"""
         response = model.generate_content([prompt, imagen])
 
