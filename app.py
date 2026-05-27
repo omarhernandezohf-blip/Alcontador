@@ -913,13 +913,11 @@ def download_section(df, file_label, title="Reporte Corporativo"):
 
 def render_upload_example(data_dict, title="👉 IMPORTANTE: ¿Qué archivo debo subir?", help_text=""):
     """
-    Shows a collapsible example table and optional help text to guide file uploads.
+    Shows optional help text to guide file uploads. Rigid examples are removed since AI is flexible.
     """
     if help_text:
         st.info(help_text)
-    with st.expander(title):
-        st.markdown("**Estructura requerida (los nombres de columnas pueden variar):**")
-        st.dataframe(pd.DataFrame(data_dict), hide_index=True, use_container_width=True)
+    st.caption("✨ Sube tu archivo con la estructura que tengas. La Inteligencia Artificial se encargará de procesarlo automáticamente.")
 
 # ==============================================================================
 # 2. GESTIÓN DE CONEXIONES EXTERNAS (BACKEND) Y SEGURIDAD (OAUTH2)
