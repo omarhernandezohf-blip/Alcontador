@@ -2216,37 +2216,65 @@ else:
         c1, c2 = st.columns(2)
         with c1:
              fcxc = st.file_uploader("Cartera (CxC)", type=['xlsx'])
-             render_upload_example({'Fecha Vencimiento': ['2025-02-15'], 'Cliente': ['Cliente ABC'], 'Saldo': ['$ 5,000,000']}, "Ejemplo CxC", help_text="Sube tus Cuentas por Cobrar. Obligatorio: Fecha de vencimiento y Saldo.")
+             render_upload_example({'Fecha Vencimiento': ['2025-02-15'], 'Cliente': ['Cliente ABC'], 'Saldo': ['$ 5,000,000']}, "Ejemplo CxC", help_text="Sube tus Cuentas por Cobrar. La IA detectará las fechas y montos.")
         with c2:
              fcxp = st.file_uploader("Proveedores (CxP)", type=['xlsx'])
-             render_upload_example({'Fecha Vencimiento': ['2025-02-10'], 'Proveedor': ['Prov. XYZ'], 'Total': ['2,500,000 COP']}, "Ejemplo CxP", help_text="Sube tus Cuentas por Pagar. Obligatorio: Fecha de vencimiento y Total a pagar.")
+             render_upload_example({'Fecha Vencimiento': ['2025-02-10'], 'Proveedor': ['Prov. XYZ'], 'Total': ['2,500,000 COP']}, "Ejemplo CxP", help_text="Sube tus Cuentas por Pagar. La IA detectará las fechas y montos.")
              
-        if fcxc and fcxp:
-            dcxc = safe_read_excel(fcxc); dcxp = safe_read_excel(fcxp)
-            
-            if dcxc.empty or len(dcxc.columns) < 2 or dcxp.empty or len(dcxp.columns) < 2:
-                st.error("❌ Error de Validación: Los archivos deben tener al menos una columna de Fecha y una de Saldo/Valor.")
-                st.stop()
-            c1, c2, c3, c4 = st.columns(4)
-            cfc = c1.selectbox("Fecha Vencimiento CxC:", dcxc.columns); cvc = c2.selectbox("Valor CxC:", dcxc.columns)
-            cfp = c3.selectbox("Fecha Vencimiento CxP:", dcxp.columns); cvp = c4.selectbox("Valor CxP:", dcxp.columns)
-            if st.button("▶️ GENERAR PROYECCIÓN"):
-                try:
-                    dcxc['Fecha'] = pd.to_datetime(dcxc[cfc]); dcxp['Fecha'] = pd.to_datetime(dcxp[cfp])
-                    fi = dcxc.groupby('Fecha')[cvc].sum().reset_index(); fe = dcxp.groupby('Fecha')[cvp].sum().reset_index()
-                    cal = pd.merge(fi, fe, on='Fecha', how='outer').fillna(0); cal.columns = ['Fecha', 'Ingresos', 'Egresos']; cal = cal.sort_values('Fecha')
-                    cal['Saldo Proyectado'] = saldo_hoy + (cal['Ingresos'] - cal['Egresos']).cumsum()
-                    st.area_chart(cal.set_index('Fecha')['Saldo Proyectado']); st.dataframe(cal, use_container_width=True)
-                    download_section(cal, "Proyeccion_Tesoreria", "Proyección de Flujo de Caja")
+        instrucciones = st.text_area("✍️ Instrucciones o contexto adicional para la IA (Opcional)", placeholder="Ej: Proyecta los pagos por semana en vez de por día. Considera que a los proveedores se les paga los viernes.")
 
-                    if api_key_valida:
-                        with st.spinner("🤖 La IA está analizando tu flujo de caja..."):
-                            render_smart_advisor(consultar_ia_gemini(f"Analiza este flujo de caja. Saldo inicial: {saldo_hoy}. Datos: {cal.head(10).to_string()}"))
-                    
-                    # Optimización de Memoria
-                    del dcxc, dcxp, cal
-                    gc.collect()
-                except: st.error("Error en el formato de fechas.")
+        if fcxc and fcxp:
+            dcxc = safe_read_excel(fcxc)
+            dcxp = safe_read_excel(fcxp)
+            
+            if dcxc.empty or dcxp.empty:
+                st.error("❌ Error: Al menos uno de los archivos está vacío.")
+                st.stop()
+                
+            if st.button("▶️ GENERAR PROYECCIÓN CON IA", type="primary", use_container_width=True):
+                st.success("✅ Archivos cargados. Iniciando Analista de Tesorería IA...")
+                
+                if api_key_valida:
+                    with st.spinner("🤖 Analizando fechas de vencimiento y saldos..."):
+                        cxc_csv = dcxc.head(500).to_csv(index=False)
+                        cxp_csv = dcxp.head(500).to_csv(index=False)
+                        
+                        prompt = f'''
+                        Actúa como un Gerente Financiero / Tesorero experto.
+                        Tienes un Saldo Disponible Hoy de: ${saldo_hoy:,.2f}
+                        Y los siguientes dos listados:
+                        
+                        --- CUENTAS POR COBRAR (CxC) ---
+                        {cxc_csv}
+                        
+                        --- CUENTAS POR PAGAR (CxP) ---
+                        {cxp_csv}
+                        
+                        INSTRUCCIONES DEL USUARIO:
+                        "{instrucciones if instrucciones else 'Haz una proyección de flujo de caja. Empareja los ingresos y egresos proyectados en el tiempo. Suma los saldos diarios o semanales.'}"
+                        
+                        OBJETIVO:
+                        Ignora formatos de columna rígidos. Identifica las columnas de Fecha, Monto, y Proveedor/Cliente.
+                        Genera un flujo de caja estructurado y profesional en Markdown.
+                        Obligatoriamente muestra el resultado de la proyección (Saldos finales por fecha) usando una tabla.
+                        Advierte si el flujo de caja se vuelve negativo en algún punto.
+                        '''
+                        response = consultar_ia_gemini(prompt)
+                        render_smart_advisor(response)
+                        
+                        df_res = extract_md_table_to_df(response)
+                        if not df_res.empty:
+                            download_section(df_res, "Proyeccion_Tesoreria_IA", "Flujo de Caja Proyectado")
+                        
+                        with st.expander("🔍 Ver vista previa de los datos subidos"):
+                            c1, c2 = st.columns(2)
+                            c1.markdown("**Cartera:**")
+                            c1.dataframe(dcxc.head(10))
+                            c2.markdown("**Proveedores:**")
+                            c2.dataframe(dcxp.head(10))
+                else:
+                    st.error("⚠️ La IA no está conectada. Verifica tu API Key.")
+
 
     # ==============================================================================
     # 🚨 MÓDULO DE NÓMINA (CORREGIDO: Auto-Detección y Protección de Errores)
@@ -2259,69 +2287,56 @@ else:
             get_text('ben_payroll')
         )
         
-        ac = st.file_uploader("Cargar Listado Personal (.xlsx)", type=['xlsx'])
-        render_upload_example({'Nombre': ['Ana Gomez'], 'Salario Base': ['$ 3,500,000'], 'Auxilio Trans': ['NO'], 'Riesgo ARL': [1]}, help_text="Sube el listado de empleados. Obligatorio: Nombre y Salario Base. Opcional: Nivel ARL y si tienen Auxilio de Transporte.")
+        col_c1, col_c2 = st.columns([1, 2])
+        with col_c1:
+            ac = st.file_uploader("Cargar Listado Personal (.xlsx)", type=['xlsx'])
+            render_upload_example({'Nombre': ['Ana Gomez'], 'Salario Base': ['$ 3,500,000'], 'Auxilio Trans': ['NO'], 'Riesgo ARL': [1]}, help_text="Sube el listado de empleados. La IA detectará las columnas correspondientes.")
         
+        with col_c2:
+            instrucciones = st.text_area("✍️ Instrucciones o contexto adicional para la IA (Opcional)", height=150, placeholder="Ej: Considera que todos tienen riesgo ARL nivel 2. Ignora la columna de bonos ocasionales para el cálculo de aportes.")
+
         if ac:
-            try:
-                dc = safe_read_excel(ac)
+            dc = safe_read_excel(ac)
+            
+            if dc.empty:
+                st.error("❌ Error: El archivo está vacío o no es legible.")
+                st.stop()
                 
-                if dc.empty or len(dc.columns) < 2:
-                    st.error("❌ Error de Validación: El archivo está vacío o no tiene al menos la columna de Nombre y Salario.")
-                    st.stop()
-                st.info("Configura las columnas (El sistema intenta detectarlas automáticamente):")
+            if st.button("▶️ CALCULAR COSTEO CON IA", type="primary", use_container_width=True):
+                st.success("✅ Archivo cargado. Iniciando Liquidador de Nómina Inteligente...")
                 
-                cols = list(dc.columns)
-                idx_nom = next((i for i, c in enumerate(cols) if "nombre" in c.lower()), 0)
-                idx_sal = next((i for i, c in enumerate(cols) if "salario" in c.lower() or "sueldo" in c.lower() or "base" in c.lower()), 0 if len(cols) < 2 else 1)
-                idx_aux = next((i for i, c in enumerate(cols) if "aux" in c.lower() or "transporte" in c.lower()), 0 if len(cols) < 3 else 2)
-                idx_exo = next((i for i, c in enumerate(cols) if "exo" in c.lower()), 0 if len(cols) < 4 else 3)
-
-                c1, c2, c3, c4 = st.columns(4)
-                cn = c1.selectbox("1. Columna Nombre", cols, index=idx_nom)
-                cs = c2.selectbox("2. Columna Salario", cols, index=idx_sal)
-                ca = c3.selectbox("3. Auxilio Trans (SI/NO)", cols, index=idx_aux)
-                ce = c4.selectbox("4. Exonerada (SI/NO)", cols, index=idx_exo)
-                
-                c_arl = st.selectbox("5. Nivel ARL (Opcional - Si no seleccionas, asume Nivel 1)", ["No Aplica"] + cols)
-                col_arl = c_arl if c_arl != "No Aplica" else None
-
-                if st.button("▶️ CALCULAR DESGLOSE"):
-                    rc = []
-                    errores = 0
-                    for r in dc.to_dict('records'):
-                        try:
-                            val_salario = float(r[cs])
-                        except:
-                            val_salario = 0
-                            errores += 1
-
-                        costo_total, total_seg, total_prest, paraf = calcular_costo_empresa_fila(r, cs, ca, col_arl, ce)
-                        total_aportes_prestaciones = total_seg + total_prest + paraf
+                if api_key_valida:
+                    with st.spinner("🤖 Calculando carga prestacional y aportes patronales..."):
+                        nomina_csv = dc.head(500).to_csv(index=False)
                         
-                        rc.append({
-                            "Empleado": str(r[cn]),
-                            "Salario Base": f"${val_salario:,.0f}",
-                            "Prestaciones y Aportes": f"${total_aportes_prestaciones:,.0f}",
-                            "Costo Total Mensual": f"${costo_total:,.0f}"
-                        })
-                    
-                    if errores > 0:
-                        st.warning(f"⚠️ OJO: En {errores} filas el salario no era un número válido (quizás seleccionaste la columna equivocada). Revisa los resultados.")
-                    else:
-                        st.success("✅ Cálculo exitoso.")
-                    
-                    st.markdown("### 📊 Resultado del Análisis")
-                    df_rc = pd.DataFrame(rc)
-                    st.dataframe(df_rc, use_container_width=True)
-                    download_section(df_rc, "Costeo_Nomina_Real", "Costeo de Nómina Mensual")
+                        prompt = f'''
+                        Actúa como un Experto Analista de Nómina en Colombia.
+                        Tienes la siguiente nómina de empleados:
+                        
+                        --- DATOS DE NÓMINA ---
+                        {nomina_csv}
+                        
+                        INSTRUCCIONES DEL USUARIO:
+                        "{instrucciones if instrucciones else 'Calcula el costo real mensual por empleado para la empresa. Incluye salario, prestaciones sociales (cesantías, intereses, prima, vacaciones) y seguridad social/parafiscales patronales si aplican. Si no se especifica, asume ARL nivel 1 y evalúa si aplican exoneraciones de salud y parafiscales según Ley 1819.'}"
+                        
+                        OBJETIVO:
+                        Ignora formatos de columna rígidos. Identifica Salarios, Nombres, Riesgos.
+                        Realiza el cálculo contable solicitado.
+                        Obligatoriamente muestra los resultados desglosados (Empleado, Salario, Carga Prestacional, Costo Total) en una tabla Markdown.
+                        Incluye conclusiones u observaciones sobre optimización de costos laborales si lo consideras pertinente.
+                        '''
+                        response = consultar_ia_gemini(prompt)
+                        render_smart_advisor(response)
+                        
+                        df_res = extract_md_table_to_df(response)
+                        if not df_res.empty:
+                            download_section(df_res, "Costeo_Nomina_Real_IA", "Costeo de Nómina Mensual")
+                        
+                        with st.expander("🔍 Ver vista previa de los datos subidos"):
+                            st.dataframe(dc.head(10))
+                else:
+                    st.error("⚠️ La IA no está conectada. Verifica tu API Key.")
 
-                    if api_key_valida:
-                        with st.spinner("🤖 Analizando carga prestacional..."):
-                             render_smart_advisor(consultar_ia_gemini(f"Analiza esta nómina. Total empleados: {len(rc)}. Costo total mensual: {sum([float(x['Costo Total Mensual'].replace('$','').replace(',','')) for x in rc])}. Da consejos de optimización."))
-
-            except Exception as e:
-                st.error(f"Error leyendo el archivo: {str(e)}. Revisa que el Excel no tenga filas vacías al inicio.")
     
     # ==============================================================================
     # FIN DE LA CORRECCIÓN DE NÓMINA - CONTINÚAN LOS OTROS MÓDULOS
@@ -2334,25 +2349,52 @@ else:
             get_text('desc_fin_ai'),
             get_text('ben_fin_ai')
         )
-        fi = st.file_uploader("Cargar Datos Financieros (.xlsx/.csv)", type=['xlsx', 'csv'])
-        render_upload_example({'Cuenta': ['Ingresos Op', 'Gastos Admin', 'Costo Ventas'], 'Saldo': ['$ 50,000,000', '$ 12,000,000', '25,000,000 COP']}, help_text="Sube tus datos financieros. Obligatorio: Una columna con los nombres (Cuentas/Categorías) y otra con los valores numéricos.")
         
+        col_f1, col_f2 = st.columns([1, 2])
+        with col_f1:
+            fi = st.file_uploader("Cargar Datos Financieros (.xlsx/.csv)", type=['xlsx', 'csv'])
+            render_upload_example({'Cuenta': ['Ingresos Op', 'Gastos Admin'], 'Saldo': ['$ 50,000,000', '$ 12,000,000']}, help_text="Sube tus datos financieros. La IA los estructurará automáticamente.")
+            
+        with col_f2:
+            instrucciones = st.text_area("✍️ Instrucciones o contexto adicional para la IA (Opcional)", height=150, placeholder="Ej: Agrupa todos los gastos de viaje en una sola categoría. Dime cuál es el rubro de gasto más alto y cómo reducirlo.")
+
         if fi and api_key_valida:
             df = safe_read_excel(fi)
             
-            if df.empty or len(df.columns) < 2:
-                st.error("❌ Error de Validación: El archivo debe tener al menos una columna de texto (Categoría) y una de números (Valor).")
+            if df.empty:
+                st.error("❌ Error: El archivo está vacío.")
                 st.stop()
-            c1, c2 = st.columns(2); cd = c1.selectbox("Columna Descripción", df.columns); cv = c2.selectbox("Columna Valor", df.columns)
-            if st.button("▶️ INICIAR ANÁLISIS IA"):
-                # Forzar a numérico por si el usuario elige una columna de texto por error
-                df[cv] = pd.to_numeric(df[cv], errors='coerce').fillna(0)
-                res = df.groupby(cd)[cv].sum().sort_values(ascending=False).head(10); st.bar_chart(res)
-                df_res_ai = res.reset_index()
-                st.dataframe(df_res_ai, use_container_width=True)
-                download_section(df_res_ai, "Analitica_Financiera", "Análisis Financiero Inteligente")
                 
-                render_smart_advisor(consultar_ia_gemini(f"Actúa como auditor financiero. Analiza estos saldos principales y da recomendaciones: {res.to_string()}"))
+            if st.button("▶️ INICIAR ANÁLISIS IA", type="primary", use_container_width=True):
+                st.success("✅ Datos cargados. Analista Financiero virtual en proceso...")
+                with st.spinner("🤖 Analizando finanzas corporativas..."):
+                    datos_csv = df.head(1000).to_csv(index=False)
+                    
+                    prompt = f'''
+                    Actúa como un Auditor y Consultor Financiero.
+                    Se te proporcionan los siguientes datos financieros:
+                    
+                    --- DATOS FINANCIEROS ---
+                    {datos_csv}
+                    
+                    INSTRUCCIONES DEL USUARIO:
+                    "{instrucciones if instrucciones else 'Agrupa los saldos por cuentas/categorías. Identifica los rubros más representativos e indica la salud financiera o áreas de optimización.'}"
+                    
+                    OBJETIVO:
+                    Entiende el archivo sin requerir columnas exactas. Identifica conceptos y valores.
+                    Responde con un análisis profundo en Markdown.
+                    Muestra obligatoriamente una tabla con el resumen de las cuentas principales y sus montos.
+                    '''
+                    response = consultar_ia_gemini(prompt)
+                    render_smart_advisor(response)
+                    
+                    df_res = extract_md_table_to_df(response)
+                    if not df_res.empty:
+                        download_section(df_res, "Analitica_Financiera_IA", "Análisis Financiero Inteligente")
+                        
+                    with st.expander("🔍 Ver vista previa de los datos subidos"):
+                        st.dataframe(df.head(10))
+
 
     elif menu == "Narrador Financiero & NIIF":
         render_module_guide(
@@ -2364,53 +2406,59 @@ else:
         c1, c2 = st.columns(2)
         with c1:
              f1 = st.file_uploader("Año Actual", type=['xlsx'])
-             render_upload_example({'Cuenta': ['Caja General'], 'Saldo 2025': ['$ 15,000,000.00']}, "Ej. Año Actual", help_text="Sube el balance del periodo actual. Obligatorio: Nombre de Cuenta y Valor.")
+             render_upload_example({'Cuenta': ['Caja General'], 'Saldo 2025': ['$ 15,000,000.00']}, "Ej. Año Actual", help_text="Sube el balance del periodo actual.")
         with c2:
              f2 = st.file_uploader("Año Anterior", type=['xlsx'])
-             render_upload_example({'Cuenta': ['Caja General'], 'Saldo 2024': ['$ 12,000,000']}, "Ej. Año Anterior", help_text="Sube el balance del periodo anterior. Obligatorio: Nombre de Cuenta y Valor.")
+             render_upload_example({'Cuenta': ['Caja General'], 'Saldo 2024': ['$ 12,000,000']}, "Ej. Año Anterior", help_text="Sube el balance del periodo anterior.")
              
+        instrucciones = st.text_area("✍️ Instrucciones o contexto adicional para la IA (Opcional)", height=150, placeholder="Ej: Redacta el informe con tono amigable. Destaca por qué subieron tanto las ventas y propón medidas para bajar los gastos administrativos.")
+
         if f1 and f2 and api_key_valida:
-            d1 = safe_read_excel(f1); d2 = safe_read_excel(f2)
+            d1 = safe_read_excel(f1)
+            d2 = safe_read_excel(f2)
             
-            if d1.empty or len(d1.columns) < 2 or d2.empty or len(d2.columns) < 2:
-                st.error("❌ Error de Validación: Ambos balances deben tener al menos la columna de Cuenta y su Valor.")
+            if d1.empty or d2.empty:
+                st.error("❌ Error: Al menos uno de los archivos está vacío.")
                 st.stop()
             
-            # Auto-detección inteligente para evitar errores
-            def detectar_idx(columnas, keywords):
-                cols_str = [str(c).lower().strip() for c in columnas]
-                for i, col in enumerate(cols_str):
-                    for kw in keywords:
-                        if kw in col: return i
-                return 0
-            
-            idx_cta = detectar_idx(d1.columns, ['cuenta', 'concepto', 'rubro', 'detalle'])
-            idx_v1 = detectar_idx(d1.columns, ['saldo', 'valor', 'total', 'monto'])
-            if idx_v1 == idx_cta and len(d1.columns) > 1: idx_v1 = 1 if idx_cta == 0 else 0
-            
-            idx_v2 = detectar_idx(d2.columns, ['saldo', 'valor', 'total', 'monto'])
-            idx_cta_2 = detectar_idx(d2.columns, ['cuenta', 'concepto', 'rubro', 'detalle'])
-            if idx_v2 == idx_cta_2 and len(d2.columns) > 1: idx_v2 = 1 if idx_cta_2 == 0 else 0
+            if st.button("✨ GENERAR INFORME Y NOTAS NIIF CON IA", type="primary", use_container_width=True):
+                st.success("✅ Balances cargados. Iniciando Narrador Financiero...")
+                with st.spinner("🤖 Analizando variaciones y redactando informe NIIF..."):
+                    d1_csv = d1.head(500).to_csv(index=False)
+                    d2_csv = d2.head(500).to_csv(index=False)
+                    
+                    prompt = f'''
+                    Actúa como un CFO Corporativo y experto en NIIF.
+                    Tienes los saldos contables de dos periodos:
+                    
+                    --- AÑO ACTUAL ---
+                    {d1_csv}
+                    
+                    --- AÑO ANTERIOR ---
+                    {d2_csv}
+                    
+                    INSTRUCCIONES DEL USUARIO:
+                    "{instrucciones if instrucciones else 'Calcula las variaciones (absolutas y relativas) entre ambos periodos. Genera: 1. Un Informe Gerencial Ejecutivo destacando lo más importante. 2. Un borrador de Nota a los Estados Financieros bajo NIIF para las cuentas con mayor variación.'}"
+                    
+                    OBJETIVO:
+                    Ignora el formato de las columnas. Cruza la información asumiendo que los nombres de cuentas similares son los mismos.
+                    Responde en formato Markdown profesional.
+                    Muestra obligatoriamente una tabla comparativa con las mayores variaciones.
+                    '''
+                    response = consultar_ia_gemini(prompt)
+                    render_smart_advisor(response)
+                    
+                    df_res = extract_md_table_to_df(response)
+                    if not df_res.empty:
+                        download_section(df_res, "Notas_NIIF_IA", "Informe Financiero y Notas NIIF")
+                        
+                    with st.expander("🔍 Ver vista previa de los datos subidos"):
+                        col1, col2 = st.columns(2)
+                        col1.markdown("**Año Actual:**")
+                        col1.dataframe(d1.head(10))
+                        col2.markdown("**Año Anterior:**")
+                        col2.dataframe(d2.head(10))
 
-            st.divider(); c1, c2, c3 = st.columns(3)
-            cta = c1.selectbox("Cuenta Contable", d1.columns, index=idx_cta)
-            v1 = c2.selectbox("Valor Año Actual", d1.columns, index=idx_v1)
-            v2 = c3.selectbox("Valor Año Anterior", d2.columns, index=idx_v2)
-            if st.button("✨ GENERAR INFORME ESTRATÉGICO"):
-                # Limpieza de datos (Evitar TypeError)
-                d1[v1] = pd.to_numeric(d1[v1], errors='coerce').fillna(0)
-                d2[v2] = pd.to_numeric(d2[v2], errors='coerce').fillna(0)
-
-                g1 = d1.groupby(cta)[v1].sum().reset_index(name='V_Act'); g2 = d2.groupby(cta)[v2].sum().reset_index(name='V_Ant')
-                merged = pd.merge(g1, g2, on=cta, how='inner').fillna(0); merged['Variacion'] = merged['V_Act'] - merged['V_Ant']
-                top = merged.reindex(merged.Variacion.abs().sort_values(ascending=False).index).head(10)
-                st.markdown("### 📊 Tablero de Control Gerencial"); st.bar_chart(top.set_index(cta)['Variacion'])
-                
-                download_section(top, "Narrador_Financiero", "Informe Variaciones NIIF")
-
-                with st.spinner("🤖 El Consultor IA está redactando el informe..."):
-                    prompt = f"""Actúa como un CfO experto. Analiza la siguiente tabla de variaciones contables:{top.to_string()} GENERA: 1. Un Informe Gerencial Ejecutivo. 2. Un borrador de Nota a los Estados Financieros bajo NIIF."""
-                    render_smart_advisor(consultar_ia_gemini(prompt))
 
     elif menu == "Validador de RUT Oficial":
         render_module_guide(
