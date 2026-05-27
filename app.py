@@ -2162,7 +2162,7 @@ if menu == "Inicio / Dashboard":
                 <ul class="features-ul">
                     <li><span class="check">✓</span> <strong>Todo lo del Plan PRO</strong></li>
                     <li><span class="check">✓</span> CFO Virtual (Narrador NIIF)</li>
-                    <li><span class="check">✓</span> Consola Administrativa Total</li>
+                    <li><span class="check">✓</span> Soporte Asesor IA 24/7</li>
                     <li><span class="check">✓</span> Máxima Velocidad de IA</li>
                 </ul>
             </div>
