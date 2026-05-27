@@ -65,6 +65,51 @@ with st.sidebar:
         """)
         
     st.markdown("---")
+
+    # --- BOT ASISTENTE BÁSICO (PLAN PRO) ---
+    with st.expander("💬 Bot de Ayuda (Soporte App)", expanded=False):
+        if "pro_bot_history" not in st.session_state:
+            st.session_state.pro_bot_history = [
+                {"role": "assistant", "content": "👋 Hola, soy el Bot de Ayuda Básica.\nSolo respondo dudas sobre cómo usar la plataforma (ej. *'¿Dónde subo el Excel?'* o *'¿Cómo genero el reporte?'*). No doy asesoría contable ni tributaria."}
+            ]
+        
+        bot_container = st.container(height=250)
+        with bot_container:
+            for msg in st.session_state.pro_bot_history:
+                avatar_img = "🤖" if msg["role"] == "assistant" else "👤"
+                with st.chat_message(msg["role"], avatar=avatar_img):
+                    st.markdown(msg["content"])
+        
+        with st.form(key="pro_bot_form", clear_on_submit=True):
+            user_bot_input = st.text_input("Haz tu pregunta...", placeholder="Ej: ¿Dónde subo mi XML?")
+            submit_bot_btn = st.form_submit_button("Consultar ⚡")
+            
+        if submit_bot_btn and user_bot_input:
+            st.session_state.pro_bot_history.append({"role": "user", "content": user_bot_input})
+            
+            contexto_pro = f"""
+            ACTÚA COMO: Un bot de soporte técnico básico de Nivel 1.
+            ESTÁS EN LA APLICACIÓN: 'Asistente Contable Pro'.
+            INSTRUCCIONES:
+            1. TU ÚNICO TRABAJO es ayudar a los usuarios a navegar por la interfaz y saber dónde hacer clics.
+            2. TIENES PROHIBIDO dar consejos contables, calcular impuestos, hablar de retenciones o normativa de la DIAN.
+            3. Si el usuario pregunta algo de contabilidad o leyes, respóndele exactamente esto: "Lo siento, soy un Bot Básico de Ayuda. Para consultas contables, normativa DIAN o asesoría de alto nivel, debes MEJORAR TU PLAN y consultar con el NÚCLEO IA (CFO Virtual) que está en el menú principal."
+            
+            PREGUNTA DEL USUARIO: {user_bot_input}
+            """
+            
+            try:
+                with st.spinner("Buscando..."):
+                    from google.generativeai import GenerativeModel
+                    # Re-use the existing model setup if possible, or call the main function
+                    respuesta_bot = consultar_ia_gemini(contexto_pro)
+                st.session_state.pro_bot_history.append({"role": "assistant", "content": respuesta_bot})
+                st.rerun()
+            except Exception as e:
+                st.error("Error de red.")
+
+    st.markdown("---")
+
     
     # --- MENÚ PRINCIPAL ---
     try:
@@ -2146,7 +2191,7 @@ if menu == "Inicio / Dashboard":
                 <li><span class="check">✓</span> Digitalización OCR Inteligente</li>
                 <li><span class="check">✓</span> Auditoría Cruce DIAN</li>
                 <li><span class="check">✓</span> Costeo de Nómina IA 2026</li>
-                <li><span class="check">✓</span> Soporte Técnico General</li>
+                <li><span class="check">✓</span> Bot Asistente Básico (Ayuda App)</li>
             </ul>
         </div>
         """, unsafe_allow_html=True)
