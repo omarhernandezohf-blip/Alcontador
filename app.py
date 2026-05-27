@@ -1663,39 +1663,129 @@ def render_quienes_somos():
 if menu == "Inicio / Dashboard":
     # 1. HEADER EJECUTIVO (HERO SECTION - ENTERPRISE TRUST)
     st.markdown("""
-    <div class="hero-container">
-        <div class="hero-content">
-            <h1 class="hero-title">Asistente Contable <span style="color: var(--primary)">PRO</span></h1>
-            <div class="hero-subtitle">v14.5 Suite Empresarial • <span style="color: var(--success)">Sistema En Línea</span></div>
+    <div class="hero-wrapper">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+        <div class="hero-card">
+            <div class="hero-badge">
+                <span class="pulse-dot"></span> SISTEMA EN LÍNEA ACTIVO
+            </div>
+            <h1 class="hero-title-mega">Asistente Contable <span class="text-gradient">PRO</span></h1>
+            <p class="hero-desc">Inteligencia Artificial Financiera v14.5 • Suite Empresarial</p>
         </div>
     </div>
     <style>
-        .hero-container {
+        .hero-wrapper {
             position: relative;
-            padding: 3rem 2rem;
-            margin-bottom: 2rem;
-            background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), transparent);
-            border-left: 4px solid var(--primary);
-            border-radius: 8px;
+            margin-bottom: 2.5rem;
+            padding: 1rem 0;
             overflow: hidden;
-            backdrop-filter: blur(12px);
-            box-shadow: var(--shadow-soft);
+            border-radius: 20px;
         }
-        .hero-title {
+        .glow-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(45px);
+            opacity: 0.6;
+            animation: float 6s ease-in-out infinite;
+            z-index: 0;
+        }
+        .orb-1 {
+            width: 180px;
+            height: 180px;
+            background: rgba(99, 102, 241, 0.8);
+            top: -30px;
+            left: 10%;
+        }
+        .orb-2 {
+            width: 220px;
+            height: 220px;
+            background: rgba(16, 185, 129, 0.5);
+            bottom: -50px;
+            right: 10%;
+            animation-delay: -3s;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.1); }
+        }
+        .hero-card {
+            position: relative;
+            z-index: 1;
+            background: rgba(20, 24, 39, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 4rem 2rem;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
+        }
+        .hero-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 35px 60px -15px rgba(99, 102, 241, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            padding: 6px 16px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 1.8rem;
+            border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        .hero-title-mega {
             font-family: 'Inter', sans-serif !important;
-            font-size: 3rem !important;
-            font-weight: 800 !important;
-            margin: 0;
-            letter-spacing: -1px;
-            color: white;
-            text-shadow: 0 0 40px rgba(99, 102, 241, 0.3);
+            font-size: 3.8rem !important;
+            font-weight: 900 !important;
+            margin: 0 0 1rem 0;
+            letter-spacing: -2px;
+            color: #ffffff;
+            line-height: 1.1;
         }
-        .hero-subtitle {
-            font-family: 'Inter', sans-serif;
-            font-size: 1.1rem;
-            color: var(--text-body);
-            margin-top: 0.5rem;
-            font-weight: 500;
+        .text-gradient {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 200% auto;
+            animation: shine 4s linear infinite;
+        }
+        @keyframes shine {
+            to { background-position: 200% center; }
+        }
+        .hero-desc {
+            font-size: 1.25rem;
+            color: #94a3b8;
+            font-weight: 400;
+            margin: 0 auto;
+            max-width: 600px;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .hero-title-mega { font-size: 2.5rem !important; }
+            .hero-card { padding: 2.5rem 1.5rem; }
+            .hero-desc { font-size: 1rem; }
         }
     </style>
     """, unsafe_allow_html=True)
