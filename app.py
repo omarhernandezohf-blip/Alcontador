@@ -2032,42 +2032,85 @@ if menu == "Inicio / Dashboard":
     st.markdown("""
     <style>
         .pricing-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 2rem;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 2.5rem 2rem;
             height: 100%;
             display: flex; flex-direction: column;
-            transition: all 0.3s ease;
-            box-shadow: var(--shadow-soft);
-        }
-        .pricing-card:hover { transform: translateY(-5px); border-color: var(--primary); box-shadow: 0 8px 30px rgba(99, 102, 241, 0.2); }
-        .pricing-card.pro {
-            background: linear-gradient(145deg, rgba(15, 23, 42, 0.9) 0%, rgba(99, 102, 241, 0.1) 100%);
-            border: 1px solid var(--primary);
-            box-shadow: 0 0 30px rgba(99, 102, 241, 0.15);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
             position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        .pricing-card:hover { transform: translateY(-10px) scale(1.02); z-index: 10; }
+        
+        .pricing-card.pro {
+            background: linear-gradient(180deg, rgba(30, 27, 75, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            box-shadow: 0 0 40px rgba(99, 102, 241, 0.15);
+        }
+        .pricing-card.pro:hover {
+            box-shadow: 0 0 60px rgba(99, 102, 241, 0.3);
+            border-color: rgba(99, 102, 241, 0.8);
+        }
+
+        /* Efecto de borde animado para Premium */
+        .premium-wrapper {
+            position: relative;
+            height: 100%;
+            border-radius: 20px;
+            padding: 2px;
+            background: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6, #10b981, #ec4899);
+            background-size: 400% 400%;
+            animation: gradient-spin 5s linear infinite;
+        }
+        @keyframes gradient-spin {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
         }
         .pricing-card.premium {
-            background: linear-gradient(145deg, rgba(15, 23, 42, 0.9) 0%, rgba(139, 92, 246, 0.2) 100%);
-            border: 1px solid #c084fc;
-            box-shadow: 0 0 40px rgba(192, 132, 252, 0.2);
-            position: relative;
+            background: rgba(15, 23, 42, 0.95);
+            border: none;
+            box-shadow: 0 0 50px rgba(139, 92, 246, 0.4);
         }
+
         .popular-badge {
-            position: absolute; top: -12px; right: 24px;
-            background: linear-gradient(90deg, #6366f1, #8b5cf6);
-            color: white; padding: 4px 12px; border-radius: 99px;
-            font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px; font-family: 'Inter';
+            position: absolute; top: -15px; right: 20px;
+            background: linear-gradient(90deg, #ec4899, #8b5cf6);
+            color: white; padding: 6px 16px; border-radius: 99px;
+            font-size: 0.8rem; font-weight: 800; letter-spacing: 1px; font-family: 'Inter';
+            box-shadow: 0 5px 15px rgba(236, 72, 153, 0.4);
+            animation: float-badge 3s ease-in-out infinite;
         }
-        .price-tag { font-family: 'Inter'; font-size: 2.5rem; font-weight: 800; color: white; margin: 10px 0; letter-spacing: -1px; }
-        .price-tag span { font-size: 0.9rem; color: var(--text-body); font-weight: 500; }
-        .price-old { font-size: 1rem; color: #64748b; text-decoration: line-through; margin-top: 10px; }
-        .features-ul { list-style: none; padding: 0; margin: 20px 0; color: var(--text-body); flex-grow: 1; font-size: 0.9rem; }
-        .features-ul li { margin-bottom: 10px; display: flex; align-items: center; }
-        .check { color: var(--success); margin-right: 8px; font-weight: bold; }
-        .cross { color: #ef4444; margin-right: 8px; opacity: 0.7; }
+        @keyframes float-badge {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .price-tag { font-family: 'Inter'; font-size: 3rem; font-weight: 900; color: white; margin: 15px 0; letter-spacing: -2px; }
+        .price-tag span { font-size: 1rem; color: #94a3b8; font-weight: 600; letter-spacing: 0; }
+        .price-tag.pro-price {
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .price-tag.prem-price {
+            background: linear-gradient(to right, #f472b6, #c084fc, #818cf8);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            animation: text-shine 3s linear infinite;
+            background-size: 200% auto;
+        }
+        @keyframes text-shine { to { background-position: 200% center; } }
+        
+        .price-old { font-size: 1.1rem; color: #64748b; text-decoration: line-through; font-weight: 600;}
+        .features-ul { list-style: none; padding: 0; margin: 25px 0; color: #cbd5e1; flex-grow: 1; font-size: 0.95rem; }
+        .features-ul li { margin-bottom: 12px; display: flex; align-items: center; }
+        .check { color: #10b981; margin-right: 10px; font-weight: 900; font-size: 1.1rem; }
+        .cross { color: #ef4444; margin-right: 10px; opacity: 0.7; font-weight: 900; }
+        .dimmed { color: #64748b; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -2096,7 +2139,7 @@ if menu == "Inicio / Dashboard":
         <div class="pricing-card pro">
             <h3 style="color:#6366f1; margin:0; font-size: 1.2rem;"> PLAN PRO</h3>
             <div class="price-old">$100.000</div>
-            <div class="price-tag">$70.000 <span>COP/mes</span></div>
+            <div class="price-tag pro-price">$70.000 <span>COP/mes</span></div>
             <ul class="features-ul">
                 <li><span class="check">✓</span> Digitalización OCR Inteligente</li>
                 <li><span class="check">✓</span> Auditoría Cruce DIAN</li>
@@ -2110,17 +2153,19 @@ if menu == "Inicio / Dashboard":
     # PLAN PREMIUM
     with col_prem:
         st.markdown("""
-        <div class="pricing-card premium">
-            <div class="popular-badge">RECOMENDADO</div>
-            <h3 style="color:#c084fc; margin:0; font-size: 1.2rem;"> PLAN PREMIUM</h3>
-            <div class="price-old">$180.000</div>
-            <div class="price-tag">$120.000 <span>COP/mes</span></div>
-            <ul class="features-ul">
-                <li><span class="check">✓</span> <strong>Todo lo del Plan PRO</strong></li>
-                <li><span class="check">✓</span> CFO Virtual (Narrador NIIF)</li>
-                <li><span class="check">✓</span> Consola Administrativa Total</li>
-                <li><span class="check">✓</span> Máxima Velocidad de IA</li>
-            </ul>
+        <div class="premium-wrapper">
+            <div class="pricing-card premium">
+                <div class="popular-badge">RECOMENDADO</div>
+                <h3 style="color:#c084fc; margin:0; font-size: 1.2rem;"> PLAN PREMIUM</h3>
+                <div class="price-old">$180.000</div>
+                <div class="price-tag prem-price">$120.000 <span>COP/mes</span></div>
+                <ul class="features-ul">
+                    <li><span class="check">✓</span> <strong>Todo lo del Plan PRO</strong></li>
+                    <li><span class="check">✓</span> CFO Virtual (Narrador NIIF)</li>
+                    <li><span class="check">✓</span> Consola Administrativa Total</li>
+                    <li><span class="check">✓</span> Máxima Velocidad de IA</li>
+                </ul>
+            </div>
         </div>
         """, unsafe_allow_html=True)
         st.link_button("🚀 OBTENER BLINDAJE TOTAL", "https://checkout.wompi.co/l/TU_LINK_PREMIUM", type="primary", use_container_width=True)
