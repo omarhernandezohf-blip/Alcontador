@@ -1894,102 +1894,63 @@ else:
         with col_dian:
             st.subheader("🏛️ 1. Archivo DIAN")
             file_dian = st.file_uploader("Subir 'Reporte Terceros DIAN' (.xlsx)", type=['xlsx'])
-            render_upload_example({'NIT': ['900123456', '890987654'], 'Valor Reportado': ['$ 1,500,000.00', '$ 5,200,000 COP']}, help_text="Sube el reporte de terceros generado por la DIAN. Debe tener una columna con los NITs y otra con los valores reportados.")
+            render_upload_example({'NIT': ['900123456', '890987654'], 'Valor Reportado': ['$ 1,500,000.00', '$ 5,200,000 COP']}, help_text="Sube el reporte de terceros generado por la DIAN. Ahora no requieres columnas estrictas.")
 
         with col_conta:
             st.subheader("📒 2. Contabilidad")
             file_conta = st.file_uploader("Subir Auxiliar por Tercero (.xlsx)", type=['xlsx'])
-            render_upload_example({'NIT': ['900123456', '890987654'], 'Saldo Contable': ['$ 1,500,000', '4,800,000.00']}, help_text="Sube tu balance de comprobación o auxiliar contable. Debe tener una columna con los NITs y otra con los saldos.")
+            render_upload_example({'NIT': ['900123456', '890987654'], 'Saldo Contable': ['$ 1,500,000', '4,800,000.00']}, help_text="Sube tu balance de comprobación o auxiliar contable. Sin formato estricto.")
             
+        instrucciones = st.text_area("✍️ Instrucciones o contexto adicional para la IA (Opcional)", placeholder="Ej: Compara ambos archivos, cruza por NIT y muéstrame solo las diferencias mayores a $5.000.000. Detalla posibles errores en nombres.")
+
         if file_dian and file_conta:
             df_dian = safe_read_excel(file_dian)
             df_conta = safe_read_excel(file_conta)
             
-            # Validación Pre-Vuelo
-            if df_dian.empty or len(df_dian.columns) < 2 or df_conta.empty or len(df_conta.columns) < 2:
-                st.error("❌ Error de Validación: Uno de los archivos está vacío o no tiene las columnas mínimas necesarias (NIT y Valor). Por favor, verifica el formato de tus Excel antes de continuar.")
+            if df_dian.empty or df_conta.empty:
+                st.error("❌ Error: Uno de los archivos está vacío. Verifica tus Excel.")
                 st.stop()
-            
-            # Cerebro de Auto-Detección
-            def detectar_idx(columnas, keywords):
-                cols_str = [str(c).lower().strip() for c in columnas]
-                for i, col in enumerate(cols_str):
-                    for kw in keywords:
-                        if kw in col: return i
-                return 0
-            
-            kw_nit = ['nit', 'n.i.t', 'cedula', 'documento', 'id', 'tercero']
-            kw_valor = ['valor', 'saldo', 'total', 'monto', 'pago', 'cuantia']
-            
-            idx_nit_d = detectar_idx(df_dian.columns, kw_nit)
-            idx_val_d = detectar_idx(df_dian.columns, kw_valor)
-            idx_nit_c = detectar_idx(df_conta.columns, kw_nit)
-            idx_val_c = detectar_idx(df_conta.columns, kw_valor)
-            
-            st.divider()
-            st.success(f"✅ Sistema Autoconfigurado: Se usarán las columnas '{df_dian.columns[idx_nit_d]}' y '{df_dian.columns[idx_val_d]}' automáticamente.")
-            
-            with st.expander("🛠️ (Opcional) Ver o cambiar columnas seleccionadas manualmente"):
-                c1, c2, c3, c4 = st.columns(4)
-                nit_dian = c1.selectbox("NIT (DIAN)", df_dian.columns, index=idx_nit_d)
-                val_dian = c2.selectbox("Valor (DIAN)", df_dian.columns, index=idx_val_d)
-                nit_conta = c3.selectbox("NIT (Conta)", df_conta.columns, index=idx_nit_c)
-                val_conta = c4.selectbox("Valor (Conta)", df_conta.columns, index=idx_val_c)
-
-            if st.button("▶️ EJECUTAR AUDITORÍA AHORA", type="primary"):
-                try:
-                    # Sanitización de datos numéricos (Prevención de errores de tipo)
-                    df_dian[val_dian] = pd.to_numeric(df_dian[val_dian], errors='coerce').fillna(0)
-                    df_conta[val_conta] = pd.to_numeric(df_conta[val_conta], errors='coerce').fillna(0)
-
-                    dian_grouped = df_dian.groupby(nit_dian)[val_dian].sum().reset_index(name='Valor_DIAN').rename(columns={nit_dian: 'NIT'})
-                    conta_grouped = df_conta.groupby(nit_conta)[val_conta].sum().reset_index(name='Valor_Conta').rename(columns={nit_conta: 'NIT'})
-                    
-                    dian_grouped['NIT'] = dian_grouped['NIT'].astype(str).str.strip()
-                    conta_grouped['NIT'] = conta_grouped['NIT'].astype(str).str.strip()
-
-                    cruce = pd.merge(dian_grouped, conta_grouped, on='NIT', how='outer').fillna(0)
-                    cruce['Diferencia'] = cruce['Valor_DIAN'] - cruce['Valor_Conta']
-                    diferencias = cruce[abs(cruce['Diferencia']) > 1000].sort_values(by="Diferencia", ascending=False)
-                    
-                    num_hallazgos = len(diferencias)
-                    total_riesgo = diferencias['Diferencia'].abs().sum()
-                    
-                    st.divider()
-                    if num_hallazgos == 0:
-                        st.balloons()
-                        st.success("✅ ¡Perfecto! No hay diferencias entre la DIAN y tu Contabilidad.")
-                    else:
-                        st.error(f"⚠️ Se encontraron {num_hallazgos} inconsistencias.")
-                        col_met1, col_met2 = st.columns(2)
-                        col_met1.metric("Riesgo Total", f"${total_riesgo:,.0f}")
-                        col_met2.metric("Terceros con Error", num_hallazgos)
+                
+            if st.button("▶️ EJECUTAR ANÁLISIS INTELIGENTE", type="primary", use_container_width=True):
+                st.success("✅ Archivos cargados. Iniciando Motor de Inteligencia Artificial...")
+                
+                if api_key_valida:
+                    with st.spinner("🤖 Analizando la estructura de los datos y cruzando información..."):
+                        # Convertimos a CSV (solo una muestra suficiente) para que Gemini la procese
+                        dian_csv = df_dian.head(500).to_csv(index=False)
+                        conta_csv = df_conta.head(500).to_csv(index=False)
                         
-                        if st.session_state.get('user_plan') == 'FREE':
-                            st.warning("🔒 Versión GRATUITA: Solo se muestran los primeros 3 errores.")
-                            st.dataframe(diferencias.head(3), use_container_width=True)
-                        else:
-                            st.success("💎 REPORTE COMPLETO (PRO)")
-                            st.dataframe(diferencias, use_container_width=True)
-                            
-                        # Universal Download
-                        download_section(diferencias, "Reporte_Auditoria_DIAN", "Auditoría Cruce DIAN vs Contabilidad")
+                        prompt = f'''
+                        Actúa como un Auditor Fiscal y Contable experto.
+                        Se te han proporcionado dos extractos de datos:
+                        
+                        --- DATOS DIAN (Reporte Terceros) ---
+                        {dian_csv}
+                        
+                        --- DATOS CONTABILIDAD ---
+                        {conta_csv}
+                        
+                        INSTRUCCIONES DEL USUARIO:
+                        "{instrucciones if instrucciones else 'Analiza ambos archivos, deduce las columnas correspondientes a Identificación (NIT/Cédula) y Valor, realiza un cruce para encontrar discrepancias, y presenta un informe detallado con las diferencias encontradas.'}"
+                        
+                        OBJETIVO:
+                        Ignora la necesidad de que las columnas tengan nombres exactos o formatos estrictos.
+                        Entiende el archivo, realiza el análisis o cruce solicitado por el usuario y responde de forma estructurada en formato Markdown.
+                        Usa tablas obligatoriamente para mostrar las inconsistencias o diferencias entre ambos reportes.
+                        Da una conclusión clara y profesional.
+                        '''
+                        response = consultar_ia_gemini(prompt)
+                        render_smart_advisor(response)
+                        
+                        with st.expander("🔍 Ver vista previa de los datos subidos"):
+                            c1, c2 = st.columns(2)
+                            c1.markdown("**Archivo DIAN:**")
+                            c1.dataframe(df_dian.head(10))
+                            c2.markdown("**Archivo Contabilidad:**")
+                            c2.dataframe(df_conta.head(10))
+                else:
+                    st.error("⚠️ La Inteligencia Artificial no está conectada. Verifica tu API Key en la barra lateral.")
 
-                    # --- AI SMART ADVISOR RESTORED ---
-                    if api_key_valida:
-                        with st.spinner("🤖 Consultando análisis experto..."):
-                            summary_prompt = f"Actúa como un auditor fiscal experto. Se encontraron {num_hallazgos} diferencias por un total de {total_riesgo}. Analiza qué riesgos implica esto frente a la UGPP y la DIAN en Colombia."
-                            response = consultar_ia_gemini(summary_prompt)
-                            render_smart_advisor(response)
-                    
-                    # Optimización de Memoria
-                    del df_dian, df_conta, cruce, diferencias
-                    # gc.collect() # Comentado para evitar AttributeError con gspread
-
-                except Exception as e:
-                    st.error(f"Algo salió mal: {e}. Revisa 'Configuración manual' arriba.")
-
-    # 2. MINERÍA XML
     elif menu == "Minería de XML (Facturación)":
         render_module_guide(
             get_text('title_xml'),
@@ -2016,298 +1977,183 @@ else:
     elif menu == "Conciliación Bancaria IA":
         render_module_guide(
             get_text('title_bank'),
-            "https://cdn-icons-png.flaticon.com/512/2489/2489756.png",
+            "https://cdn-icons-png.flaticon.com/512/2830/2830284.png",
             get_text('desc_bank'),
             get_text('ben_bank')
         )
         
-        col_banco, col_libro = st.columns(2)
-        with col_banco: 
+        col_b1, col_b2 = st.columns(2)
+        with col_b1:
             st.subheader("🏦 Extracto Bancario")
-            file_banco = st.file_uploader("Subir Excel Banco", type=['xlsx'])
-            render_upload_example({'Fecha': ['2025-01-10', '2025-01-12'], 'Descripción': ['Pago Proveedor X', 'Comision Bancaria'], 'Valor': ['-500,000.00', '$ -12,000']}, help_text="Sube tu extracto bancario mensual. Obligatorio: Columna de Fecha, Descripción y Valor.")
-        
-        with col_libro: 
-            st.subheader("📒 Libro Auxiliar")
-            file_libro = st.file_uploader("Subir Excel Contabilidad", type=['xlsx'])
-            render_upload_example({'Fecha': ['2025-01-10', '2025-01-12'], 'Detalle': ['Egreso #405', 'Nota Debito'], 'Crédito': ['$ 500,000', '12,000.00']}, help_text="Sube tu auxiliar contable de bancos. Obligatorio: Columna de Fecha, Detalle y Crédito/Débito.")
-        
-        if file_banco and file_libro:
-            # Lectura Segura
+            file_banco = st.file_uploader("Subir Extracto (.xlsx)", type=['xlsx'], key="banco")
+        with col_b2:
+            st.subheader("📒 Libro Auxiliar Contable")
+            file_libros = st.file_uploader("Subir Auxiliar de Bancos (.xlsx)", type=['xlsx'], key="libros")
+            
+        instrucciones = st.text_area("✍️ Instrucciones Específicas para la IA (Opcional)", height=150, placeholder="Ej: Las columnas de fecha tienen diferentes formatos, trata de cruzarlos. Los montos en el banco son negativos para retiros, pero en libros están en la columna Crédito.")
+
+        if file_banco and file_libros:
             df_banco = safe_read_excel(file_banco)
-            df_libro = safe_read_excel(file_libro)
+            df_libros = safe_read_excel(file_libros)
             
-            # Validación Pre-Vuelo
-            if df_banco.empty or len(df_banco.columns) < 3 or df_libro.empty or len(df_libro.columns) < 3:
-                st.error("❌ Error de Validación: Uno de los archivos está vacío o no tiene las columnas mínimas (Fecha, Descripción, Valor). Por favor revisa y vuelve a subir.")
+            if df_banco.empty or df_libros.empty:
+                st.error("❌ Al menos uno de los archivos está vacío.")
                 st.stop()
-            
-            # --- CEREBRO DE AUTO-DETECCIÓN ---
-            def detectar_idx(columnas, keywords):
-                cols_str = [str(c).lower().strip() for c in columnas]
-                for i, col in enumerate(cols_str):
-                    for kw in keywords:
-                        if kw in col: return i
-                return 0
-            
-            kw_fecha = ['fecha', 'date', 'dia', 'fec']
-            kw_valor = ['valor', 'monto', 'importe', 'saldo', 'debito', 'credito', 'total']
-            kw_desc = ['desc', 'detalle', 'concepto', 'tercero', 'referencia']
-            
-            idx_fb = detectar_idx(df_banco.columns, kw_fecha)
-            idx_vb = detectar_idx(df_banco.columns, kw_valor)
-            idx_db = detectar_idx(df_banco.columns, kw_desc)
-            
-            idx_fl = detectar_idx(df_libro.columns, kw_fecha)
-            idx_vl = detectar_idx(df_libro.columns, kw_valor)
-            
-            st.divider()
-            st.success(f"✅ Configuración Automática: Se comparará '{df_banco.columns[idx_vb]}' del Banco vs '{df_libro.columns[idx_vl]}' del Libro.")
-
-            with st.expander("🛠️ Ver/Editar Columnas Seleccionadas"):
-                c1, c2, c3, c4 = st.columns(4)
-                col_fecha_b = c1.selectbox("Fecha Banco:", df_banco.columns, index=idx_fb, key="fb")
-                col_valor_b = c2.selectbox("Valor Banco:", df_banco.columns, index=idx_vb, key="vb")
-                col_fecha_l = c3.selectbox("Fecha Libro:", df_libro.columns, index=idx_fl, key="fl")
-                col_valor_l = c4.selectbox("Valor Libro:", df_libro.columns, index=idx_vl, key="vl")
-                col_desc_b = st.selectbox("Descripción Banco:", df_banco.columns, index=idx_db, key="db")
-
-            if st.button("▶️ EJECUTAR CONCILIACIÓN AHORA", type="primary"):
-                registrar_log(st.session_state['username'], "Conciliacion", "Inicio matching bancario")
                 
-                # Normalización de Fechas
-                try:
-                    df_banco['Fecha_Dt'] = pd.to_datetime(df_banco[col_fecha_b])
-                    df_libro['Fecha_Dt'] = pd.to_datetime(df_libro[col_fecha_l])
-                except:
-                    st.error("Error en formato de fechas. Asegúrate que las columnas de fecha sean correctas.")
-                    st.stop()
-
-                df_banco['Conciliado'] = False
-                df_libro['Conciliado'] = False
-                matches = []
+            if st.button("▶️ EJECUTAR CONCILIACIÓN INTELIGENTE", type="primary", use_container_width=True):
+                st.success("✅ Archivos cargados. Iniciando Conciliador IA...")
                 
-                bar = st.progress(0)
-                total_rows = len(df_banco)
-                
-                # ALGORITMO DE MATCHING INTELIGENTE
-                for i, (idx_b, vb, fb, fecha_b_orig, desc_b) in enumerate(zip(df_banco.index, df_banco[col_valor_b], df_banco['Fecha_Dt'], df_banco[col_fecha_b], df_banco[col_desc_b])):
-                    bar.progress((i+1)/total_rows)
-                    cands = df_libro[
-                        (df_libro[col_valor_l] == vb) & 
-                        (~df_libro['Conciliado']) & 
-                        (df_libro['Fecha_Dt'].between(fb - timedelta(days=3), fb + timedelta(days=3)))
-                    ]
-                    
-                    if not cands.empty:
-                        match_idx = cands.index[0]
-                        df_banco.at[idx_b, 'Conciliado'] = True
-                        df_libro.at[match_idx, 'Conciliado'] = True
-                        f_libro_str = df_libro.at[match_idx, col_fecha_l]
-                        matches.append({
-                            "Fecha Banco": str(fecha_b_orig),
-                            "Fecha Libro": str(f_libro_str),
-                            "Descripción": str(desc_b),
-                            "Valor Cruzado": f"${vb:,.2f}",
-                            "Estado": "✅ AUTOMÁTICO"
-                        })
-                
-                st.divider()
-                st.balloons()
-                st.success(f"🚀 ¡Proceso Terminado! {len(matches)} partidas conciliadas automáticamente.")
-                
-                df_matches = pd.DataFrame(matches)
-                df_pend_banco = df_banco[~df_banco['Conciliado']]
-                df_pend_libro = df_libro[~df_libro['Conciliado']]
-                
-                t1, t2, t3 = st.tabs(["✅ Partidas Cruzadas", "⚠️ Pendientes en Banco", "⚠️ Pendientes en Libros"])
-                
-                with t1: 
-                    st.dataframe(df_matches, use_container_width=True)
-                    download_section(df_matches, "Conciliacion_Cruzada", "Partidas Conciliadas")
-                with t2: 
-                    st.dataframe(df_pend_banco, use_container_width=True)
-                    download_section(df_pend_banco, "Pendientes_Banco", "Partidas Pendientes en Banco")
-                with t3: 
-                    st.dataframe(df_pend_libro, use_container_width=True)
-                    download_section(df_pend_libro, "Pendientes_Libros", "Partidas Pendientes en Libros")
-
-                # --- AI SMART ADVISOR RESTORED ---
                 if api_key_valida:
-                    with st.spinner("🤖 Analizando partidas pendientes..."):
-                        render_smart_advisor(consultar_ia_gemini(f"Tengo {len(df_pend_banco)} partidas pendientes en bancos y {len(df_pend_libro)} en libros. ¿Qué me recomiendas revisar primero?"))
-                
-                # Optimización de Memoria
-                del df_banco, df_libro, df_matches, df_pend_banco, df_pend_libro
-                # gc.collect() # Comentado para evitar AttributeError con gspread
+                    with st.spinner("🤖 Analizando y emparejando transacciones..."):
+                        banco_csv = df_banco.head(500).to_csv(index=False)
+                        libros_csv = df_libros.head(500).to_csv(index=False)
+                        
+                        prompt = f'''
+                        Actúa como un Auditor Contable y Financiero experto en conciliaciones bancarias.
+                        Tienes dos extractos de transacciones:
+                        
+                        --- EXTRACTO BANCARIO ---
+                        {banco_csv}
+                        
+                        --- LIBRO AUXILIAR CONTABLE ---
+                        {libros_csv}
+                        
+                        INSTRUCCIONES DEL USUARIO:
+                        "{instrucciones if instrucciones else 'Realiza una conciliación bancaria. Encuentra las partidas conciliatorias (lo que está en bancos y no en libros, y viceversa). Busca montos idénticos o muy similares en fechas cercanas.'}"
+                        
+                        OBJETIVO:
+                        Ignora formatos estrictos o nombres de columnas rígidos.
+                        Usa tu inteligencia para identificar fechas, descripciones/referencias y montos.
+                        Presenta un informe de conciliación con las partidas que cuadran y las partidas pendientes o no conciliadas.
+                        Usa tablas para mostrar las transacciones huérfanas o discrepancias de montos.
+                        Responde de forma clara y profesional en Markdown.
+                        '''
+                        response = consultar_ia_gemini(prompt)
+                        render_smart_advisor(response)
+                        
+                        with st.expander("🔍 Ver vista previa de los datos subidos"):
+                            col1, col2 = st.columns(2)
+                            col1.markdown("**Extracto Bancario:**")
+                            col1.dataframe(df_banco.head(10))
+                            col2.markdown("**Libro Contable:**")
+                            col2.dataframe(df_libros.head(10))
+                else:
+                    st.error("⚠️ La Inteligencia Artificial no está conectada. Verifica tu API Key.")
 
     elif menu == "Auditoría Fiscal de Gastos":
         render_module_guide(
-            get_text('title_fiscal'),
-            "https://cdn-icons-png.flaticon.com/512/1642/1642346.png",
-            get_text('desc_fiscal'),
-            get_text('ben_fiscal')
+            get_text('title_gastos'),
+            "https://cdn-icons-png.flaticon.com/512/3233/3233483.png",
+            get_text('desc_gastos'),
+            get_text('ben_gastos')
         )
         
-        
-        ar = st.file_uploader("Cargar Auxiliar de Gastos (.xlsx)", type=['xlsx'])
-        render_upload_example({
-            'Fecha': ['2025-01-05', '2025-01-08'], 
-            'Tercero': ['Comercializadora SAS', 'Servicios SA'], 
-            'Valor': ['$ 15,000,000', '450,000 COP'],
-            'Método Pago': ['Transferencia', 'Efectivo']
-        }, help_text="Sube el auxiliar de gastos/egresos. Obligatorio: Fecha, Tercero, Valor y Método de Pago (ej. Efectivo, Transferencia).")
-        
+        col_g1, col_g2 = st.columns([1, 2])
+        with col_g1:
+            ar = st.file_uploader("📥 Cargar Auxiliar de Gastos (.xlsx)", type=["xlsx"])
+            render_upload_example(
+                {'Fecha': ['2023-10-01', '2023-10-05'], 'Tercero': ['Restaurante X', 'Papelería Y'], 'Valor': [150000, 50000], 'Método Pago': ['Efectivo', 'Tarjeta'], 'Concepto': ['Almuerzo gerencia', 'Resmas']},
+                "Formato sugerido",
+                "Sube tu reporte de gastos. No te preocupes por el orden o los nombres de las columnas."
+            )
+            
+        with col_g2:
+            instrucciones = st.text_area("✍️ Instrucciones Específicas para la IA (Opcional)", height=150, placeholder="Ej: Ignora los gastos por debajo de $50,000. Revisa si 'Efectivo' incumple la norma de bancarización para compras grandes. La empresa es una agencia de publicidad.")
+
         if ar:
             df = safe_read_excel(ar)
             
-            if df.empty or len(df.columns) < 4:
-                st.error("❌ Error de Validación: El archivo está vacío o le faltan columnas clave. Asegúrate de tener al menos Fecha, Tercero, Valor y Método de Pago.")
+            if df.empty:
+                st.error("❌ El archivo está vacío.")
                 st.stop()
-            # ... (Existing Logic kept brief for length, assumig no changes needed in logic, just UI restoration)
-            # Re-implementing logic for completeness as I am overwriting the file
-            def detectar_idx(columnas, keywords):
-                cols_str = [str(c).lower().strip() for c in columnas]
-                for i, col in enumerate(cols_str):
-                    for kw in keywords:
-                        if kw in col: return i
-                return 0
-
-            kw_fecha = ['fecha', 'date', 'dia']
-            kw_tercero = ['tercero', 'beneficiario', 'nombre', 'proveedor']
-            kw_valor = ['valor', 'monto', 'importe', 'saldo', 'debito', 'total']
-            kw_metodo = ['metodo', 'forma', 'pago', 'medio', 'banco', 'caja']
-            kw_concepto = ['concepto', 'detalle', 'descripcion', 'nota']
-
-            idx_f = detectar_idx(df.columns, kw_fecha)
-            idx_t = detectar_idx(df.columns, kw_tercero)
-            idx_v = detectar_idx(df.columns, kw_valor)
-            idx_m = detectar_idx(df.columns, kw_metodo)
-            idx_c = detectar_idx(df.columns, kw_concepto)
-
-            st.divider()
-            st.success(f"✅ Configuración Automática: Analizando columna '{df.columns[idx_v]}' según método '{df.columns[idx_m]}'.")
-
-            with st.expander("🛠️ Ver/Editar Columnas Seleccionadas"):
-                c1, c2, c3, c4 = st.columns(4)
-                cf = c1.selectbox("Fecha", df.columns, index=idx_f)
-                ct = c2.selectbox("Tercero", df.columns, index=idx_t)
-                cv = c3.selectbox("Valor", df.columns, index=idx_v)
-                cm = c4.selectbox("Método de Pago", df.columns, index=idx_m)
-                cc = st.selectbox("Concepto (Opcional)", df.columns, index=idx_c)
-
-            if st.button("▶️ ANALIZAR RIESGOS FISCALES", type="primary"):
-                df['val_check_safe'] = pd.to_numeric(df[cv], errors='coerce').fillna(0)
-                def wrapper_analisis(row):
-                    return analizar_gasto_fila(row, cv, cm, cc)
-                analisis_result = df.apply(wrapper_analisis, axis=1)
-                df['Hallazgo_Temp'] = analisis_result.apply(lambda x: x[0])
-                df['Riesgo_Temp'] = analisis_result.apply(lambda x: x[1])
-                df_riesgos = df[df['Riesgo_Temp'] != "BAJO"].copy()
                 
-                st.divider()
-                if df_riesgos.empty:
-                    st.balloons()
-                    st.success("✅ ¡Excelente! No se encontraron riesgos fiscales evidentes.")
+            if st.button("▶️ EJECUTAR AUDITORÍA DE GASTOS CON IA", type="primary", use_container_width=True):
+                st.success("✅ Archivo cargado. Iniciando Auditor Virtual...")
+                
+                if api_key_valida:
+                    with st.spinner("🤖 Analizando la estructura de los datos y cruzando con normatividad fiscal..."):
+                        gastos_csv = df.head(1000).to_csv(index=False)
+                        
+                        prompt = f'''
+                        Actúa como un Auditor Fiscal y Tributario de alto nivel en Colombia.
+                        Se te ha proporcionado un listado de gastos de la empresa:
+                        
+                        --- DATOS DE GASTOS ---
+                        {gastos_csv}
+                        
+                        INSTRUCCIONES DEL USUARIO:
+                        "{instrucciones if instrucciones else 'Analiza los gastos, identifica la columna de Valor y Método de Pago. Detecta posibles riesgos fiscales de no deducibilidad (Art. 107 ET: Causalidad, Proporcionalidad, Necesidad) y bancarización (Efectivo mayor a topes). Presenta los hallazgos en una tabla.'}"
+                        
+                        OBJETIVO:
+                        Ignora la necesidad de que las columnas tengan nombres exactos o formatos estrictos.
+                        Entiende el archivo, realiza el análisis o auditoría solicitada por el usuario y responde de forma estructurada en formato Markdown.
+                        Destaca los riesgos críticos y usa tablas obligatoriamente para mostrar los gastos problemáticos.
+                        '''
+                        response = consultar_ia_gemini(prompt)
+                        render_smart_advisor(response)
+                        
+                        with st.expander("🔍 Ver vista previa de los datos subidos"):
+                            st.dataframe(df.head(10))
                 else:
-                    st.warning(f"⚠️ Se encontraron {len(df_riesgos)} operaciones con riesgo fiscal.")
-                    df_res = pd.DataFrame({
-                        "Fecha": df_riesgos[cf].astype(str),
-                        "Tercero": df_riesgos[ct].astype(str),
-                        "Valor": df_riesgos['val_check_safe'].apply(lambda x: f"${x:,.0f}"),
-                        "Método Pago": df_riesgos[cm].astype(str),
-                        "Riesgo": df_riesgos['Riesgo_Temp'],
-                        "Hallazgo": df_riesgos['Hallazgo_Temp']
-                    })
-                    st.dataframe(df_res, use_container_width=True)
-                    download_section(df_res, "Auditoria_Fiscal_Gastos", "Auditoría Fiscal (Art. 771-5)")
-                    
-                    if api_key_valida:
-                        with st.spinner("🤖 Analizando impacto tributario..."):
-                             render_smart_advisor(consultar_ia_gemini(f"Como auditor, explica las consecuencias de tener {len(df_riesgos)} gastos rechazados por Art 771-5 (pago efectivo)."))
+                    st.error("⚠️ La Inteligencia Artificial no está conectada. Verifica tu API Key en la barra lateral.")
 
-    # --------------------------------------------------------------------------
-    # MÓDULO 1: ESCÁNER UGPP (LEY 1393 - REGLA DEL 40%)
-    # --------------------------------------------------------------------------
     elif menu == "Escáner de Nómina (UGPP)":
         render_module_guide(
             get_text('title_ugpp'),
-            "https://cdn-icons-png.flaticon.com/512/3135/3135817.png",
+            "https://cdn-icons-png.flaticon.com/512/3364/3364069.png",
             get_text('desc_ugpp'),
             get_text('ben_ugpp')
         )
         
-        an = st.file_uploader("Cargar Nómina UGPP (.xlsx)", type=['xlsx'], key="upl_ugpp")
-        render_upload_example({
-            'Empleado': ['Juan Perez', 'Maria Lopez'],
-            'Salario Básico': ['$ 2,500,000', '$ 18,000,000'],
-            'Bonos No Salariales': ['500,000', '12,000,000 COP'],
-            'Auxilios': ['$ 200,000', '5,000,000']
-        }, help_text="Sube tu reporte de nómina. Obligatorio: Nombre del empleado, Salario Básico y Pagos No Salariales.")
-        if an:
-            dn = safe_read_excel(an)
+        col_u1, col_u2 = st.columns([1, 2])
+        with col_u1:
+            ar = st.file_uploader("📥 Cargar Base de Nómina (.xlsx)", type=["xlsx"])
+            render_upload_example(
+                {'Empleado': ['Juan', 'Ana'], 'Salario Base': [2000000, 3000000], 'Bonos Flexibles': [500000, 1500000], 'Aux. Trasporte': [140606, 0]},
+                "Formato sugerido",
+                "Sube la nómina detallada. No te preocupes por el orden de las columnas, la IA las entenderá."
+            )
+        
+        with col_u2:
+            instrucciones = st.text_area("✍️ Instrucciones Específicas para la IA (Opcional)", height=150, placeholder="Ej: Comprueba que los bonos no constitutivos de salario (columna 'Flexibles') no superen el 40% del total devengado. Muestra alertas rojas si alguien se pasa.")
+
+        if ar:
+            df = safe_read_excel(ar)
             
-            if dn.empty or len(dn.columns) < 2:
-                st.error("❌ Error de Validación: Tu archivo de nómina no tiene suficientes columnas. Necesitas al menos el Empleado y su Salario.")
+            if df.empty:
+                st.error("❌ El archivo está vacío.")
                 st.stop()
-            cols_todas = dn.columns.tolist()
-            cols_numericas = dn.select_dtypes(include=['float64', 'int64']).columns.tolist()
-            if not cols_numericas: cols_numericas = cols_todas
-
-            def detectar_idx(columnas, keywords):
-                cols_str = [str(c).lower().strip() for c in columnas]
-                for i, col in enumerate(cols_str):
-                    for kw in keywords:
-                        if kw in col: return i
-                return 0
-
-            idx_e = detectar_idx(cols_todas, ['nombre', 'empleado', 'tercero'])
-            idx_s = detectar_idx(cols_numericas, ['salario', 'sueldo', 'basico'])
-            
-            st.divider()
-            with st.expander("🛠️ Configuración de Columnas", expanded=True):
-                c1, c2, c3 = st.columns(3)
-                cn = c1.selectbox("Empleado", cols_todas, index=idx_e, key="ugpp_n")
-                cs = c2.selectbox("Salario Básico", cols_numericas, index=idx_s, key="ugpp_s")
-                opciones_ns = ["< No Aplica / Es $0 >"] + cols_numericas
-                cns = c3.selectbox("Pagos No Salariales (Bonos/Auxilios)", opciones_ns, index=0, key="ugpp_ns")
-
-            if st.button("▶️ ESCANEAR RIESGO UGPP", type="primary"):
-                dn['salario_safe'] = pd.to_numeric(dn[cs], errors='coerce').fillna(0)
-                if cns == "< No Aplica / Es $0 >":
-                    dn['no_salarial_safe'] = 0.0
-                else:
-                    dn['no_salarial_safe'] = pd.to_numeric(dn[cns], errors='coerce').fillna(0)
-
-                dn['total_rem'] = dn['salario_safe'] + dn['no_salarial_safe']
-                dn['limite_40'] = dn['total_rem'] * 0.40
-                dn['exceso'] = dn['no_salarial_safe'] - dn['limite_40']
-                dn['exceso'] = dn['exceso'].clip(lower=0)
-                dn['estado'] = dn['exceso'].apply(lambda x: "RIESGO ALTO" if x > 0 else "OK")
-
-                df_res = pd.DataFrame({
-                    "Empleado": dn[cn].astype(str),
-                    "Salario": dn['salario_safe'].apply(lambda x: f"${x:,.0f}"),
-                    "No Salarial": dn['no_salarial_safe'].apply(lambda x: f"${x:,.0f}"),
-                    "Límite 40%": dn['limite_40'].apply(lambda x: f"${x:,.0f}"),
-                    "Exceso IBC": dn['exceso'].apply(lambda x: f"${x:,.0f}"),
-                    "Estado": dn['estado']
-                })
                 
-                riesgos = df_res[df_res['Estado'] == "RIESGO ALTO"]
+            if st.button("▶️ EJECUTAR ESCÁNER UGPP CON IA", type="primary", use_container_width=True):
+                st.success("✅ Archivo cargado. Iniciando Auditor UGPP Virtual...")
                 
-                st.divider()
-                if riesgos.empty:
-                    st.success("✅ ¡Perfecto! Cumples con la norma del 40%.")
-                    st.dataframe(df_res, use_container_width=True)
+                if api_key_valida:
+                    with st.spinner("🤖 Analizando topes y componentes salariales según Ley 1393..."):
+                        nomina_csv = df.head(1000).to_csv(index=False)
+                        
+                        prompt = f'''
+                        Actúa como un Auditor experto en Nómina y requerimientos de la UGPP en Colombia.
+                        Se te ha proporcionado un listado de nómina de empleados:
+                        
+                        --- DATOS DE NÓMINA ---
+                        {nomina_csv}
+                        
+                        INSTRUCCIONES DEL USUARIO:
+                        "{instrucciones if instrucciones else 'Analiza la nómina, identifica salarios y pagos no constitutivos de salario. Aplica la Ley 1393 de 2010 (pagos no salariales no deben superar el 40% del total devengado). Identifica empleados en riesgo de sanción UGPP.'}"
+                        
+                        OBJETIVO:
+                        Ignora formatos estrictos de columnas. Entiende qué significa cada dato.
+                        Realiza el análisis o cálculo solicitado. Si detectas empleados donde los pagos no constitutivos superan el 40%, enuméralos en una tabla obligatoriamente.
+                        Calcula el exceso o base presunta si es posible con los datos provistos.
+                        Responde de forma estructurada, profesional y clara en formato Markdown.
+                        '''
+                        response = consultar_ia_gemini(prompt)
+                        render_smart_advisor(response)
+                        
+                        with st.expander("🔍 Ver vista previa de los datos subidos"):
+                            st.dataframe(df.head(10))
                 else:
-                    st.error(f"⚠️ {len(riesgos)} empleados exceden el límite del 40%.")
-                    st.dataframe(riesgos, use_container_width=True)
-                    download_section(riesgos, "Riesgos_Nomina_UGPP", "Informe de Riesgos UGPP")
-
-                    if api_key_valida:
-                        with st.spinner("🤖 Calculando riesgo de sanción..."):
-                            render_smart_advisor(consultar_ia_gemini(f"Analiza este riesgo UGPP. {len(riesgos)} empleados exceden el 40%. Total exceso: {dn['exceso'].sum()}. ¿Qué sanción aplica?"))
+                    st.error("⚠️ La Inteligencia Artificial no está conectada. Verifica tu API Key en la barra lateral.")
 
     elif menu == "Proyección de Tesorería":
         render_module_guide(
@@ -2824,3 +2670,4 @@ def render_tax_copilot():
 
 # Ejecutar el Chatbot al final para asegurar que todas las constantes están cargadas
 render_tax_copilot()
+
