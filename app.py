@@ -3092,23 +3092,50 @@ def render_tax_copilot():
         
         # Estado del Chat (Persistencia)
         if "chat_history" not in st.session_state:
-            st.session_state.chat_history = []
+            st.session_state.chat_history = [
+                {"role": "assistant", "content": "👋 **¡Hola! Soy tu CFO Virtual y Soporte Técnico.**\n\nEstoy conectado directamente a la base de datos de la DIAN y conozco toda la plataforma.\n\n💡 *Puedes preguntarme cosas como:*\n- ¿Cómo funciona el cruce de facturas?\n- ¿Cuáles son las tarifas de renta este año?\n- ¿Dónde subo mis archivos XML?"}
+            ]
             
-        with st.expander("💬 Copiloto y Soporte IA", expanded=False):
+        st.markdown("""
+        <style>
+            .ai-assistant-wrapper {
+                background: linear-gradient(180deg, rgba(16, 185, 129, 0.1) 0%, rgba(15, 23, 42, 0.8) 100%);
+                border: 1px solid rgba(16, 185, 129, 0.4);
+                border-radius: 12px;
+                padding: 10px;
+                box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+                margin-bottom: 10px;
+                animation: pulse-border 3s infinite;
+            }
+            @keyframes pulse-border {
+                0% { box-shadow: 0 0 10px rgba(16, 185, 129, 0.2); }
+                50% { box-shadow: 0 0 25px rgba(16, 185, 129, 0.6); }
+                100% { box-shadow: 0 0 10px rgba(16, 185, 129, 0.2); }
+            }
+            .stExpander {
+                border: none !important;
+                background: transparent !important;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+            
+        with st.expander("🧠 NÚCLEO IA (CFO & Soporte)", expanded=False):
             
             # Cabecera del chat con la imagen
             st.markdown(f"""
-            <div class="chat-header-sidebar">
-                <img src="{img_src}" class="chat-avatar-sidebar">
-                <div>
-                    <h3 style="margin:0; color:white; font-size:14px;">Soporte y Copiloto</h3>
-                    <span style="color:#34d399; font-size:11px; font-weight:600;">● En línea | Responde al instante</span>
+            <div class="ai-assistant-wrapper">
+                <div class="chat-header-sidebar" style="display:flex; align-items:center; gap:10px;">
+                    <img src="{img_src}" class="chat-avatar-sidebar" style="border: 2px solid #10b981; border-radius: 50%; box-shadow: 0 0 10px #10b981;">
+                    <div>
+                        <h3 style="margin:0; color:#f8fafc; font-size:15px; font-weight:800; letter-spacing: 0.5px;">CFO Virtual Activo</h3>
+                        <span style="color:#10b981; font-size:11px; font-weight:700;">● INTELIGENCIA EN LÍNEA</span>
+                    </div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
             
             # Contenedor de Historia (Scroll simulado)
-            chat_container = st.container(height=300)
+            chat_container = st.container(height=350)
             with chat_container:
                 for msg in st.session_state.chat_history:
                     # Usar la foto formal para el asistente, y el emoji predeterminado para el usuario
@@ -3118,8 +3145,8 @@ def render_tax_copilot():
             
             # Zona de Input (Tipo Formulario para no recargar toda la app)
             with st.form(key="chat_form", clear_on_submit=True):
-                user_input = st.text_input("Escribe tu consulta aquí...", placeholder="Ej: ¿Cómo subo el Excel?")
-                submit_btn = st.form_submit_button("Enviar Consulta 🚀")
+                user_input = st.text_input("💬 Chatea con la IA...", placeholder="Ej: Ayúdame a auditar...", label_visibility="collapsed")
+                submit_btn = st.form_submit_button("Enviar Comando ⚡")
                 
             if submit_btn and user_input:
                 st.session_state.chat_history.append({"role": "user", "content": user_input})
@@ -3137,12 +3164,12 @@ def render_tax_copilot():
                 - BASE RETENCIÓN SERVICIOS (4 UVT): ${BASE_RET_SERVICIOS:,.0f}
                 - TOPE BANCARIZACIÓN (100 UVT): ${TOPE_EFECTIVO:,.0f}
                 
-                INSTRUCCIÓN: Responde de forma clara y amigable. Si es una duda contable, cita la norma. Si es una duda sobre la app, guíalo paso a paso.
+                INSTRUCCIÓN: Eres el 'CFO Virtual y Núcleo IA'. Responde de forma muy profesional, tecnológica y amigable. Si es una duda contable, cita la norma. Si es una duda sobre la app, guíalo paso a paso. Sé conciso y brillante.
                 PREGUNTA DEL USUARIO: {user_input}
                 """
                 
                 try:
-                    with st.spinner("Analizando..."):
+                    with st.spinner("Procesando en red neuronal..."):
                         respuesta = consultar_ia_gemini(contexto_legal)
                     
                     st.session_state.chat_history.append({"role": "assistant", "content": respuesta})
