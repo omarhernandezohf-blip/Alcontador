@@ -1,5 +1,8 @@
 import textwrap
 import streamlit as st
+from security_module import SecurityShield
+import time
+
 import pandas as pd
 import numpy as np
 import gspread
@@ -85,6 +88,12 @@ with st.sidebar:
             submit_bot_btn = st.form_submit_button("Consultar ⚡")
             
         if submit_bot_btn and user_bot_input:
+            is_threat, threat_msg = SecurityShield.analyze_text_threats(user_bot_input)
+            if is_threat:
+                st.session_state['security_lockdown'] = True
+                st.session_state['lockdown_reason'] = threat_msg
+                st.rerun()
+
             st.session_state.pro_bot_history.append({"role": "user", "content": user_bot_input})
             
             contexto_pro = f"""
@@ -639,6 +648,75 @@ def check_single_session():
 # Ejecutar verificación de sesión inmediatamente
 check_single_session()
 
+
+# --- SISTEMA DE DEFENSA ACTIVA (HONEYPOT) ---
+if st.session_state.get('security_lockdown', False):
+    st.markdown("""
+    <style>
+    .stApp {
+        background-color: #450a0a !important;
+        background-image: repeating-linear-gradient(45deg, #450a0a 25%, transparent 25%, transparent 75%, #450a0a 75%, #450a0a), repeating-linear-gradient(45deg, #450a0a 25%, #7f1d1d 25%, #7f1d1d 75%, #450a0a 75%, #450a0a) !important;
+        background-position: 0 0, 10px 10px !important;
+        background-size: 20px 20px !important;
+    }
+    .lockdown-box {
+        background: rgba(0,0,0,0.8);
+        border: 2px solid #ef4444;
+        padding: 40px;
+        border-radius: 15px;
+        text-align: center;
+        margin-top: 100px;
+        box-shadow: 0 0 50px rgba(239, 68, 68, 0.5);
+    }
+    .blinking-text {
+        color: #ef4444;
+        font-size: 3rem;
+        font-weight: 900;
+        animation: blinker 1s linear infinite;
+        font-family: monospace;
+    }
+    @keyframes blinker {
+        50% { opacity: 0; }
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("<div class='lockdown-box'>", unsafe_allow_html=True)
+    st.markdown("<h1 class='blinking-text'>⛔ SECURITY LOCKDOWN ⛔</h1>", unsafe_allow_html=True)
+    st.markdown("<h3 style='color: white;'>Violación de Seguridad Detectada</h3>", unsafe_allow_html=True)
+    st.markdown(f"<p style='color: #fca5a5; font-size: 1.2rem;'>Motivo: {st.session_state.get('lockdown_reason', 'Actividad sospechosa')}</p>", unsafe_allow_html=True)
+    
+    # Progress bar simulating IP tracing
+    st.markdown("<p style='color: #4ade80; font-family: monospace; text-align: left; margin-top: 30px;'>> Inicializando rastreo de IP y reporte automático a las autoridades cibernéticas...</p>", unsafe_allow_html=True)
+    progress_bar = st.progress(0)
+    for i in range(100):
+        time.sleep(0.02)
+        progress_bar.progress(i + 1)
+    
+    st.markdown("<p style='color: #4ade80; font-family: monospace; text-align: left;'>> IP: [REGISTRADA]<br>> Fingerprint: [CAPTURADO]<br>> Reporte legal: [ENVIADO]</p>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+    
+    st.stop() # Bloquea absolutamente todo el resto de la app
+
+
+# --- PARCHE DE SEGURIDAD GLOBAL PARA SUBIDA DE ARCHIVOS ---
+original_file_uploader = st.file_uploader
+
+def secure_file_uploader(label, type=None, accept_multiple_files=False, **kwargs):
+    uploaded = original_file_uploader(label, type=type, accept_multiple_files=accept_multiple_files, **kwargs)
+    if uploaded is not None:
+        files = uploaded if accept_multiple_files else [uploaded]
+        for f in files:
+            ext = f.name.split('.')[-1]
+            is_safe, msg = SecurityShield.scan_file(f, ext)
+            if not is_safe:
+                st.session_state['security_lockdown'] = True
+                st.session_state['lockdown_reason'] = msg
+                st.rerun()
+    return uploaded
+
+st.file_uploader = secure_file_uploader
+
 # Lógica de registro de historial (Firestore)
 if 'last_menu' not in st.session_state:
     st.session_state['last_menu'] = menu
@@ -921,7 +999,14 @@ def create_pdf(df, title, filename):
 
 def extract_md_table_to_df(text):
     import pandas as pd
-    lines = text.split('\n')
+    lines = text.split('
+        st.markdown("""
+        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; border-radius: 8px; padding: 10px; margin-top: 15px; margin-bottom: 20px; text-align: center;">
+            <span style="color: #10b981; font-weight: bold;">🛡️ ESCUDO DE PRIVACIDAD LEGAL ACTIVO (Ley 1581 de Habeas Data - Colombia):</span>
+            <span style="color: #a7f3d0; font-size: 0.9em;"> Esta plataforma opera bajo el principio de <b>Cero Retención</b>. Los datos de facturación e impuestos que procesas se borran de la memoria tras cada sesión.</span>
+        </div>
+        """, unsafe_allow_html=True)
+\n')
     tables = []
     current_table = []
     for line in lines:
@@ -2985,6 +3070,12 @@ else:
                 submit_btn = st.form_submit_button("ENVIAR ⚡", use_container_width=True)
                 
         if submit_btn and user_input:
+            is_threat, threat_msg = SecurityShield.analyze_text_threats(user_input)
+            if is_threat:
+                st.session_state['security_lockdown'] = True
+                st.session_state['lockdown_reason'] = threat_msg
+                st.rerun()
+
             st.session_state.chat_history.append({"role": "user", "content": user_input})
             
             contexto_legal = f"""
