@@ -2992,6 +2992,9 @@ else:
                         if "has not been used" in error_msg or "SERVICE_DISABLED" in error_msg:
                             st.error("⚠️ **Tu Base de Datos de Firebase está desactivada en Google Cloud.**")
                             st.info("💡 **CÓMO ARREGLARLO:**\n1. Haz clic en este enlace oficial de Google: 👉 [Activar API de Firestore](https://console.developers.google.com/apis/api/firestore.googleapis.com/overview?project=alcontador-data)\n2. Dale al botón azul de **'Habilitar'**.\n3. Espera 2 minutos y recarga esta página.")
+                        elif "does not exist for project" in error_msg or "404 The database (default) does not exist" in error_msg:
+                            st.error("⚠️ **La base de datos aún no ha sido inicializada en tu proyecto de Google Cloud.**")
+                            st.info("💡 **CÓMO ARREGLARLO:**\n1. Haz clic en este enlace oficial: 👉 [Crear Base de Datos Firestore](https://console.cloud.google.com/datastore/setup?project=alcontador-data)\n2. Selecciona **'Native mode'** (Modo Nativo) si te lo pregunta.\n3. Elige una ubicación (ej. us-central) y haz clic en **'Crear Base de Datos'**.\n4. Espera a que termine, vuelve aquí y recarga la página.")
                         else:
                             st.error(f"❌ Error al leer Firebase: {error_msg}")
                             st.info("💡 Asegúrate de que tu Service Account tenga el rol de 'Administrador de Cloud Datastore'.")
