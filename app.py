@@ -160,6 +160,7 @@ with st.sidebar:
             st.session_state.target_menu = menu
         elif menu != st.session_state.target_menu:
             st.session_state.target_menu = menu
+            st.rerun()
             
     except ImportError:
         # Fallback seguro si la librería no está instalada
