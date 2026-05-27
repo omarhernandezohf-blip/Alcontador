@@ -2724,8 +2724,20 @@ else:
                             })
                             
                     except Exception as e:
-                        st.error(f"❌ Error de permisos al leer Firebase: {e}")
-                        st.info("💡 **Solución:** La cuenta de servicio (Service Account) configurada en Streamlit Cloud no tiene permisos para listar usuarios. Ve a Google Cloud Console > IAM, busca tu cuenta de servicio y asígnale el rol de **'Administrador de Cloud Datastore'** o **'Firebase Admin'**.")
+                        error_msg = str(e)
+                        if "has not been used" in error_msg or "SERVICE_DISABLED" in error_msg:
+                            st.error("⚠️ **Tu Base de Datos de Firebase está desactivada en Google Cloud.**")
+                            st.info("💡 **CÓMO ARREGLARLO:**\n1. Haz clic en este enlace oficial de Google: 👉 [Activar API de Firestore](https://console.developers.google.com/apis/api/firestore.googleapis.com/overview?project=alcontador-data)\n2. Dale al botón azul de **'Habilitar'**.\n3. Espera 2 minutos y recarga esta página.")
+                        else:
+                            st.error(f"❌ Error al leer Firebase: {error_msg}")
+                            st.info("💡 Asegúrate de que tu Service Account tenga el rol de 'Administrador de Cloud Datastore'.")
+                            
+                        st.markdown("### 📊 Panel de Control (Modo Demostración)")
+                        c1, c2, c3, c4 = st.columns(4)
+                        c1.metric("Usuarios Registrados", "---")
+                        c2.metric("Suscripciones (Pagos)", "---")
+                        c3.metric("Tokens/Créditos Usados", "---")
+                        c4.metric("Conectados (24h)", "---")
                         st.stop()
                 
                 st.markdown("### 📊 Panel de Control en Tiempo Real")
