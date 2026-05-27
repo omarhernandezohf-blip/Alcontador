@@ -2967,7 +2967,7 @@ else:
         
         if "chat_history" not in st.session_state:
             st.session_state.chat_history = [
-                {"role": "assistant", "content": "👋 **¡Hola! Soy tu CFO Virtual y Soporte Técnico.**\n\nEstoy conectado directamente a la base de datos de la DIAN y conozco toda la plataforma.\n\n💡 *Puedes preguntarme cosas como:*\n- ¿Cómo funciona el cruce de facturas?\n- ¿Cuáles son las tarifas de renta este año?\n- ¿Dónde subo mis archivos XML?"}
+                {"role": "assistant", "content": "👋 **¡Hola! Soy tu CFO Virtual y Soporte Técnico.**\\n\\nConozco la normativa tributaria colombiana (Estatuto Tributario, resoluciones DIAN 2026) y puedo ayudarte a interpretar tus reportes financieros, liquidaciones y facturación electrónica.\\n\\n💡 *Puedes preguntarme cosas como:*\\n- ¿Cómo funciona el cruce de facturas?\\n- ¿Cuáles son las tarifas de renta este año?\\n- ¿Dónde subo mis archivos XML?"}
             ]
             
         chat_container = st.container(height=500)
