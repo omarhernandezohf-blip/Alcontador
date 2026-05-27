@@ -69,43 +69,9 @@ with st.sidebar:
     # --- MENÚ PRINCIPAL ---
     try:
         from streamlit_option_menu import option_menu
-        # Usamos la lista COMPLETA de módulos para no romper la navegación
-        menu = option_menu(
-            menu_title="Navegación",
-            options=[
-                "Inicio / Dashboard",
-                "🏢 Quiénes Somos / Historia",
-                "Auditoría Cruce DIAN",
-                "Minería de XML (Facturación)",
-                "Conciliación Bancaria IA",
-                "Auditoría Fiscal de Gastos",
-                "Escáner de Nómina (UGPP)",
-                "Proyección de Tesorería",
-                "Costeo de Nómina Real",
-                "Analítica Financiera Inteligente",
-                "Narrador Financiero & NIIF",
-                "Validador de RUT Oficial",
-                "Digitalización OCR",
-                "Generador de Cotizaciones",
-                "Generador Logístico",
-                "👑 Consola Administrativa"
-            ],
-            icons=[
-                "house", "building", "shield-check", "file-earmark-code", "bank", "graph-up",
-                "people", "cash-coin", "calculator", "cpu", "book", "check-circle", "camera",
-                "file-earmark-pdf",
-                "airplane-engines",
-                "key"
-            ],
-            menu_icon="cast",
-            default_index=0,
-        )
-    except ImportError:
-        # Fallback seguro si la librería no está instalada
-        st.warning("Librería 'streamlit-option-menu' no detectada. Usando selector estándar.")
-        menu = st.radio(
-            "Navegación",
-            [
+        
+        # Opciones del menú
+        menu_options = [
                 "Inicio / Dashboard",
                 "🏢 Quiénes Somos / Historia",
                 "Auditoría Cruce DIAN",
@@ -123,7 +89,64 @@ with st.sidebar:
                 "Generador Logístico",
                 "👑 Consola Administrativa"
             ]
+            
+        # Sistema de enrutamiento interno
+        default_idx = 0
+        if "target_menu" in st.session_state and st.session_state.target_menu in menu_options:
+            default_idx = menu_options.index(st.session_state.target_menu)
+            
+        menu = option_menu(
+            menu_title="Navegación",
+            options=menu_options,
+            icons=[
+                "house", "building", "shield-check", "file-earmark-code", "bank", "graph-up",
+                "people", "cash-coin", "calculator", "cpu", "book", "check-circle", "camera",
+                "file-earmark-pdf",
+                "airplane-engines",
+                "key"
+            ],
+            menu_icon="cast",
+            default_index=default_idx,
         )
+        
+        # Sincronización del estado del menú
+        if "target_menu" not in st.session_state:
+            st.session_state.target_menu = menu
+        elif menu != st.session_state.target_menu:
+            st.session_state.target_menu = menu
+            
+    except ImportError:
+        # Fallback seguro si la librería no está instalada
+        st.warning("Librería 'streamlit-option-menu' no detectada. Usando selector estándar.")
+        menu_options = [
+                "Inicio / Dashboard",
+                "🏢 Quiénes Somos / Historia",
+                "Auditoría Cruce DIAN",
+                "Minería de XML (Facturación)",
+                "Conciliación Bancaria IA",
+                "Auditoría Fiscal de Gastos",
+                "Escáner de Nómina (UGPP)",
+                "Proyección de Tesorería",
+                "Costeo de Nómina Real",
+                "Analítica Financiera Inteligente",
+                "Narrador Financiero & NIIF",
+                "Validador de RUT Oficial",
+                "Digitalización OCR",
+                "Generador de Cotizaciones",
+                "Generador Logístico",
+                "👑 Consola Administrativa"
+            ]
+            
+        default_idx = 0
+        if "target_menu" in st.session_state and st.session_state.target_menu in menu_options:
+            default_idx = menu_options.index(st.session_state.target_menu)
+            
+        menu = st.radio(
+            "Navegación",
+            menu_options,
+            index=default_idx
+        )
+        st.session_state.target_menu = menu
 
 
 
@@ -1793,108 +1816,214 @@ if menu == "Inicio / Dashboard":
     # Los atajos (Quick Actions) falsos y el Ticker falso fueron eliminados.
     # El usuario ahora navegará 100% mediante el menú lateral que sí es funcional.
 
-    # 2. NUEVO DASHBOARD: QUIÉNES SOMOS, NOTICIAS E HISTORIAL
+    # 2. DASHBOARD DE INTELIGENCIA ARTIFICIAL (AI COMMAND CENTER)
+    st.markdown('''
+    <style>
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .bento-card {
+            background: rgba(20, 24, 39, 0.5);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+        .bento-card:hover {
+            transform: translateY(-5px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+        .bento-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 4px;
+        }
+        .card-ocr::before { background: linear-gradient(90deg, #6366f1, #818cf8); }
+        .card-nomina::before { background: linear-gradient(90deg, #10b981, #34d399); }
+        .card-audit::before { background: linear-gradient(90deg, #f43f5e, #fb7185); }
+        .card-niif::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+        
+        .bento-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #f8fafc;
+            margin: 0 0 0.5rem 0;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .bento-desc {
+            font-size: 0.95rem;
+            color: #94a3b8;
+            margin: 0 0 1rem 0;
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+        
+        /* AI Terminal Styles */
+        .ai-terminal {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 1.5rem;
+            font-family: 'Courier New', Courier, monospace;
+            position: relative;
+            margin-bottom: 2rem;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+        }
+        .ai-header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 10px; margin-bottom: 15px;
+        }
+        .ai-title { color: #10b981; font-weight: bold; font-size: 0.9rem; margin:0;}
+        .ai-pulse {
+            width: 10px; height: 10px; background: #ef4444; border-radius: 50%;
+            animation: pulse-red 1.5s infinite;
+        }
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .ai-content { color: #38bdf8; font-size: 0.95rem; line-height: 1.6; }
+        .ai-cursor {
+            display: inline-block; width: 8px; height: 15px; background: #38bdf8;
+            animation: blink 1s step-end infinite; margin-left: 5px; vertical-align: middle;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+        
+        /* Ocultar botones predeterminados de Streamlit para que parezcan parte de la tarjeta */
+        div[data-testid="stButton"] button {
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            transition: all 0.2s !important;
+        }
+    </style>
+    ''', unsafe_allow_html=True)
 
-    @st.cache_data(ttl=86400) # Cache por 24 horas para no agotar cuota y cargar rápido
-    def get_daily_ai_content():
+    @st.cache_data(ttl=7200) # Se actualiza cada 2 horas
+    def get_live_ai_monitor():
         try:
             import google.generativeai as genai
-            # Usar un modelo rápido y estable
             model = genai.GenerativeModel('gemini-1.5-flash')
-            noticia = model.generate_content("Escribe un párrafo muy corto (máximo 4 líneas) con una noticia tributaria o contable importante para Colombia en 2026. Sé profesional.").text
-            chiste = model.generate_content("Escribe un chiste corto y amigable sobre contadores, auditores o impuestos para sacar una sonrisa al usuario que está trabajando. Corto y sin explicaciones.").text
-            return noticia, chiste
+            # Prompt de Monitor Financiero
+            reporte = model.generate_content("Eres la IA central de 'Asistente Contable Pro'. Escribe un reporte de 3 líneas muy técnico y profesional (estilo terminal de Bloomberg) sobre el panorama fiscal, contable o tributario de Colombia hoy. Usa un tono analítico.").text
+            return reporte
         except Exception:
-            return "Las tasas de usura y retención en la fuente se mantienen estables para este mes. Verifica las actualizaciones de la DIAN.", "¡Un contador no envejece, solo se deprecia! Tómate 5 minutos para estirarte y tomar agua."
+            return "[SYS_WARN] Conexión satelital a base de datos tributaria demorada. Cargando últimos parámetros de retención vigentes..."
 
-    noticia_dia, chiste_dia = get_daily_ai_content()
+    ai_report = get_live_ai_monitor()
 
-    st.markdown("### 🌟 BIENVENIDO A ASISTENTE CONTABLE PRO")
-    
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        st.markdown("#### 🎯 ¿En qué te podemos ayudar?")
-        st.markdown("""
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-            <div class="glass-card" style="padding: 20px; border-left: 4px solid #6366f1;">
-                <h4 style="margin:0; color: #a5b4fc;">📄 Digitalización OCR</h4>
-                <p style="font-size: 0.9rem; color: #cbd5e1; margin-top: 10px;">Extrae datos de facturas y recibos físicos al instante con inteligencia artificial.</p>
-            </div>
-            <div class="glass-card" style="padding: 20px; border-left: 4px solid #10b981;">
-                <h4 style="margin:0; color: #6ee7b7;">💰 Costeo de Nómina</h4>
-                <p style="font-size: 0.9rem; color: #cbd5e1; margin-top: 10px;">Calcula el costo real de tus empleados incluyendo parafiscales y provisiones 2026.</p>
-            </div>
-            <div class="glass-card" style="padding: 20px; border-left: 4px solid #f43f5e;">
-                <h4 style="margin:0; color: #fda4af;">🔍 Auditoría Fiscal</h4>
-                <p style="font-size: 0.9rem; color: #cbd5e1; margin-top: 10px;">Detecta inconsistencias en reportes de la DIAN automáticamente.</p>
-            </div>
-            <div class="glass-card" style="padding: 20px; border-left: 4px solid #f59e0b;">
-                <h4 style="margin:0; color: #fcd34d;">🤖 Copiloto Tributario</h4>
-                <p style="font-size: 0.9rem; color: #cbd5e1; margin-top: 10px;">Resuelve tus dudas fiscales 24/7 en el menú interactivo lateral.</p>
-            </div>
+    # --- TERMINAL IA (Ancho Completo) ---
+    st.markdown(f'''
+    <div class="ai-terminal">
+        <div class="ai-header">
+            <p class="ai-title">▶ SYSTEM: AI MONITORING CENTER // STATUS: ONLINE</p>
+            <div class="ai-pulse" title="Live Connection"></div>
         </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("#### 🕒 Tu Historial de Actividad Reciente")
-        # Leer historial real desde Firestore
-        email = st.session_state.get('user_email')
-        if not email or not st.session_state.get('logged_in'):
-            st.markdown("""
-            <div class="glass-card" style="padding: 20px; text-align: center; color: #94a3b8;">
-                <p>Inicia sesión para ver tu historial de actividad real.</p>
-            </div>
-            """, unsafe_allow_html=True)
+        <p class="ai-content">>> ANALYZING FINANCIAL DATA...<br><br>{ai_report}<span class="ai-cursor"></span></p>
+    </div>
+    ''', unsafe_allow_html=True)
+
+    st.markdown("### 🧩 Módulos Principales")
+    
+    # --- BENTO GRID DE MÓDULOS ---
+    c1, c2, c3, c4 = st.columns(4)
+    
+    with c1:
+        st.markdown('''
+        <div class="bento-card card-ocr">
+            <h3 class="bento-title">📄 Digitalización OCR</h3>
+            <p class="bento-desc">Convierte tus facturas físicas y recibos a datos estructurados al instante usando visión por computadora.</p>
+        </div>
+        ''', unsafe_allow_html=True)
+        if st.button("🚀 Abrir Módulo", key="btn_ocr", use_container_width=True):
+            st.session_state.target_menu = "Digitalización OCR"
+            st.rerun()
+
+    with c2:
+        st.markdown('''
+        <div class="bento-card card-nomina">
+            <h3 class="bento-title">💰 Costeo de Nómina</h3>
+            <p class="bento-desc">Motor de cálculo real de empleados, parafiscales y provisiones automáticas (Normativa 2026).</p>
+        </div>
+        ''', unsafe_allow_html=True)
+        if st.button("🚀 Abrir Módulo", key="btn_nom", use_container_width=True):
+            st.session_state.target_menu = "Costeo de Nómina Real"
+            st.rerun()
+
+    with c3:
+        st.markdown('''
+        <div class="bento-card card-audit">
+            <h3 class="bento-title">🔍 Auditoría Cruce DIAN</h3>
+            <p class="bento-desc">Detecta inconsistencias millonarias entre tu contabilidad y los reportes exógenos de la DIAN.</p>
+        </div>
+        ''', unsafe_allow_html=True)
+        if st.button("🚀 Abrir Módulo", key="btn_aud", use_container_width=True):
+            st.session_state.target_menu = "Auditoría Cruce DIAN"
+            st.rerun()
+
+    with c4:
+        st.markdown('''
+        <div class="bento-card card-niif">
+            <h3 class="bento-title">📊 Narrador Financiero</h3>
+            <p class="bento-desc">Tu CFO virtual. Redacta informes gerenciales perfectos y genera notas NIIF automáticamente.</p>
+        </div>
+        ''', unsafe_allow_html=True)
+        if st.button("🚀 Abrir Módulo", key="btn_niif", use_container_width=True):
+            st.session_state.target_menu = "Narrador Financiero & NIIF"
+            st.rerun()
+            
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # --- HISTORIAL LUMINOSO ---
+    st.markdown("### 🕒 Línea de Tiempo Activa")
+    email = st.session_state.get('user_email')
+    if not email or not st.session_state.get('logged_in'):
+        st.info("🔒 Inicia sesión para registrar y visualizar tu actividad en la plataforma.")
+    else:
+        history = get_user_history(email, limit=3)
+        if not history:
+            st.info("Aún no hay registros en tu bitácora criptográfica.")
         else:
-            history = get_user_history(email, limit=4)
-            if not history:
-                st.markdown("""
-                <div class="glass-card" style="padding: 20px; text-align: center; color: #94a3b8;">
-                    <p>Aún no tienes actividad registrada.</p>
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                import datetime
-                html_list = '<div class="glass-card" style="padding: 20px;"><ul style="list-style-type: none; padding-left: 0; color: #cbd5e1; font-size: 0.95rem; margin: 0;">'
-                colors = ['🟢', '🔵', '🟣', '⚪']
+            import datetime
+            html_tl = '<div style="background: rgba(20, 24, 39, 0.4); border-radius: 12px; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.05);">'
+            for item in history:
+                action = item.get('action', 'Acción')
+                timestamp = item.get('timestamp')
+                time_str = "Recientemente"
+                if timestamp:
+                    try:
+                        if hasattr(timestamp, 'timestamp'):
+                            dt = datetime.datetime.fromtimestamp(timestamp.timestamp())
+                        else:
+                            dt = timestamp
+                        time_str = dt.strftime('%H:%M - %d/%m/%Y')
+                    except: pass
                 
-                for i, item in enumerate(history):
-                    action = item.get('action', 'Acción')
-                    timestamp = item.get('timestamp')
-                    time_str = "Recientemente"
-                    if timestamp:
-                        try:
-                            # Dependiendo del tipo de objeto devuelto por Firestore
-                            if hasattr(timestamp, 'timestamp'):
-                                dt = datetime.datetime.fromtimestamp(timestamp.timestamp())
-                            else:
-                                dt = timestamp
-                            time_str = dt.strftime('%d/%m/%Y %H:%M')
-                        except: pass
-                        
-                    color = colors[i % len(colors)]
-                    border = 'border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;' if i < len(history)-1 else 'margin-bottom: 0;'
-                    html_list += f'<li style="margin-bottom: 15px; {border}">{color} <b>{time_str}</b> - {action}</li>'
-                    
-                html_list += '</ul></div>'
-                st.markdown(html_list, unsafe_allow_html=True)
-
-    with col2:
-        st.markdown("#### 📰 Noticia del Día (IA)")
-        st.markdown(f"""
-        <div class="glass-card" style="padding: 20px; border-top: 4px solid #3b82f6; margin-bottom: 20px; background: linear-gradient(180deg, rgba(59, 130, 246, 0.1) 0%, rgba(0,0,0,0) 100%);">
-            <p style="color: #e2e8f0; font-size: 0.95rem; line-height: 1.5; margin:0;">{noticia_dia}</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("#### ☕ Pausa Activa")
-        st.markdown(f"""
-        <div class="glass-card" style="padding: 20px; border-top: 4px solid #8b5cf6; background: linear-gradient(180deg, rgba(139, 92, 246, 0.1) 0%, rgba(0,0,0,0) 100%);">
-            <p style="color: #e2e8f0; font-size: 0.95rem; font-style: italic; margin:0;">"{chiste_dia}"</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-
+                # Diseño de item de timeline
+                html_tl += f'''
+                <div style="display: flex; gap: 15px; margin-bottom: 15px; align-items: flex-start;">
+                    <div style="margin-top: 5px; width: 12px; height: 12px; border-radius: 50%; background: #6366f1; box-shadow: 0 0 10px #6366f1;"></div>
+                    <div>
+                        <div style="color: #94a3b8; font-size: 0.8rem; font-family: monospace;">{time_str}</div>
+                        <div style="color: #f1f5f9; font-size: 1rem;">{action}</div>
+                    </div>
+                </div>
+                '''
+            html_tl += '</div>'
+            st.markdown(html_tl, unsafe_allow_html=True)
 
     # 3. SECCIÓN PLANES Y PRECIOS
     st.markdown("---")
