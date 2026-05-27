@@ -2673,53 +2673,60 @@ else:
             else:
                 with st.spinner("Conectando con Firestore y recopilando métricas en tiempo real..."):
                     users_ref = db.collection('users')
-                    docs = users_ref.stream()
                     
-                    user_data = []
-                    total_users = 0
-                    pagos = 0
-                    tokens = 0
-                    
-                    # Conteo de conectados en las últimas 24h
-                    import datetime
-                    now = datetime.datetime.now(datetime.timezone.utc)
-                    conectados_24h = 0
-                    
-                    for doc in docs:
-                        total_users += 1
-                        data = doc.to_dict()
+                    try:
+                        docs = users_ref.stream()
                         
-                        email = doc.id
-                        plan = data.get('plan', 'FREE')
-                        credits_used = data.get('credits_used', 0)
-                        last_login_ts = data.get('last_login')
+                        user_data = []
+                        total_users = 0
+                        pagos = 0
+                        tokens = 0
                         
-                        # Manejo de Timestamp
-                        last_login_str = "Nunca"
-                        is_recent = False
-                        if last_login_ts:
-                            try:
-                                # Firestore devuelve datetime con timezone
-                                delta = now - last_login_ts
-                                if delta.total_seconds() < 86400: # 24 horas
-                                    conectados_24h += 1
-                                    is_recent = True
-                                last_login_str = last_login_ts.strftime('%Y-%m-%d %H:%M')
-                            except:
-                                pass
-                                
-                        if plan.upper() in ['PRO', 'PREMIUM']:
-                            pagos += 1
+                        # Conteo de conectados en las últimas 24h
+                        import datetime
+                        now = datetime.datetime.now(datetime.timezone.utc)
+                        conectados_24h = 0
+                        
+                        for doc in docs:
+                            total_users += 1
+                            data = doc.to_dict()
                             
-                        tokens += credits_used
-                        
-                        user_data.append({
-                            "Email": email,
-                            "Plan": plan.upper(),
-                            "Créditos Usados": credits_used,
-                            "Último Login": last_login_str,
-                            "Activo (24h)": "🟢 Sí" if is_recent else "⚪ No"
-                        })
+                            email = doc.id
+                            plan = data.get('plan', 'FREE')
+                            credits_used = data.get('credits_used', 0)
+                            last_login_ts = data.get('last_login')
+                            
+                            # Manejo de Timestamp
+                            last_login_str = "Nunca"
+                            is_recent = False
+                            if last_login_ts:
+                                try:
+                                    # Firestore devuelve datetime con timezone
+                                    delta = now - last_login_ts
+                                    if delta.total_seconds() < 86400: # 24 horas
+                                        conectados_24h += 1
+                                        is_recent = True
+                                    last_login_str = last_login_ts.strftime('%Y-%m-%d %H:%M')
+                                except:
+                                    pass
+                                    
+                            if plan.upper() in ['PRO', 'PREMIUM']:
+                                pagos += 1
+                                
+                            tokens += credits_used
+                            
+                            user_data.append({
+                                "Email": email,
+                                "Plan": plan.upper(),
+                                "Créditos Usados": credits_used,
+                                "Último Login": last_login_str,
+                                "Activo (24h)": "🟢 Sí" if is_recent else "⚪ No"
+                            })
+                            
+                    except Exception as e:
+                        st.error(f"❌ Error de permisos al leer Firebase: {e}")
+                        st.info("💡 **Solución:** La cuenta de servicio (Service Account) configurada en Streamlit Cloud no tiene permisos para listar usuarios. Ve a Google Cloud Console > IAM, busca tu cuenta de servicio y asígnale el rol de **'Administrador de Cloud Datastore'** o **'Firebase Admin'**.")
+                        st.stop()
                 
                 st.markdown("### 📊 Panel de Control en Tiempo Real")
                 
