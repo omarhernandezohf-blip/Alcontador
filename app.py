@@ -2080,11 +2080,11 @@ if menu == "Inicio / Dashboard":
             <h3 style="color:#94a3b8; margin:0; font-size: 1.2rem;"> NIVEL INICIAL</h3>
             <div class="price-tag">$0 <span>COP/mes</span></div>
             <ul class="features-ul">
-                <li><span class="check">✓</span> Acceso al Dashboard</li>
-                <li><span class="check">✓</span> 5 Consultas IA/día</li>
-                <li><span class="check">✓</span> Archivos hasta 2 MB</li>
-                <li class="dimmed"><span class="cross">✕</span> Agente Tributario</li>
-                <li class="dimmed"><span class="cross">✕</span> Conexión Bancaria</li>
+                <li><span class="check">✓</span> Acceso al Dashboard IA</li>
+                <li><span class="check">✓</span> Copiloto Tributario Básico</li>
+                <li><span class="check">✓</span> Exportación PDF/Excel</li>
+                <li class="dimmed"><span class="cross">✕</span> Digitalización OCR</li>
+                <li class="dimmed"><span class="cross">✕</span> Módulos de Auditoría</li>
             </ul>
         </div>
         """, unsafe_allow_html=True)
@@ -2098,10 +2098,10 @@ if menu == "Inicio / Dashboard":
             <div class="price-old">$100.000</div>
             <div class="price-tag">$70.000 <span>COP/mes</span></div>
             <ul class="features-ul">
-                <li><span class="check">✓</span> 500 Créditos Mensuales</li>
-                <li><span class="check">✓</span> Modelo Gemini 1.5 Flash</li>
-                <li><span class="check">✓</span> Archivos hasta 10 MB</li>
-                <li><span class="check">✓</span> Soporte Prioritario</li>
+                <li><span class="check">✓</span> Digitalización OCR Inteligente</li>
+                <li><span class="check">✓</span> Auditoría Cruce DIAN</li>
+                <li><span class="check">✓</span> Costeo de Nómina IA 2026</li>
+                <li><span class="check">✓</span> Soporte Técnico General</li>
             </ul>
         </div>
         """, unsafe_allow_html=True)
@@ -2116,10 +2116,10 @@ if menu == "Inicio / Dashboard":
             <div class="price-old">$180.000</div>
             <div class="price-tag">$120.000 <span>COP/mes</span></div>
             <ul class="features-ul">
-                <li><span class="check">✓</span> <strong>Ilimitado + Agentic IA</strong></li>
-                <li><span class="check">✓</span> Modelo Gemini 1.5 PRO</li>
-                <li><span class="check">✓</span> Archivos hasta 50 MB (Massive)</li>
-                <li><span class="check">✓</span> Auditoría NIIF Avanzada</li>
+                <li><span class="check">✓</span> <strong>Todo lo del Plan PRO</strong></li>
+                <li><span class="check">✓</span> CFO Virtual (Narrador NIIF)</li>
+                <li><span class="check">✓</span> Consola Administrativa Total</li>
+                <li><span class="check">✓</span> Máxima Velocidad de IA</li>
             </ul>
         </div>
         """, unsafe_allow_html=True)
