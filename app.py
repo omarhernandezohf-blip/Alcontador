@@ -844,6 +844,40 @@ def create_pdf(df, title, filename):
     
     return pdf.output(dest='S').encode('latin-1')
 
+
+def extract_md_table_to_df(text):
+    import pandas as pd
+    lines = text.split('\n')
+    tables = []
+    current_table = []
+    for line in lines:
+        if '|' in line and not line.strip().startswith('#'): # ignore headers that might have a pipe
+            current_table.append(line.strip(' |'))
+        else:
+            if len(current_table) > 2:
+                tables.append(current_table)
+            current_table = []
+    if len(current_table) > 2:
+         tables.append(current_table)
+         
+    if not tables: return pd.DataFrame()
+    
+    # Process the first table found
+    t = tables[0]
+    headers = [x.strip() for x in t[0].split('|')]
+    data = []
+    for row in t[2:]:
+        row_data = [x.strip() for x in row.split('|')]
+        # Make sure row has same length as headers by padding or truncating
+        if len(row_data) > len(headers): row_data = row_data[:len(headers)]
+        while len(row_data) < len(headers): row_data.append("")
+        data.append(row_data)
+        
+    try:
+        return pd.DataFrame(data, columns=headers)
+    except:
+        return pd.DataFrame()
+
 def download_section(df, file_label, title="Reporte Corporativo"):
     """
     Renders two buttons: Download Excel and Download PDF.
@@ -1942,6 +1976,10 @@ else:
                         response = consultar_ia_gemini(prompt)
                         render_smart_advisor(response)
                         
+                        df_res = extract_md_table_to_df(response)
+                        if not df_res.empty:
+                            download_section(df_res, "Auditoria_DIAN_IA", "Reporte de Auditoría DIAN")
+                        
                         with st.expander("🔍 Ver vista previa de los datos subidos"):
                             c1, c2 = st.columns(2)
                             c1.markdown("**Archivo DIAN:**")
@@ -2031,6 +2069,10 @@ else:
                         response = consultar_ia_gemini(prompt)
                         render_smart_advisor(response)
                         
+                        df_res = extract_md_table_to_df(response)
+                        if not df_res.empty:
+                            download_section(df_res, "Auditoria_DIAN_IA", "Reporte de Auditoría DIAN")
+                        
                         with st.expander("🔍 Ver vista previa de los datos subidos"):
                             col1, col2 = st.columns(2)
                             col1.markdown("**Extracto Bancario:**")
@@ -2092,6 +2134,10 @@ else:
                         response = consultar_ia_gemini(prompt)
                         render_smart_advisor(response)
                         
+                        df_res = extract_md_table_to_df(response)
+                        if not df_res.empty:
+                            download_section(df_res, "Auditoria_DIAN_IA", "Reporte de Auditoría DIAN")
+                        
                         with st.expander("🔍 Ver vista previa de los datos subidos"):
                             st.dataframe(df.head(10))
                 else:
@@ -2149,6 +2195,10 @@ else:
                         '''
                         response = consultar_ia_gemini(prompt)
                         render_smart_advisor(response)
+                        
+                        df_res = extract_md_table_to_df(response)
+                        if not df_res.empty:
+                            download_section(df_res, "Auditoria_DIAN_IA", "Reporte de Auditoría DIAN")
                         
                         with st.expander("🔍 Ver vista previa de los datos subidos"):
                             st.dataframe(df.head(10))
