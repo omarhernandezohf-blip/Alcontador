@@ -87,13 +87,15 @@ with st.sidebar:
                 "Validador de RUT Oficial",
                 "Digitalización OCR",
                 "Generador de Cotizaciones",
-                "Generador Logístico"
+                "Generador Logístico",
+                "👑 Consola Administrativa"
             ],
             icons=[
                 "house", "building", "shield-check", "file-earmark-code", "bank", "graph-up",
                 "people", "cash-coin", "calculator", "cpu", "book", "check-circle", "camera",
                 "file-earmark-pdf",
-                "airplane-engines"
+                "airplane-engines",
+                "key"
             ],
             menu_icon="cast",
             default_index=0,
@@ -118,7 +120,8 @@ with st.sidebar:
                 "Validador de RUT Oficial",
                 "Digitalización OCR",
                 "Generador de Cotizaciones",
-                "Generador Logístico"
+                "Generador Logístico",
+                "👑 Consola Administrativa"
             ]
         )
 
@@ -2638,6 +2641,108 @@ else:
             
             except Exception as e:
                 st.error(f"Error técnico: {e}")
+
+
+
+
+
+    elif menu == "👑 Consola Administrativa":
+        st.title("👑 Consola Administrativa")
+        st.markdown("---")
+        
+        # Validar PIN
+        if "admin_authenticated" not in st.session_state:
+            st.session_state.admin_authenticated = False
+            
+        if not st.session_state.admin_authenticated:
+            pin_input = st.text_input("Ingrese PIN de Administrador:", type="password")
+            if st.button("Ingresar"):
+                if pin_input == "2711":
+                    st.session_state.admin_authenticated = True
+                    st.rerun()
+                else:
+                    st.error("PIN Incorrecto.")
+        else:
+            if st.button("Cerrar Sesión Admin", key="logout_admin"):
+                st.session_state.admin_authenticated = False
+                st.rerun()
+                
+            db = get_firestore_db()
+            if not db:
+                st.error("❌ No hay conexión a la base de datos (Firestore).")
+            else:
+                with st.spinner("Conectando con Firestore y recopilando métricas en tiempo real..."):
+                    users_ref = db.collection('users')
+                    docs = users_ref.stream()
+                    
+                    user_data = []
+                    total_users = 0
+                    pagos = 0
+                    tokens = 0
+                    
+                    # Conteo de conectados en las últimas 24h
+                    import datetime
+                    now = datetime.datetime.now(datetime.timezone.utc)
+                    conectados_24h = 0
+                    
+                    for doc in docs:
+                        total_users += 1
+                        data = doc.to_dict()
+                        
+                        email = doc.id
+                        plan = data.get('plan', 'FREE')
+                        credits_used = data.get('credits_used', 0)
+                        last_login_ts = data.get('last_login')
+                        
+                        # Manejo de Timestamp
+                        last_login_str = "Nunca"
+                        is_recent = False
+                        if last_login_ts:
+                            try:
+                                # Firestore devuelve datetime con timezone
+                                delta = now - last_login_ts
+                                if delta.total_seconds() < 86400: # 24 horas
+                                    conectados_24h += 1
+                                    is_recent = True
+                                last_login_str = last_login_ts.strftime('%Y-%m-%d %H:%M')
+                            except:
+                                pass
+                                
+                        if plan.upper() in ['PRO', 'PREMIUM']:
+                            pagos += 1
+                            
+                        tokens += credits_used
+                        
+                        user_data.append({
+                            "Email": email,
+                            "Plan": plan.upper(),
+                            "Créditos Usados": credits_used,
+                            "Último Login": last_login_str,
+                            "Activo (24h)": "🟢 Sí" if is_recent else "⚪ No"
+                        })
+                
+                st.markdown("### 📊 Panel de Control en Tiempo Real")
+                
+                c1, c2, c3, c4 = st.columns(4)
+                c1.metric("Usuarios Registrados", total_users)
+                c2.metric("Suscripciones (Pagos)", pagos)
+                c3.metric("Tokens/Créditos Usados", tokens)
+                c4.metric("Conectados (24h)", conectados_24h)
+                
+                st.markdown("### 👥 Base de Datos de Usuarios")
+                if user_data:
+                    import pandas as pd
+                    df_users = pd.DataFrame(user_data)
+                    # Ordenar por activo primero y luego por fecha
+                    df_users = df_users.sort_values(by=["Activo (24h)", "Último Login"], ascending=[False, False])
+                    st.dataframe(df_users, use_container_width=True)
+                    
+                    # Grafiquito rápido de distribución de planes
+                    plan_counts = df_users['Plan'].value_counts()
+                    st.markdown("#### Distribución de Planes")
+                    st.bar_chart(plan_counts)
+                else:
+                    st.info("No hay usuarios registrados aún.")
 
 
 
