@@ -73,6 +73,7 @@ with st.sidebar:
         # Opciones del menú
         menu_options = [
                 "Inicio / Dashboard",
+                "🧠 Núcleo IA (CFO & Soporte)",
                 "🏢 Quiénes Somos / Historia",
                 "Auditoría Cruce DIAN",
                 "Minería de XML (Facturación)",
@@ -99,7 +100,7 @@ with st.sidebar:
             menu_title="Navegación",
             options=menu_options,
             icons=[
-                "house", "building", "shield-check", "file-earmark-code", "bank", "graph-up",
+                "house", "robot", "building", "shield-check", "file-earmark-code", "bank", "graph-up",
                 "people", "cash-coin", "calculator", "cpu", "book", "check-circle", "camera",
                 "file-earmark-pdf",
                 "airplane-engines",
@@ -120,6 +121,7 @@ with st.sidebar:
         st.warning("Librería 'streamlit-option-menu' no detectada. Usando selector estándar.")
         menu_options = [
                 "Inicio / Dashboard",
+                "🧠 Núcleo IA (CFO & Soporte)",
                 "🏢 Quiénes Somos / Historia",
                 "Auditoría Cruce DIAN",
                 "Minería de XML (Facturación)",
@@ -2910,6 +2912,61 @@ else:
 
 
 
+
+    # --- MÓDULO NÚCLEO IA ---
+    elif menu == "🧠 Núcleo IA (CFO & Soporte)":
+        st.markdown("<h1 style='text-align: center; color: #10b981;'>🧠 NÚCLEO IA</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #94a3b8; font-size: 1.1rem;'>Tu Director Financiero Virtual y Soporte Técnico 24/7</p>", unsafe_allow_html=True)
+        st.markdown("---")
+        
+        if "chat_history" not in st.session_state:
+            st.session_state.chat_history = [
+                {"role": "assistant", "content": "👋 **¡Hola! Soy tu CFO Virtual y Soporte Técnico.**\n\nEstoy conectado directamente a la base de datos de la DIAN y conozco toda la plataforma.\n\n💡 *Puedes preguntarme cosas como:*\n- ¿Cómo funciona el cruce de facturas?\n- ¿Cuáles son las tarifas de renta este año?\n- ¿Dónde subo mis archivos XML?"}
+            ]
+            
+        chat_container = st.container(height=500)
+        with chat_container:
+            for msg in st.session_state.chat_history:
+                avatar_img = img_src if msg["role"] == "assistant" else "👤"
+                with st.chat_message(msg["role"], avatar=avatar_img):
+                    st.markdown(msg["content"])
+        
+        with st.form(key="chat_form_full", clear_on_submit=True):
+            cols = st.columns([5,1])
+            with cols[0]:
+                user_input = st.text_input("💬 Chatea con la IA...", placeholder="Ej: Ayúdame a auditar mis facturas de enero...", label_visibility="collapsed")
+            with cols[1]:
+                submit_btn = st.form_submit_button("ENVIAR ⚡", use_container_width=True)
+                
+        if submit_btn and user_input:
+            st.session_state.chat_history.append({"role": "user", "content": user_input})
+            
+            contexto_legal = f"""
+            ACTÚA COMO: 
+            1. EXPERTO CONTADOR Y ABOGADO TRIBUTARISTA DE COLOMBIA (Normativa 2026).
+            2. AGENTE DE SOPORTE TÉCNICO de esta aplicación ('Asistente Contable Pro'). Ayuda al usuario a entender cómo usar los módulos, qué archivos subir o cómo solucionar errores.
+            
+            DATOS OFICIALES 2026:
+            - SMMLV: ${SMMLV_2026:,.0f}
+            - AUXILIO TRANSPORTE: ${AUX_TRANS_2026:,.0f}
+            - UVT 2026: ${UVT_2026:,.0f}
+            - BASE RETENCIÓN COMPRAS (27 UVT): ${BASE_RET_COMPRAS:,.0f}
+            - BASE RETENCIÓN SERVICIOS (4 UVT): ${BASE_RET_SERVICIOS:,.0f}
+            - TOPE BANCARIZACIÓN (100 UVT): ${TOPE_EFECTIVO:,.0f}
+            
+            INSTRUCCIÓN: Eres el 'CFO Virtual y Núcleo IA'. Responde de forma muy profesional, tecnológica y amigable. Si es una duda contable, cita la norma. Si es una duda sobre la app, guíalo paso a paso. Sé conciso y brillante.
+            PREGUNTA DEL USUARIO: {user_input}
+            """
+            
+            try:
+                with st.spinner("Procesando en red neuronal..."):
+                    respuesta = consultar_ia_gemini(contexto_legal)
+                
+                st.session_state.chat_history.append({"role": "assistant", "content": respuesta})
+                st.rerun() 
+            except Exception as e:
+                st.error(f"Error de conexión con el Núcleo: {e}")
+
     elif menu == "👑 Consola Administrativa":
         st.title("👑 Consola Administrativa")
         st.markdown("---")
@@ -3119,7 +3176,7 @@ def render_tax_copilot():
         </style>
         """, unsafe_allow_html=True)
             
-        with st.expander("🧠 NÚCLEO IA (CFO & Soporte)", expanded=False):
+        with st.expander("🧠 NÚCLEO IA (CFO & Soporte)", expanded=True):
             
             # Cabecera del chat con la imagen
             st.markdown(f"""
