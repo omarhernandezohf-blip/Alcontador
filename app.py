@@ -999,14 +999,7 @@ def create_pdf(df, title, filename):
 
 def extract_md_table_to_df(text):
     import pandas as pd
-    lines = text.split('
-        st.markdown("""
-        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; border-radius: 8px; padding: 10px; margin-top: 15px; margin-bottom: 20px; text-align: center;">
-            <span style="color: #10b981; font-weight: bold;">🛡️ ESCUDO DE PRIVACIDAD LEGAL ACTIVO (Ley 1581 de Habeas Data - Colombia):</span>
-            <span style="color: #a7f3d0; font-size: 0.9em;"> Esta plataforma opera bajo el principio de <b>Cero Retención</b>. Los datos de facturación e impuestos que procesas se borran de la memoria tras cada sesión.</span>
-        </div>
-        """, unsafe_allow_html=True)
-\n')
+    lines = text.split('\\n')
     tables = []
     current_table = []
     for line in lines:
@@ -1817,6 +1810,12 @@ def render_quienes_somos():
     """, unsafe_allow_html=True)
 
 if menu == "Inicio / Dashboard":
+    st.markdown("""
+    <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; border-radius: 8px; padding: 10px; margin-top: 15px; margin-bottom: 20px; text-align: center;">
+        <span style="color: #10b981; font-weight: bold;">🛡️ ESCUDO DE PRIVACIDAD LEGAL ACTIVO (Ley 1581 de Habeas Data - Colombia):</span>
+        <span style="color: #a7f3d0; font-size: 0.9em;"> Esta plataforma opera bajo el principio de <b>Cero Retención</b>. Los datos de facturación e impuestos que procesas se borran de la memoria tras cada sesión.</span>
+    </div>
+    """, unsafe_allow_html=True)
     # 1. HEADER EJECUTIVO (HERO SECTION - ENTERPRISE TRUST)
     st.markdown("""
     <div class="hero-wrapper">
