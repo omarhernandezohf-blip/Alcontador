@@ -2927,7 +2927,7 @@ else:
         chat_container = st.container(height=500)
         with chat_container:
             for msg in st.session_state.chat_history:
-                avatar_img = img_src if msg["role"] == "assistant" else "👤"
+                avatar_img = "🤖" if msg["role"] == "assistant" else "👤"
                 with st.chat_message(msg["role"], avatar=avatar_img):
                     st.markdown(msg["content"])
         
@@ -3145,100 +3145,7 @@ def render_tax_copilot():
     """, unsafe_allow_html=True)
 
     with st.sidebar:
-        st.markdown("---") # Separador visual
-        
-        # Estado del Chat (Persistencia)
-        if "chat_history" not in st.session_state:
-            st.session_state.chat_history = [
-                {"role": "assistant", "content": "👋 **¡Hola! Soy tu CFO Virtual y Soporte Técnico.**\n\nEstoy conectado directamente a la base de datos de la DIAN y conozco toda la plataforma.\n\n💡 *Puedes preguntarme cosas como:*\n- ¿Cómo funciona el cruce de facturas?\n- ¿Cuáles son las tarifas de renta este año?\n- ¿Dónde subo mis archivos XML?"}
-            ]
-            
-        st.markdown("""
-        <style>
-            .ai-assistant-wrapper {
-                background: linear-gradient(180deg, rgba(16, 185, 129, 0.1) 0%, rgba(15, 23, 42, 0.8) 100%);
-                border: 1px solid rgba(16, 185, 129, 0.4);
-                border-radius: 12px;
-                padding: 10px;
-                box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
-                margin-bottom: 10px;
-                animation: pulse-border 3s infinite;
-            }
-            @keyframes pulse-border {
-                0% { box-shadow: 0 0 10px rgba(16, 185, 129, 0.2); }
-                50% { box-shadow: 0 0 25px rgba(16, 185, 129, 0.6); }
-                100% { box-shadow: 0 0 10px rgba(16, 185, 129, 0.2); }
-            }
-            .stExpander {
-                border: none !important;
-                background: transparent !important;
-            }
-        </style>
-        """, unsafe_allow_html=True)
-            
-        with st.expander("🧠 NÚCLEO IA (CFO & Soporte)", expanded=True):
-            
-            # Cabecera del chat con la imagen
-            st.markdown(f"""
-            <div class="ai-assistant-wrapper">
-                <div class="chat-header-sidebar" style="display:flex; align-items:center; gap:10px;">
-                    <img src="{img_src}" class="chat-avatar-sidebar" style="border: 2px solid #10b981; border-radius: 50%; box-shadow: 0 0 10px #10b981;">
-                    <div>
-                        <h3 style="margin:0; color:#f8fafc; font-size:15px; font-weight:800; letter-spacing: 0.5px;">CFO Virtual Activo</h3>
-                        <span style="color:#10b981; font-size:11px; font-weight:700;">● INTELIGENCIA EN LÍNEA</span>
-                    </div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Contenedor de Historia (Scroll simulado)
-            chat_container = st.container(height=350)
-            with chat_container:
-                for msg in st.session_state.chat_history:
-                    # Usar la foto formal para el asistente, y el emoji predeterminado para el usuario
-                    avatar_img = img_src if msg["role"] == "assistant" else "👤"
-                    with st.chat_message(msg["role"], avatar=avatar_img):
-                        st.markdown(msg["content"])
-            
-            # Zona de Input (Tipo Formulario para no recargar toda la app)
-            with st.form(key="chat_form", clear_on_submit=True):
-                user_input = st.text_input("💬 Chatea con la IA...", placeholder="Ej: Ayúdame a auditar...", label_visibility="collapsed")
-                submit_btn = st.form_submit_button("Enviar Comando ⚡")
-                
-            if submit_btn and user_input:
-                st.session_state.chat_history.append({"role": "user", "content": user_input})
-                
-                contexto_legal = f"""
-                ACTÚA COMO: 
-                1. EXPERTO CONTADOR Y ABOGADO TRIBUTARISTA DE COLOMBIA (Normativa 2026).
-                2. AGENTE DE SOPORTE TÉCNICO de esta aplicación ('Asistente Contable Pro'). Ayuda al usuario a entender cómo usar los módulos, qué archivos subir o cómo solucionar errores.
-                
-                DATOS OFICIALES 2026:
-                - SMMLV: ${SMMLV_2026:,.0f}
-                - AUXILIO TRANSPORTE: ${AUX_TRANS_2026:,.0f}
-                - UVT 2026: ${UVT_2026:,.0f}
-                - BASE RETENCIÓN COMPRAS (27 UVT): ${BASE_RET_COMPRAS:,.0f}
-                - BASE RETENCIÓN SERVICIOS (4 UVT): ${BASE_RET_SERVICIOS:,.0f}
-                - TOPE BANCARIZACIÓN (100 UVT): ${TOPE_EFECTIVO:,.0f}
-                
-                INSTRUCCIÓN: Eres el 'CFO Virtual y Núcleo IA'. Responde de forma muy profesional, tecnológica y amigable. Si es una duda contable, cita la norma. Si es una duda sobre la app, guíalo paso a paso. Sé conciso y brillante.
-                PREGUNTA DEL USUARIO: {user_input}
-                """
-                
-                try:
-                    with st.spinner("Procesando en red neuronal..."):
-                        respuesta = consultar_ia_gemini(contexto_legal)
-                    
-                    st.session_state.chat_history.append({"role": "assistant", "content": respuesta})
-                    st.rerun() 
-                except Exception as e:
-                    st.error(f"Error IA: {str(e)}")
-        
         # Colocar la normativa al final de la barra lateral
         st.markdown("---")
         st.caption(f"🇨🇴 **Normativa 2026 Activa**")
         st.caption(f"UVT: $52,374 | SMMLV: $1.7M")
-
-# Ejecutar el Chatbot al final para asegurar que todas las constantes están cargadas
-render_tax_copilot()
-
